@@ -1,10 +1,22 @@
 "use client";
 
-import { useAppStore } from "@/lib/store";
-import { Plus, LayoutGrid, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useAppStore, Workspace } from "@/lib/store";
+import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Paper,
+  TextField,
+  IconButton,
+  Chip,
+  AppBar,
+  Toolbar
+} from "@mui/material";
 
 export default function Dashboard() {
   const { workspaces, createWorkspace, selectWorkspace } = useAppStore();
@@ -27,73 +39,249 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground flex flex-col items-center justify-center p-8">
-      <div className="max-w-4xl w-full space-y-8">
-        <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-accent-primary rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <LayoutGrid className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-heading font-bold tracking-tight">Welcome to ForgeAI</h1>
-            <p className="text-slate-500 text-lg">Select a workspace to get started</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {workspaces.map((ws) => (
-            <div
-              key={ws.id}
-              onClick={() => handleSelect(ws.id)}
-              className="group relative bg-surface p-6 rounded-2xl border border-border-subtle hover:border-accent-primary/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer overflow-hidden"
+    <Box sx={{ bgcolor: 'background.default' }}>
+      {/* Top Navigation */}
+      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Toolbar sx={{ minHeight: '64px!important' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 2,
+                bgcolor: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex items-start justify-between mb-4">
-                 <div className="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center text-accent-primary font-bold text-lg group-hover:bg-accent-primary group-hover:text-white transition-colors">
+              <LayoutGrid size={24} color="white" />
+            </Box>
+            <Typography variant="h6" fontWeight={600}>
+              ForgeAI
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Main Content */}
+      <Container maxWidth="lg" sx={{ py: 6 }}>
+        {/* Workspaces Section */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+            Your Workspaces
+          </Typography>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)'
+              },
+              gap: 3
+            }}
+          >
+            {workspaces.map((ws: Workspace) => (
+              <Paper
+                key={ws.id}
+                elevation={0}
+                onClick={() => handleSelect(ws.id)}
+                sx={{
+                  p: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.1)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                {/* Top Border Accent */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 3,
+                    bgcolor: 'primary.main',
+                    borderRadius: '8px 8px 0 0',
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    '.MuiPaper-root:hover &': {
+                      opacity: 1
+                    }
+                  }}
+                />
+
+                {/* Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      fontSize: '1.25rem'
+                    }}
+                  >
                     {ws.title.charAt(0)}
-                 </div>
-                 {ws.plan === 'Pro' && (
-                     <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold uppercase tracking-wider border border-indigo-100">
-                         PRO
-                     </span>
-                 )}
-              </div>
-              
-              <h3 className="text-xl font-bold mb-1">{ws.title}</h3>
-              <p className="text-sm text-slate-400 mb-6">{ws.groups.length} Groups • {ws.groups.reduce((acc, g) => acc + g.pages.length, 0)} Pages</p>
-              
-              <div className="flex items-center text-sm font-medium text-slate-400 group-hover:text-accent-primary transition-colors">
-                  Open Workspace <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 transition-all" />
-              </div>
-            </div>
-          ))}
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {ws.plan === 'Pro' && (
+                      <Chip
+                        label="PRO"
+                        size="small"
+                        color="primary"
+                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
+                      />
+                    )}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      <MoreVertical size={16} />
+                    </IconButton>
+                  </Box>
+                </Box>
 
-          {/* Create New Card */}
-          {isCreating ? (
-            <form onSubmit={handleCreate} className="bg-surface p-6 rounded-2xl border border-dashed border-border-highlight flex flex-col justify-center gap-4">
-              <input
-                autoFocus
-                placeholder="Workspace Name"
-                value={newWorkspaceName}
-                onChange={(e) => setNewWorkspaceName(e.target.value)}
-                className="w-full bg-surface-elevated px-4 py-2 rounded-lg border border-border-subtle focus:outline-none focus:ring-2 focus:ring-accent-primary/20"
-              />
-              <div className="flex gap-2">
-                 <button type="submit" className="flex-1 bg-accent-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">Create</button>
-                 <button type="button" onClick={() => setIsCreating(false)} className="px-4 py-2 text-slate-500 hover:text-slate-800 text-sm">Cancel</button>
-              </div>
-            </form>
-          ) : (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="bg-surface-elevated border border-dashed border-border-highlight p-6 rounded-2xl flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-accent-primary hover:border-accent-primary/30 hover:bg-blue-50/50 transition-all group"
-            >
-              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <Plus className="w-6 h-6" />
-              </div>
-              <span className="font-medium">Create New Workspace</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+                {/* Content */}
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  {ws.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {ws.groups.length} Groups • {ws.groups.reduce((acc, g) => acc + g.pages.length, 0)} Pages
+                </Typography>
+
+                {/* Footer */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  Open Workspace
+                  <ArrowRight
+                    size={16}
+                    style={{
+                      marginLeft: 8,
+                      transition: 'transform 0.2s'
+                    }}
+                  />
+                </Box>
+              </Paper>
+            ))}
+
+            {/* Create New Workspace Card */}
+            {isCreating ? (
+              <Paper
+                component="form"
+                onSubmit={handleCreate}
+                elevation={0}
+                sx={{
+                  p: 3,
+                  border: '2px dashed',
+                  borderColor: 'primary.main',
+                  borderRadius: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2
+                }}
+              >
+                <TextField
+                  autoFocus
+                  fullWidth
+                  placeholder="Workspace Name"
+                  value={newWorkspaceName}
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                  size="small"
+                />
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    size="small"
+                  >
+                    Create
+                  </Button>
+                  <Button
+                    onClick={() => setIsCreating(false)}
+                    size="small"
+                    color="inherit"
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              </Paper>
+            ) : (
+              <Paper
+                elevation={0}
+                onClick={() => setIsCreating(true)}
+                sx={{
+                  p: 3,
+                  border: '2px dashed',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'scale(1.1)'
+                    }
+                  }}
+                >
+                  <Plus size={28} />
+                </Box>
+                <Typography variant="body1" fontWeight={500}>
+                  Create New Workspace
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        </Box>
+
+        {/* Recent Activity */}
+        <RecentActivity />
+      </Container>
+    </Box>
   );
 }
