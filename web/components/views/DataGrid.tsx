@@ -8,7 +8,7 @@ import { Paper, Box } from "@mui/material";
 
 interface DataGridProps {
   workspaceId: string;
-  pageId: string;
+  pageId?: string;
 }
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
@@ -31,8 +31,16 @@ export function DataGrid({ workspaceId, pageId }: DataGridProps) {
   const workspace = workspaces.find((w) => w.id === workspaceId);
   
   // Find page and group
-  const group = workspace?.groups.find(g => g.pages.some(p => p.id === pageId));
-  const page = group?.pages.find(p => p.id === pageId);
+  let group = workspace?.groups.find(g => g.pages.some(p => p.id === pageId));
+  let page = group?.pages.find(p => p.id === pageId);
+
+  // Default to first page if no pageId provided or found
+  if ((!group || !page) && !pageId && workspace?.groups.length) {
+      group = workspace.groups[0];
+      if (group?.pages.length) {
+          page = group.pages[0];
+      }
+  }
 
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'sprint-1': true,
