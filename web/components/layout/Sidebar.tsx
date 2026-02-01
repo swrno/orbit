@@ -2,11 +2,11 @@
 
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { ChevronRight, LayoutGrid, Plus, Search, Settings, Sparkles, Table, Kanban, FileText } from "lucide-react";
+import { ChevronRight, LayoutGrid, Plus, Search, Settings, Sparkles, Table, Kanban, FileText, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Box, IconButton, Button } from "@mui/material";
+import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Box, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 
 export function Sidebar() {
   const params = useParams();
@@ -14,8 +14,14 @@ export function Sidebar() {
   const workspaceId = params.workspaceId as string;
   const pageId = params.pageId as string;
   
-  const { workspaces, addGroup, addPage } = useAppStore();
+  const { workspaces, addGroup, addPage, deleteGroup } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; groupId: string | null; groupTitle: string }>({ 
+    open: false, 
+    groupId: null, 
+    groupTitle: '' 
+  });
 
   if (!workspace) return null;
 
@@ -40,6 +46,29 @@ export function Sidebar() {
     if (title) {
         addPage(workspaceId, groupId, title, 'document');
     }
+  };
+  
+  const handleDeleteGroup = (e: React.MouseEvent, groupId: string, groupTitle: string) => {
+    e.stopPropagation();
+    setDeleteDialog({ open: true, groupId, groupTitle });
+  };
+  
+  const confirmDelete = () => {
+    if (deleteDialog.groupId) {
+      deleteGroup(workspaceId, deleteDialog.groupId);
+      setDeleteDialog({ open: false, groupId: null, groupTitle: '' });
+      // Navigate to first available page if current group is deleted
+      const firstGroup = workspace.groups.find((g: { id: string; pages: any[] }) => g.id !== deleteDialog.groupId && g.pages.length > 0);
+      if (firstGroup && firstGroup.pages.length > 0) {
+        router.push(`/${workspaceId}/${firstGroup.pages[0].id}`);
+      } else {
+        router.push(`/${workspaceId}`);
+      }
+    }
+  };
+  
+  const cancelDelete = () => {
+    setDeleteDialog({ open: false, groupId: null, groupTitle: '' });
   };
 
   const activeGroupId = workspace.groups.find(g => g.pages.some(p => p.id === pageId))?.id;
@@ -139,21 +168,32 @@ export function Sidebar() {
                         {isActive && <ChevronRight size={16} className="opacity-50" />}
                    </ListItemButton>
                    
-                   <IconButton
-                        size="small"
-                        onClick={(e) => handleAddPage(e, group.id)}
-                        sx={{ 
-                            position: 'absolute', 
-                            right: 4, 
-                            top: '50%', 
-                            transform: 'translateY(-50%)',
-                            opacity: 0,
-                            transition: 'opacity 0.2s',
-                            '.MuiBox-root:hover &': { opacity: 1 } 
-                        }}
-                   >
-                        <Plus size={14} />
-                   </IconButton>
+                   <Box sx={{ 
+                       position: 'absolute', 
+                       right: 4, 
+                       top: '50%', 
+                       transform: 'translateY(-50%)',
+                       display: 'flex',
+                       gap: 0.5,
+                       opacity: 0,
+                       transition: 'opacity 0.2s',
+                       '.MuiBox-root:hover &': { opacity: 1 } 
+                   }}>
+                       <IconButton
+                            size="small"
+                            onClick={(e) => handleAddPage(e, group.id)}
+                            sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
+                       >
+                            <Plus size={14} />
+                       </IconButton>
+                       <IconButton
+                            size="small"
+                            onClick={(e) => handleDeleteGroup(e, group.id, group.title)}
+                            sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'error.light', color: 'error.main' } }}
+                       >
+                            <Trash2 size={14} />
+                       </IconButton>
+                   </Box>
                 </Box>
             );
         })}
@@ -183,6 +223,31 @@ export function Sidebar() {
              </ListItemButton>
          </List>
       </Box>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={cancelDelete}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Group?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete the group "{deleteDialog.groupTitle}"? This action cannot be undone and will delete all pages within this group.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDelete} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" variant="contained" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Drawer>
   );
 }
