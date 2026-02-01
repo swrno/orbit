@@ -2,11 +2,11 @@
 
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { ChevronRight, LayoutGrid, Plus, Search, Settings, Sparkles, Table, Kanban, FileText, Trash2 } from "lucide-react";
+import { ChevronRight, ChevronDown, LayoutGrid, Plus, Search, Settings, Sparkles, Table, Kanban, FileText, Trash2, Home, Pencil, Folder } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Box, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Box, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField } from "@mui/material";
 
 export function Sidebar() {
   const params = useParams();
@@ -14,7 +14,7 @@ export function Sidebar() {
   const workspaceId = params.workspaceId as string;
   const pageId = params.pageId as string;
   
-  const { workspaces, addGroup, addPage, deleteGroup } = useAppStore();
+  const { workspaces, addGroup, addPage, deleteGroup, renameGroup, renamePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
   
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; groupId: string | null; groupTitle: string }>({ 
@@ -23,29 +23,115 @@ export function Sidebar() {
     groupTitle: '' 
   });
 
+  const [addGroupDialog, setAddGroupDialog] = useState(false);
+  const [groupTitle, setGroupTitle] = useState('');
+
+  const [addPageDialog, setAddPageDialog] = useState<{ open: boolean; groupId: string | null }>({
+    open: false,
+    groupId: null
+  });
+  const [pageTitle, setPageTitle] = useState('');
+
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingGroupTitle, setEditingGroupTitle] = useState('');
+
+  const [editingPageId, setEditingPageId] = useState<string | null>(null);
+  const [editingPageTitle, setEditingPageTitle] = useState('');
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(workspace.groups.map(g => g.id)));
+
+
+
+
   if (!workspace) return null;
 
+  const toggleGroupExpansion = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+
   const handleGroupClick = (group: any) => {
-    if (group.pages.length > 0) {
-        router.push(`/${workspaceId}/${group.pages[0].id}`);
-    } else {
-        alert("This group has no pages. Please add one via the + button.");
-    }
+    toggleGroupExpansion(group.id);
   };
 
   const handleAddGroup = () => {
-    const title = prompt("Enter group title:");
-    if (title) {
-        addGroup(workspace.id, title);
+    setAddGroupDialog(true);
+  };
+
+  const confirmAddGroup = () => {
+    if (groupTitle.trim()) {
+      addGroup(workspace.id, groupTitle.trim());
+      setGroupTitle('');
+      setAddGroupDialog(false);
     }
+  };
+
+  const cancelAddGroup = () => {
+    setGroupTitle('');
+    setAddGroupDialog(false);
   };
 
   const handleAddPage = (e: React.MouseEvent, groupId: string) => {
     e.stopPropagation();
-    const title = prompt("Enter page title:");
-    if (title) {
-        addPage(workspaceId, groupId, title, 'document');
+    setAddPageDialog({ open: true, groupId });
+  };
+
+  const confirmAddPage = () => {
+    if (pageTitle.trim() && addPageDialog.groupId) {
+      addPage(workspaceId, addPageDialog.groupId, pageTitle.trim(), 'document');
+      setPageTitle('');
+      setAddPageDialog({ open: false, groupId: null });
     }
+  };
+
+  const cancelAddPage = () => {
+    setPageTitle('');
+    setAddPageDialog({ open: false, groupId: null });
+  };
+
+  const handleStartRename = (e: React.MouseEvent, groupId: string, currentTitle: string) => {
+    e.stopPropagation();
+    setEditingGroupId(groupId);
+    setEditingGroupTitle(currentTitle);
+  };
+
+  const handleConfirmRename = () => {
+    if (editingGroupId && editingGroupTitle.trim()) {
+      renameGroup(workspaceId, editingGroupId, editingGroupTitle.trim());
+      setEditingGroupId(null);
+      setEditingGroupTitle('');
+    }
+  };
+
+  const handleCancelRename = () => {
+    setEditingGroupId(null);
+    setEditingGroupTitle('');
+  };
+
+  const handleStartPageRename = (e: React.MouseEvent, groupId: string, pageId: string, currentTitle: string) => {
+    e.stopPropagation();
+    setEditingPageId(pageId);
+    setEditingPageTitle(currentTitle);
+  };
+
+  const handleConfirmPageRename = (groupId: string) => {
+    if (editingPageId && editingPageTitle.trim()) {
+      renamePage(workspaceId, groupId, editingPageId, editingPageTitle.trim());
+      setEditingPageId(null);
+      setEditingPageTitle('');
+    }
+  };
+
+  const handleCancelPageRename = () => {
+    setEditingPageId(null);
+    setEditingPageTitle('');
   };
   
   const handleDeleteGroup = (e: React.MouseEvent, groupId: string, groupTitle: string) => {
@@ -142,61 +228,218 @@ export function Sidebar() {
         </Button>
       </Box>
 
-      {/* Group List */}
+      {/* Index Navigation */}
+      <List sx={{ px: 2, pb: 1 }}>
+        <ListItemButton
+          component={Link}
+          href={`/${workspaceId}`}
+          selected={!pageId}
+          sx={{ 
+            borderRadius: 1,
+            '&.Mui-selected': { 
+              bgcolor: 'action.selected', 
+              '&:hover': { bgcolor: 'action.selected' } 
+            }
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+            <Home size={16} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Index" 
+            primaryTypographyProps={{ variant: 'body2', fontWeight: !pageId ? 600 : 400 }} 
+          />
+          {!pageId && <ChevronRight size={16} className="opacity-50" />}
+        </ListItemButton>
+      </List>
+
+      {/* Group List - Folder Style */}
       <List sx={{ flex: 1, overflowY: 'auto', px: 2 }}>
         <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ px: 2, mb: 1, display: 'block', letterSpacing: 1 }}>
             GROUPS
         </Typography>
         
         {workspace.groups.map((group) => {
-            const isActive = group.id === activeGroupId;
+            const isExpanded = expandedGroups.has(group.id);
+            const isEditing = editingGroupId === group.id;
+            
             return (
-                <Box key={group.id} sx={{ position: 'relative', mb: 0.5 }}>
-                   <ListItemButton
-                        onClick={() => handleGroupClick(group)}
-                        selected={isActive}
-                        sx={{ 
-                            borderRadius: 1, 
-                            pr: 6,
-                            '&.Mui-selected': { bgcolor: 'primary.light', color: 'primary.main', '&:hover': { bgcolor: 'primary.light' } }
-                        }}
-                   >
-                        <ListItemText 
-                            primary={group.title} 
-                            primaryTypographyProps={{ variant: 'body2', fontWeight: isActive ? 600 : 400, noWrap: true }} 
-                        />
-                        {isActive && <ChevronRight size={16} className="opacity-50" />}
-                   </ListItemButton>
+                <Box key={group.id} sx={{ mb: 0.5 }}>
+                   {/* Group Header */}
+                   {isEditing ? (
+                     // Inline Edit Mode for Group
+                     <Box sx={{ px: 2, py: 1 }}>
+                       <TextField
+                         autoFocus
+                         size="small"
+                         fullWidth
+                         value={editingGroupTitle}
+                         onChange={(e) => setEditingGroupTitle(e.target.value)}
+                         onKeyDown={(e) => {
+                           if (e.key === 'Enter') {
+                             handleConfirmRename();
+                           } else if (e.key === 'Escape') {
+                             handleCancelRename();
+                           }
+                         }}
+                         onBlur={handleConfirmRename}
+                         sx={{ 
+                           '& .MuiInputBase-input': { 
+                             py: 0.5,
+                             fontSize: '0.875rem'
+                           } 
+                         }}
+                       />
+                     </Box>
+                   ) : (
+                     // Normal Display Mode for Group
+                     <Box sx={{ position: 'relative' }}>
+                       <ListItemButton
+                            onClick={() => handleGroupClick(group)}
+                            sx={{ 
+                                borderRadius: 1, 
+                                pr: 6,
+                            }}
+                       >
+                            <ListItemIcon sx={{ minWidth: 28 }}>
+                              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </ListItemIcon>
+                            <ListItemIcon sx={{ minWidth: 32 }}>
+                              <Folder size={16} />
+                            </ListItemIcon>
+                            <ListItemText 
+                                primary={group.title} 
+                                primaryTypographyProps={{ variant: 'body2', fontWeight: 500, noWrap: true }} 
+                            />
+                       </ListItemButton>
+                       
+                       <Box sx={{ 
+                           position: 'absolute', 
+                           right: 4, 
+                           top: '50%', 
+                           transform: 'translateY(-50%)',
+                           display: 'flex',
+                           gap: 0.5,
+                           opacity: 0,
+                           transition: 'opacity 0.2s',
+                           '.MuiBox-root:hover &': { opacity: 1 } 
+                       }}>
+                           <IconButton
+                                size="small"
+                                onClick={(e) => handleStartRename(e, group.id, group.title)}
+                                sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
+                           >
+                                <Pencil size={14} />
+                           </IconButton>
+                           <IconButton
+                                size="small"
+                                onClick={(e) => handleAddPage(e, group.id)}
+                                sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
+                           >
+                                <Plus size={14} />
+                           </IconButton>
+                           <IconButton
+                                size="small"
+                                onClick={(e) => handleDeleteGroup(e, group.id, group.title)}
+                                sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'error.light', color: 'error.main' } }}
+                           >
+                                <Trash2 size={14} />
+                           </IconButton>
+                       </Box>
+                     </Box>
+                   )}
                    
-                   <Box sx={{ 
-                       position: 'absolute', 
-                       right: 4, 
-                       top: '50%', 
-                       transform: 'translateY(-50%)',
-                       display: 'flex',
-                       gap: 0.5,
-                       opacity: 0,
-                       transition: 'opacity 0.2s',
-                       '.MuiBox-root:hover &': { opacity: 1 } 
-                   }}>
-                       <IconButton
-                            size="small"
-                            onClick={(e) => handleAddPage(e, group.id)}
-                            sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
-                       >
-                            <Plus size={14} />
-                       </IconButton>
-                       <IconButton
-                            size="small"
-                            onClick={(e) => handleDeleteGroup(e, group.id, group.title)}
-                            sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'error.light', color: 'error.main' } }}
-                       >
-                            <Trash2 size={14} />
-                       </IconButton>
-                   </Box>
+                   {/* Pages under this group */}
+                   {isExpanded && group.pages.length > 0 && (
+                     <List sx={{ pl: 4, py: 0 }}>
+                       {group.pages.map((page) => {
+                         const isPageEditing = editingPageId === page.id;
+                         const isPageActive = pageId === page.id;
+                         const PageIcon = page.type === 'board' ? Kanban : page.type === 'table' ? Table : FileText;
+                         
+                         return (
+                           <Box key={page.id} sx={{ position: 'relative', mb: 0.5 }}>
+                             {isPageEditing ? (
+                               // Inline Edit Mode for Page
+                               <Box sx={{ px: 2, py: 0.5 }}>
+                                 <TextField
+                                   autoFocus
+                                   size="small"
+                                   fullWidth
+                                   value={editingPageTitle}
+                                   onChange={(e) => setEditingPageTitle(e.target.value)}
+                                   onKeyDown={(e) => {
+                                     if (e.key === 'Enter') {
+                                       handleConfirmPageRename(group.id);
+                                     } else if (e.key === 'Escape') {
+                                       handleCancelPageRename();
+                                     }
+                                   }}
+                                   onBlur={() => handleConfirmPageRename(group.id)}
+                                   sx={{ 
+                                     '& .MuiInputBase-input': { 
+                                       py: 0.5,
+                                       fontSize: '0.875rem'
+                                     } 
+                                   }}
+                                 />
+                               </Box>
+                             ) : (
+                               // Normal Display Mode for Page
+                               <>
+                                 <ListItemButton
+                                   component={Link}
+                                   href={`/${workspaceId}/${page.id}`}
+                                   selected={isPageActive}
+                                   sx={{ 
+                                     borderRadius: 1,
+                                     pr: 4,
+                                     '&.Mui-selected': { 
+                                       bgcolor: 'action.selected', 
+                                       '&:hover': { bgcolor: 'action.selected' } 
+                                     }
+                                   }}
+                                 >
+                                   <ListItemIcon sx={{ minWidth: 32 }}>
+                                     <PageIcon size={16} />
+                                   </ListItemIcon>
+                                   <ListItemText 
+                                     primary={page.title} 
+                                     primaryTypographyProps={{ variant: 'body2', fontWeight: isPageActive ? 600 : 400, noWrap: true }} 
+                                   />
+                                   {isPageActive && <ChevronRight size={16} className="opacity-50" />}
+                                 </ListItemButton>
+                                 
+                                 <Box sx={{ 
+                                   position: 'absolute', 
+                                   right: 4, 
+                                   top: '50%', 
+                                   transform: 'translateY(-50%)',
+                                   display: 'flex',
+                                   gap: 0.5,
+                                   opacity: 0,
+                                   transition: 'opacity 0.2s',
+                                   '.MuiBox-root:hover &': { opacity: 1 } 
+                                 }}>
+                                   <IconButton
+                                     size="small"
+                                     onClick={(e) => handleStartPageRename(e, group.id, page.id, page.title)}
+                                     sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
+                                   >
+                                     <Pencil size={14} />
+                                   </IconButton>
+                                 </Box>
+                               </>
+                             )}
+                           </Box>
+                         );
+                       })}
+                     </List>
+                   )}
                 </Box>
             );
         })}
+        
         
         <ListItemButton onClick={handleAddGroup} sx={{ borderRadius: 1, color: 'text.secondary', mt: 1 }}>
              <ListItemIcon sx={{ minWidth: 32 }}>
@@ -205,6 +448,7 @@ export function Sidebar() {
              <ListItemText primary="Add Group" primaryTypographyProps={{ variant: 'body2' }} />
         </ListItemButton>
       </List>
+
 
       {/* Footer */}
       <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
@@ -245,6 +489,66 @@ export function Sidebar() {
           </Button>
           <Button onClick={confirmDelete} color="error" variant="contained" autoFocus>
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Group Dialog */}
+      <Dialog open={addGroupDialog} onClose={cancelAddGroup} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Group</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Group Title"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={groupTitle}
+            onChange={(e) => setGroupTitle(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                confirmAddGroup();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelAddGroup} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={confirmAddGroup} variant="contained" disabled={!groupTitle.trim()}>
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Page Dialog */}
+      <Dialog open={addPageDialog.open} onClose={cancelAddPage} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Page</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Page Title"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={pageTitle}
+            onChange={(e) => setPageTitle(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                confirmAddPage();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelAddPage} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={confirmAddPage} variant="contained" disabled={!pageTitle.trim()}>
+            Create
           </Button>
         </DialogActions>
       </Dialog>

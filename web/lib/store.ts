@@ -38,6 +38,7 @@ export type Page = {
 export type Group = {
   id: string;
   title: string;
+  icon?: string; // Icon name from lucide-react
   pages: Page[];
 };
 
@@ -56,7 +57,7 @@ interface AppState {
   // Actions
   createWorkspace: (title: string) => void;
   selectWorkspace: (id: string) => void;
-  addGroup: (workspaceId: string, title: string) => void;
+  addGroup: (workspaceId: string, title: string, icon?: string) => void;
   addPage: (workspaceId: string, groupId: string, title: string, type: PageType) => void;
   updatePage: (workspaceId: string, groupId: string, pageId: string, updates: Partial<Page>) => void;
   
@@ -64,6 +65,11 @@ interface AppState {
   addTask: (workspaceId: string, task: Omit<Task, 'id'>) => void;
   updateTask: (workspaceId: string, taskId: string, updates: Partial<Task>) => void;
   deleteTask: (workspaceId: string, taskId: string) => void;
+
+  // Update Actions
+  renameGroup: (workspaceId: string, groupId: string, newTitle: string) => void;
+  renamePage: (workspaceId: string, groupId: string, pageId: string, newTitle: string) => void;
+  updateGroupIcon: (workspaceId: string, groupId: string, icon: string) => void;
 
   // Delete Actions
   deleteGroup: (workspaceId: string, groupId: string) => void;
@@ -135,10 +141,10 @@ export const useAppStore = create<AppState>()(
 
       selectWorkspace: (id) => set({ currentWorkspaceId: id }),
 
-      addGroup: (workspaceId, title) => set((state) => ({
+      addGroup: (workspaceId, title, icon) => set((state) => ({
         workspaces: state.workspaces.map(ws => 
           ws.id === workspaceId 
-            ? { ...ws, groups: [...ws.groups, { id: `g-${Date.now()}`, title, pages: [] }] }
+            ? { ...ws, groups: [...ws.groups, { id: `g-${Date.now()}`, title, icon, pages: [] }] }
             : ws
         )
       })),
@@ -203,6 +209,52 @@ export const useAppStore = create<AppState>()(
             ? {
                 ...ws,
                 tasks: ws.tasks.filter(t => t.id !== taskId)
+              }
+            : ws
+        )
+      })),
+
+      renameGroup: (workspaceId, groupId, newTitle) => set((state) => ({
+        workspaces: state.workspaces.map(ws =>
+          ws.id === workspaceId
+            ? {
+                ...ws,
+                groups: ws.groups.map(g =>
+                  g.id === groupId ? { ...g, title: newTitle } : g
+                )
+              }
+            : ws
+        )
+      })),
+
+      renamePage: (workspaceId, groupId, pageId, newTitle) => set((state) => ({
+        workspaces: state.workspaces.map(ws =>
+          ws.id === workspaceId
+            ? {
+                ...ws,
+                groups: ws.groups.map(g =>
+                  g.id === groupId
+                    ? {
+                        ...g,
+                        pages: g.pages.map(p =>
+                          p.id === pageId ? { ...p, title: newTitle } : p
+                        )
+                      }
+                    : g
+                )
+              }
+            : ws
+        )
+      })),
+
+      updateGroupIcon: (workspaceId, groupId, icon) => set((state) => ({
+        workspaces: state.workspaces.map(ws =>
+          ws.id === workspaceId
+            ? {
+                ...ws,
+                groups: ws.groups.map(g =>
+                  g.id === groupId ? { ...g, icon } : g
+                )
               }
             : ws
         )
