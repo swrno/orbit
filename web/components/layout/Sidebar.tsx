@@ -31,6 +31,8 @@ export function Sidebar() {
     groupId: null
   });
   const [pageTitle, setPageTitle] = useState('');
+  const [pageType, setPageType] = useState<'board' | 'table' | 'document'>('document');
+
 
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingGroupTitle, setEditingGroupTitle] = useState('');
@@ -85,14 +87,16 @@ export function Sidebar() {
 
   const confirmAddPage = () => {
     if (pageTitle.trim() && addPageDialog.groupId) {
-      addPage(workspaceId, addPageDialog.groupId, pageTitle.trim(), 'document');
+      addPage(workspaceId, addPageDialog.groupId, pageTitle.trim(), pageType);
       setPageTitle('');
+      setPageType('document');
       setAddPageDialog({ open: false, groupId: null });
     }
   };
 
   const cancelAddPage = () => {
     setPageTitle('');
+    setPageType('document');
     setAddPageDialog({ open: false, groupId: null });
   };
 
@@ -541,7 +545,38 @@ export function Sidebar() {
                 confirmAddPage();
               }
             }}
+            sx={{ mb: 2 }}
           />
+          
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Document Type
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant={pageType === 'board' ? 'contained' : 'outlined'}
+              onClick={() => setPageType('board')}
+              startIcon={<Kanban size={18} />}
+              sx={{ flex: 1 }}
+            >
+              Board
+            </Button>
+            <Button
+              variant={pageType === 'table' ? 'contained' : 'outlined'}
+              onClick={() => setPageType('table')}
+              startIcon={<Table size={18} />}
+              sx={{ flex: 1 }}
+            >
+              Table
+            </Button>
+            <Button
+              variant={pageType === 'document' ? 'contained' : 'outlined'}
+              onClick={() => setPageType('document')}
+              startIcon={<FileText size={18} />}
+              sx={{ flex: 1 }}
+            >
+              Document
+            </Button>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={cancelAddPage} color="inherit">

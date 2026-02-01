@@ -39,6 +39,7 @@ export type Group = {
   id: string;
   title: string;
   icon?: string; // Icon name from lucide-react
+  groups?: Group[]; // Nested subgroups
   pages: Page[];
 };
 
