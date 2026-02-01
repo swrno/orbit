@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* 
+  MUI handles the global theme and variables. 
+  Keeping Tailwind directives for utility usage where convenient (e.g. flex, padding),
+  but removing custom theme variables to avoid conflicts.
+*/
