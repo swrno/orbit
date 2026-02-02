@@ -2,6 +2,7 @@
 
 import { useAppStore, Task, TaskStatus, TaskPriority, Sprint } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/date-utils";
 import {
   Plus, MoreHorizontal, Clock, AlertCircle, User,
   Calendar, MessageSquare, Tag, GripVertical, ChevronDown,
@@ -461,7 +462,7 @@ export function BoardView({ workspaceId, sprintId }: BoardViewProps) {
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {task.dueDate && (
-                        <Tooltip title={`Due: ${new Date(task.dueDate).toLocaleDateString()}`}>
+                        <Tooltip title={`Due: ${formatDate(task.dueDate)}`}>
                           <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
                             <Calendar size={12} />
                           </Box>
