@@ -70,8 +70,8 @@ export function TaskDetailModal({ workspaceId, task, open, onClose }: TaskDetail
     // Get related data
     const epic = workspace.epics?.find(e => e.id === task.epicId);
     const sprint = workspace.sprints?.find(s => s.id === task.sprintId);
-    const blockerTasks = task.blockedBy?.map(id => workspace.tasks.find(t => t.id === id)).filter(Boolean) as Task[];
-    const blocksTasks = task.blocks?.map(id => workspace.tasks.find(t => t.id === id)).filter(Boolean) as Task[];
+    const blockerTasks = (task.blockedBy?.map(id => workspace.tasks.find(t => t.id === id)).filter(Boolean) as Task[]) || [];
+    const blocksTasks = (task.blocks?.map(id => workspace.tasks.find(t => t.id === id)).filter(Boolean) as Task[]) || [];
 
     // Calculate total time logged
     const totalTimeLogged = useMemo(() =>
