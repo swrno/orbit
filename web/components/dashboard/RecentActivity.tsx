@@ -8,10 +8,10 @@ import { useRouter } from "next/navigation";
 export function RecentActivity() {
   const { workspaces } = useAppStore();
   const router = useRouter();
-  
+
   // Flatten all pages from all workspaces with their workspace context
   const allPages: Array<{ page: Page; workspace: Workspace; group: Group }> = [];
-  
+
   workspaces.forEach((ws: Workspace) => {
     ws.groups.forEach((g: Group) => {
       g.pages.forEach((p: Page) => {
@@ -33,7 +33,7 @@ export function RecentActivity() {
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
         Recent Activity
       </Typography>
-      
+
       <Paper
         elevation={0}
         sx={{
@@ -66,11 +66,9 @@ export function RecentActivity() {
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={
-                    <Typography variant="body1" fontWeight={500}>
-                      {page.title}
-                    </Typography>
-                  }
+                  primary={page.title}
+                  primaryTypographyProps={{ variant: 'body1', fontWeight: 500 }}
+                  secondaryTypographyProps={{ component: 'div' }}
                   secondary={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                       <Chip
