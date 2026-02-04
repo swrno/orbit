@@ -2,11 +2,12 @@
 
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { ChevronRight, ChevronDown, LayoutGrid, Plus, Search, Settings, Sparkles, Table, Kanban, FileText, Trash2, Home, Pencil, Folder, Layers, Calendar, Users } from "lucide-react";
+import { ChevronRight, ChevronDown, LayoutGrid, Plus, Search, Settings, Sparkles, Table, Kanban, FileText, Trash2, Home, Pencil, Folder, Layers, Calendar, Users, Bug } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Box, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField } from "@mui/material";
+import { SearchModal } from "@/components/search/SearchModal";
 
 export function Sidebar() {
   const params = useParams();
@@ -30,7 +31,25 @@ export function Sidebar() {
     open: false,
     groupId: null
   });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newPageType, setNewPageType] = useState<'board' | 'table' | 'document'>('board');
+  const [newPageTitle, setNewPageTitle] = useState('');
+  const [newPageGroup, setNewPageGroup] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pageTitle, setPageTitle] = useState('');
+  // Keyboard shortcut for search (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const [pageType, setPageType] = useState<'board' | 'table' | 'document'>('document');
 
 
@@ -214,6 +233,7 @@ export function Sidebar() {
           variant="outlined"
           fullWidth
           startIcon={<Search size={16} />}
+          onClick={() => setSearchOpen(true)}
           sx={{
             justifyContent: 'flex-start',
             color: 'text.secondary',
@@ -320,6 +340,27 @@ export function Sidebar() {
             primaryTypographyProps={{ variant: 'body2' }}
           />
         </ListItemButton>
+        <ListItemButton
+          component={Link}
+          href={`/${workspaceId}/bugs`}
+          prefetch={true}
+          sx={{
+            borderRadius: 1,
+            "&.Mui-selected": {
+              bgcolor: "action.selected",
+              "&:hover": { bgcolor: "action.selected" }
+            }
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
+            <Bug size={16} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Bugs"
+            primaryTypographyProps={{ variant: "body2" }}
+          />
+        </ListItemButton>
+
 
         <ListItemButton
           component={Link}
@@ -694,6 +735,13 @@ export function Sidebar() {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Search Modal */}
+      <SearchModal 
+        open={searchOpen} 
+        onClose={() => setSearchOpen(false)} 
+        workspaceId={workspaceId} 
+      />
+
     </Drawer>
   );
 }
