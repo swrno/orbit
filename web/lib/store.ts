@@ -140,6 +140,8 @@ export type Group = {
 export type Workspace = {
   id: string;
   title: string;
+  name: string; // Display name for workspace
+  color?: string; // Color for workspace icon
   key: string; // Project key for task IDs, e.g., "PROJ"
   plan: 'Free' | 'Pro';
   groups: Group[];
@@ -158,7 +160,7 @@ interface AppState {
   currentWorkspaceId: string | null;
 
   // Actions
-  createWorkspace: (title: string) => void;
+  createWorkspace: (title: string, id?: string) => void;
   selectWorkspace: (id: string) => void;
   addGroup: (workspaceId: string, title: string, icon?: string) => void;
   addPage: (workspaceId: string, groupId: string, title: string, type: PageType) => void;
@@ -266,6 +268,8 @@ const INITIAL_WORKSPACES: Workspace[] = [
     id: 'ws-1',
     title: 'ForgeAI',
     key: 'FORGE',
+    name: 'My Team',
+    color: '#0052CC',
     plan: 'Pro',
     groups: [
       {
@@ -448,6 +452,7 @@ const INITIAL_WORKSPACES: Workspace[] = [
   {
     id: 'ws-2',
     title: 'Personal',
+    name: 'Personal',
     key: 'PERS',
     plan: 'Free',
     groups: [
@@ -462,7 +467,7 @@ const INITIAL_WORKSPACES: Workspace[] = [
     sprints: [],
     epics: [],
     labels: DEFAULT_LABELS,
-    teamMembers: [],
+    teamMembers: DEFAULT_TEAM,
     activities: [],
     tasks: [],
     taskCounter: 0,
@@ -476,13 +481,15 @@ export const useAppStore = create<AppState>()(
       workspaces: INITIAL_WORKSPACES,
       currentWorkspaceId: 'ws-1', // Default to first
 
-      createWorkspace: (title) => set((state) => {
+      createWorkspace: (title, id) => set((state) => {
         // Generate a key from the title (uppercase, first 4 letters, no spaces)
         const key = title.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4) || 'PROJ';
         return {
           workspaces: [...state.workspaces, {
-            id: `ws-${Date.now()}`,
+            id: id || `ws-${Date.now()}`,
             title,
+            name: title,
+            color: ['#0052CC', '#6554C0', '#00875A', '#FF8B00'][Math.floor(Math.random() * 4)],
             key,
             plan: 'Free',
             groups: [],
@@ -490,7 +497,7 @@ export const useAppStore = create<AppState>()(
             sprints: [],
             epics: [],
             labels: DEFAULT_LABELS,
-            teamMembers: [],
+            teamMembers: DEFAULT_TEAM,
             activities: [],
             taskCounter: 0,
             epicCounter: 0

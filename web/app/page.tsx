@@ -1,44 +1,50 @@
 "use client";
 
-import { Box, Button, Typography, Container, Grid, Paper, Chip } from "@mui/material";
+import { Box, Button, Typography, Container, Grid, Paper } from "@mui/material";
 import {
   Zap, ArrowRight, CheckCircle2, BarChart3, Target, Users,
-  Layout, Shield, Sparkles, TrendingUp
+  Layout, Calendar, Bug, TrendingUp, Layers
 } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
   const features = [
     {
-      icon: <Layout size={28} />,
-      title: "Agile Boards",
-      description: "Scrum & Kanban boards with drag-and-drop for seamless project management"
+      icon: <Layers size={32} />,
+      title: "Product Backlog",
+      description: "Centralized repository for all work items with intelligent prioritization and story point estimation"
     },
     {
-      icon: <Target size={28} />,
-      title: "Roadmap Planning",
-      description: "Visual timeline for strategic planning and milestone tracking"
+      icon: <Calendar size={32} />,
+      title: "Sprint Planning",
+      description: "Time-boxed iterations with capacity planning, velocity tracking, and burndown charts"
     },
     {
-      icon: <BarChart3 size={28} />,
-      title: "Analytics & Reports",
-      description: "Velocity charts, burndown, and capacity planning for data-driven decisions"
+      icon: <Layout size={32} />,
+      title: "Scrum Boards",
+      description: "Visual workflow management with drag-and-drop, swimlanes, and WIP limits"
     },
     {
-      icon: <Users size={28} />,
-      title: "Team Collaboration",
-      description: "Real-time updates, comments, and team workload management"
+      icon: <Target size={32} />,
+      title: "Epic Management",
+      description: "Strategic roadmap planning with epic-to-story hierarchy and progress tracking"
     },
     {
-      icon: <Shield size={28} />,
+      icon: <Bug size={32} />,
       title: "Bug Tracking",
-      description: "Dedicated bugs queue with priority management and SLA tracking"
+      description: "Comprehensive defect management with severity levels, SLAs, and resolution metrics"
     },
     {
-      icon: <Sparkles size={28} />,
-      title: "AI-Powered",
-      description: "Smart suggestions and intelligent task recommendations"
+      icon: <BarChart3 size={32} />,
+      title: "Analytics & Reports",
+      description: "Data-driven insights with velocity charts, CFD, burndown, and team capacity reports"
     }
+  ];
+
+  const stats = [
+    { value: "100%", label: "Agile Methodology" },
+    { value: "Real-time", label: "Collaboration" },
+    { value: "∞", label: "Scalability" }
   ];
 
   return (
@@ -81,34 +87,39 @@ export default function HomePage() {
       </Box>
 
       {/* Hero Section */}
-      <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: 'white' }}>
+      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto' }}>
             <Typography
               variant="h2"
               sx={{
-                fontSize: { xs: '2rem', md: '3rem' },
+                fontSize: { xs: '2.5rem', md: '3.5rem' },
                 fontWeight: 500,
-                mb: 2,
+                mb: 3,
                 color: '#172B4D',
                 lineHeight: 1.2
               }}
             >
-              Project management for modern teams
+              Agile Project Management
+              <Box component="span" sx={{ display: 'block', color: '#0052CC', mt: 1 }}>
+                Built for Modern Teams
+              </Box>
             </Typography>
             <Typography
               variant="h6"
               sx={{
-                mb: 4,
+                mb: 5,
                 color: '#42526E',
                 fontWeight: 400,
-                lineHeight: 1.6
+                lineHeight: 1.7,
+                maxWidth: 700,
+                mx: 'auto'
               }}
             >
-              Plan, track, and manage agile projects with powerful boards, roadmaps,
-              and real-time analytics
+              Complete agile workflow from backlog to delivery. Plan sprints, track progress,
+              manage bugs, and generate insights with enterprise-grade project management.
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/dashboard" style={{ textDecoration: 'none' }}>
                 <Button
                   variant="contained"
@@ -117,16 +128,16 @@ export default function HomePage() {
                   sx={{
                     bgcolor: '#0052CC',
                     color: 'white',
-                    px: 4,
-                    py: 1.5,
+                    px: 5,
+                    py: 2,
                     textTransform: 'none',
                     fontWeight: 500,
-                    fontSize: '1rem',
+                    fontSize: '1.1rem',
                     '&:hover': { bgcolor: '#0747A6' },
                     boxShadow: 'none'
                   }}
                 >
-                  Try ForgeAI free
+                  Start Planning
                 </Button>
               </Link>
               <Link href="/get-started" style={{ textDecoration: 'none' }}>
@@ -136,35 +147,31 @@ export default function HomePage() {
                   sx={{
                     borderColor: '#DFE1E6',
                     color: '#42526E',
-                    px: 4,
-                    py: 1.5,
+                    px: 5,
+                    py: 2,
                     textTransform: 'none',
                     fontWeight: 500,
-                    fontSize: '1rem',
+                    fontSize: '1.1rem',
                     '&:hover': {
                       borderColor: '#B3BAC5',
                       bgcolor: '#F4F5F7'
                     }
                   }}
                 >
-                  View demo
+                  Learn More
                 </Button>
               </Link>
             </Box>
           </Box>
 
           {/* Stats */}
-          <Box sx={{ display: 'flex', gap: 6, justifyContent: 'center', mt: 8, flexWrap: 'wrap' }}>
-            {[
-              { value: '10K+', label: 'Teams' },
-              { value: '99.9%', label: 'Uptime' },
-              { value: '50M+', label: 'Tasks' }
-            ].map((stat, idx) => (
+          <Box sx={{ display: 'flex', gap: { xs: 4, md: 8 }, justifyContent: 'center', mt: 10, flexWrap: 'wrap' }}>
+            {stats.map((stat, idx) => (
               <Box key={idx} sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" fontWeight={600} sx={{ color: '#172B4D', mb: 0.5 }}>
+                <Typography variant="h3" fontWeight={600} sx={{ color: '#0052CC', mb: 0.5 }}>
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                <Typography variant="body1" sx={{ color: '#6B778C', fontWeight: 500 }}>
                   {stat.label}
                 </Typography>
               </Box>
@@ -174,26 +181,17 @@ export default function HomePage() {
       </Box>
 
       {/* Features Section */}
-      <Box sx={{ py: 8, bgcolor: '#f4f5f7' }}>
+      <Box sx={{ py: 10, bgcolor: '#f4f5f7' }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Chip
-              label="Features"
-              sx={{
-                bgcolor: '#DEEBFF',
-                color: '#0052CC',
-                fontWeight: 500,
-                mb: 2,
-                textTransform: 'uppercase',
-                fontSize: '0.75rem',
-                letterSpacing: '0.5px'
-              }}
-            />
-            <Typography variant="h3" fontWeight={500} sx={{ mb: 2, color: '#172B4D' }}>
-              Everything you need to ship faster
+          <Box sx={{ textAlign: 'center', mb: 8 }}>
+            <Typography variant="overline" sx={{ color: '#0052CC', fontWeight: 600, fontSize: '0.875rem', letterSpacing: 1 }}>
+              FEATURES
+            </Typography>
+            <Typography variant="h3" fontWeight={500} sx={{ mt: 2, mb: 2, color: '#172B4D' }}>
+              Everything You Need for Agile Delivery
             </Typography>
             <Typography variant="body1" sx={{ color: '#42526E', maxWidth: 600, mx: 'auto' }}>
-              Powerful features built for agile teams who demand speed and flexibility
+              Complete workflow coverage from strategic planning to tactical execution
             </Typography>
           </Box>
 
@@ -202,7 +200,7 @@ export default function HomePage() {
               <Grid item xs={12} md={4} key={idx}>
                 <Paper
                   sx={{
-                    p: 3,
+                    p: 4,
                     height: '100%',
                     bgcolor: 'white',
                     border: '1px solid #DFE1E6',
@@ -210,30 +208,30 @@ export default function HomePage() {
                     boxShadow: 'none',
                     transition: 'all 0.2s',
                     '&:hover': {
-                      boxShadow: '0 4px 12px rgba(23,43,77,0.08)',
-                      transform: 'translateY(-2px)'
+                      boxShadow: '0 8px 16px rgba(23,43,77,0.12)',
+                      transform: 'translateY(-4px)'
                     }
                   }}
                 >
                   <Box
                     sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: '3px',
+                      width: 56,
+                      height: 56,
+                      borderRadius: '8px',
                       bgcolor: '#DEEBFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#0052CC',
-                      mb: 2
+                      mb: 3
                     }}
                   >
                     {feature.icon}
                   </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mb: 2 }}>
                     {feature.title}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#42526E', lineHeight: 1.6 }}>
+                  <Typography variant="body2" sx={{ color: '#42526E', lineHeight: 1.7 }}>
                     {feature.description}
                   </Typography>
                 </Paper>
@@ -243,15 +241,65 @@ export default function HomePage() {
         </Container>
       </Box>
 
+      {/* Workflow Section */}
+      <Box sx={{ py: 10, bgcolor: 'white' }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: 'center', mb: 8 }}>
+            <Typography variant="overline" sx={{ color: '#0052CC', fontWeight: 600, fontSize: '0.875rem', letterSpacing: 1 }}>
+              WORKFLOW
+            </Typography>
+            <Typography variant="h3" fontWeight={500} sx={{ mt: 2, color: '#172B4D' }}>
+              From Backlog to Delivery
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'center' }}>
+            {[
+              { num: "1", title: "Plan", desc: "Prioritize backlog" },
+              { num: "2", title: "Sprint", desc: "Commit to work" },
+              { num: "3", title: "Track", desc: "Monitor progress" },
+              { num: "4", title: "Review", desc: "Analyze metrics" }
+            ].map((step, idx) => (
+              <Box key={idx} sx={{ flex: 1, textAlign: 'center' }}>
+                <Box
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    bgcolor: '#0052CC',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                    fontWeight: 600,
+                    mx: 'auto',
+                    mb: 2
+                  }}
+                >
+                  {step.num}
+                </Box>
+                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>
+                  {step.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                  {step.desc}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Container>
+      </Box>
+
       {/* CTA Section */}
-      <Box sx={{ py: 8, bgcolor: 'white' }}>
+      <Box sx={{ py: 10, bgcolor: '#f4f5f7' }}>
         <Container maxWidth="md">
-          <Box sx={{ textAlign: 'center' }}>
+          <Paper sx={{ p: 6, textAlign: 'center', bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none' }}>
             <Typography variant="h3" fontWeight={500} sx={{ mb: 2, color: '#172B4D' }}>
-              Ready to get started?
+              Start Your First Sprint Today
             </Typography>
             <Typography variant="body1" sx={{ mb: 4, color: '#42526E' }}>
-              Join thousands of teams already using ForgeAI
+              Join teams using ForgeAI to deliver better software, faster
             </Typography>
             <Link href="/dashboard" style={{ textDecoration: 'none' }}>
               <Button
@@ -262,18 +310,18 @@ export default function HomePage() {
                   bgcolor: '#0052CC',
                   color: 'white',
                   px: 5,
-                  py: 1.5,
+                  py: 2,
                   textTransform: 'none',
                   fontWeight: 500,
-                  fontSize: '1rem',
+                  fontSize: '1.1rem',
                   '&:hover': { bgcolor: '#0747A6' },
                   boxShadow: 'none'
                 }}
               >
-                Start free trial
+                Get Started Free
               </Button>
             </Link>
-          </Box>
+          </Paper>
         </Container>
       </Box>
 
@@ -286,9 +334,12 @@ export default function HomePage() {
               <Typography variant="body2" fontWeight={600} sx={{ color: '#172B4D' }}>
                 ForgeAI
               </Typography>
+              <Typography variant="caption" sx={{ color: '#6B778C', ml: 2 }}>
+                Agile Project Management Platform
+              </Typography>
             </Box>
             <Typography variant="body2" sx={{ color: '#6B778C' }}>
-              © 2026 ForgeAI. Built for modern teams.
+              © 2026 ForgeAI. Built for agile teams.
             </Typography>
           </Box>
         </Container>

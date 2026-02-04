@@ -3,7 +3,6 @@
 import { DataGrid } from "@/components/views/DataGrid";
 import { BoardView } from "@/components/views/BoardView";
 import { DocumentView } from "@/components/views/DocumentView";
-import { Header } from "@/components/layout/Header";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 
@@ -37,7 +36,6 @@ export default function GenericPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header />
       {currentPage.type === 'table' && (
         <DataGrid workspaceId={workspaceId} pageId={currentPage.id} />
       )}

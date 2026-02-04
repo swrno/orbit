@@ -2,267 +2,480 @@
 
 import {
     Box, Container, Typography, Paper, List, ListItem, ListItemIcon,
-    ListItemText, Chip, Accordion, AccordionSummary, AccordionDetails,
-    Button, Grid
+    ListItemText, Divider, Accordion, AccordionSummary, AccordionDetails,
+    Card, CardContent, Grid, Alert
 } from "@mui/material";
 import {
-    CheckCircle2, Zap, ChevronDown, Layout, Target, Users,
-    BarChart3, Bug, Book, Layers, TrendingUp
+    CheckCircle2, Zap, ChevronDown, Layout, Target, BarChart3, Bug,
+    Layers, Calendar, ArrowRight, Play, TrendingUp, Users, ListTodo
 } from "lucide-react";
 import Link from "next/link";
 
 export default function GetStartedPage() {
-    const quickStartSteps = [
+    const concepts = [
         {
-            title: "Create Your Workspace",
-            description: "Click on the workspace dropdown and create a new workspace. Each workspace represents a team or project."
+            id: "backlog",
+            icon: <Layers size={24} color="#0052CC" />,
+            title: "Product Backlog",
+            tagline: "Your single source of truth for all work",
+            description: "The Product Backlog is a prioritized list of everything that might be needed in your product. It's dynamic, living, and constantly evolving as you learn more about your product and customers.",
+            whyUse: [
+                "Centralized view of all work items (stories, tasks, bugs)",
+                "Prioritize based on business value and urgency",
+                "Estimate effort using story points",
+                "Prepare work for upcoming sprints",
+                "Maintain flexibility to adapt to changing requirements"
+            ],
+            workflow: [
+                { step: "Create user stories", desc: "Write clear, testable requirements" },
+                { step: "Estimate story points", desc: "Team consensus on complexity" },
+                { step: "Prioritize by value", desc: "Most important items at top" },
+                { step: "Refine continuously", desc: "Add details, break down large items" },
+                { step: "Mark as 'Ready'", desc: "Clear acceptance criteria defined" }
+            ],
+            bestPractices: [
+                "Keep backlog items small and achievable",
+                "Write user stories in format: 'As a [role], I want [feature] so that [benefit]'",
+                "Regular backlog grooming sessions (weekly)",
+                "Limit work in progress - don't overcommit"
+            ],
+            path: "/ws-1/backlog"
         },
         {
-            title: "Set Up Your Team",
-            description: "Add team members through the Team page. Assign roles and set capacity for better workload management."
+            id: "sprints",
+            icon: <Calendar size={24} color="#0052CC" />,
+            title: "Sprint Planning",
+            tagline: "Time-boxed iterations for focused delivery",
+            description: "A Sprint is a time-boxed period (typically 2 weeks) where your team commits to delivering a set of work. Sprints create rhythm, predictability, and regular opportunities for feedback and improvement.",
+            whyUse: [
+                "Fixed timeframes create urgency and focus",
+                "Regular delivery of working software",
+                "Predictable velocity for planning",
+                "Clear start and end points for teams",
+                "Built-in opportunities for reflection and improvement"
+            ],
+            workflow: [
+                { step: "Set Sprint Goal", desc: "Define clear objective for the sprint" },
+                { step: "Select Backlog Items", desc: "Pull from top of backlog based on capacity" },
+                { step: "Check Team Capacity", desc: "Ensure committed work matches availability" },
+                { step: "Start Sprint", desc: "Team begins executing work" },
+                { step: "Daily Standups", desc: "15-min sync: What did I do? What will I do? Blockers?" },
+                { step: "Sprint Review", desc: "Demo completed work to stakeholders" },
+                { step: "Sprint Retrospective", desc: "Reflect on process, identify improvements" }
+            ],
+            bestPractices: [
+                "Maintain consistent sprint length (2 weeks recommended)",
+                "Don't add work mid-sprint unless absolutely critical",
+                "Base commitments on historical velocity",
+                "Definition of Done must be clear and agreed upon",
+                "Protect team time - minimize interruptions"
+            ],
+            path: "/ws-1/sprints"
         },
         {
-            title: "Create Epics & Sprints",
-            description: "Define high-level goals with Epics and break work into time-boxed Sprints for agile delivery."
+            id: "epics",
+            icon: <Target size={24} color="#0052CC" />,
+            title: "Epic Management",
+            tagline: "Organize work into strategic initiatives",
+            description: "An Epic is a large body of work that can be broken down into smaller user stories. Epics provide strategic context and help teams understand how individual stories contribute to larger business goals.",
+            whyUse: [
+                "Strategic overview of major initiatives",
+                "Group related stories for better organization",
+                "Track progress toward big-picture goals",
+                "Communicate roadmap to stakeholders",
+                "Span multiple sprints for complex features"
+            ],
+            workflow: [
+                { step: "Define Epic", desc: "Large feature or initiative (e.g., 'User Authentication')" },
+                { step: "Break into Stories", desc: "Epic → Login, Register, Password Reset, etc." },
+                { step: "Prioritize Stories", desc: "Decide order of implementation" },
+                { step: "Track Progress", desc: "Monitor completion percentage" },
+                { step: "Close Epic", desc: "All child stories completed" }
+            ],
+            examples: [
+                "Epic: 'User Authentication' → Stories: Login, Register, SSO, 2FA",
+                "Epic: 'Payment Processing' → Stories: Stripe Integration, Invoices, Refunds",
+                "Epic: 'Mobile App' → Stories: iOS App, Android App, Push Notifications"
+            ],
+            bestPractices: [
+                "Epics should deliver clear business value",
+                "Break down epics that span >3 sprints",
+                "Link all related stories to parent epic",
+                "Review epic progress in planning sessions"
+            ],
+            path: "/ws-1/epics"
         },
         {
-            title: "Start Planning",
-            description: "Use the Backlog to create tasks, prioritize work, and assign estimates and owners."
+            id: "bugs",
+            icon: <Bug size={24} color="#BF2600" />,
+            title: "Bug Tracking",
+            tagline: "Systematic defect management",
+            description: "Bug tracking ensures no defect falls through the cracks. Every bug goes through a defined lifecycle from discovery to resolution, with clear ownership and priority at each stage.",
+            whyUse: [
+                "Systematic tracking prevents bugs from being forgotten",
+                "Prioritize critical issues over minor ones",
+                "Clear ownership and accountability",
+                "Metrics on quality and resolution time",
+                "Separate defects from new features"
+            ],
+            workflow: [
+                { step: "Report Bug", desc: "Title, steps to reproduce, expected vs actual" },
+                { step: "Triage", desc: "Assess severity and priority" },
+                { step: "Assign", desc: "Assign to developer" },
+                { step: "Fix", desc: "Developer resolves issue" },
+                { step: "Review", desc: "Code review and testing" },
+                { step: "Verify", desc: "QA confirms fix" },
+                { step: "Close", desc: "Bug resolved in production" }
+            ],
+            severityLevels: [
+                { level: "Critical", desc: "System down, data loss, security breach" },
+                { level: "High", desc: "Major feature broken, many users affected" },
+                { level: "Medium", desc: "Feature partially broken, workaround exists" },
+                { level: "Low", desc: "Minor issue, cosmetic, edge case" }
+            ],
+            bestPractices: [
+                "Always include reproduction steps",
+                "Attach screenshots or screen recordings",
+                "Specify environment (browser, OS, version)",
+                "Set realistic SLAs based on severity",
+                "Review bug trends in retrospectives"
+            ],
+            path: "/ws-1/bugs"
         },
         {
-            title: "Track Progress",
-            description: "Monitor sprint progress with Boards, track velocity, and use analytics for data-driven decisions."
-        }
-    ];
-
-    const features = [
-        {
-            category: "Agile Workflows",
-            icon: <Layout size={20} />,
-            items: [
-                { name: "Scrum Boards", description: "Kanban-style boards with drag-and-drop and WIP limits", path: "/ws-1/board-1" },
-                { name: "Sprint Planning", description: "Create sprints, assign tasks, and track goals", path: "/ws-1/sprints" },
-                { name: "Backlog Management", description: "Prioritize work and groom your backlog", path: "/ws-1/backlog" },
-                { name: "Epic Management", description: "Define strategic initiatives and track progress", path: "/ws-1/epics" }
-            ]
-        },
-        {
-            category: "Planning & Roadmaps",
-            icon: <Target size={20} />,
-            items: [
-                { name: "Roadmap Timeline", description: "Visual timeline with epic schedules across quarters", path: "/ws-1/roadmap" },
-                { name: "Release Planning", description: "Group tasks and track release progress" }
-            ]
-        },
-        {
-            category: "Analytics & Reporting",
-            icon: <BarChart3 size={20} />,
-            items: [
-                { name: "Velocity Chart", description: "Track sprint velocity and forecast capacity", path: "/ws-1/reports" },
-                { name: "Burndown Chart", description: "Monitor daily progress", path: "/ws-1/reports" },
-                { name: "Cumulative Flow", description: "Identify bottlenecks and optimize flow", path: "/ws-1/reports" },
-                { name: "Capacity Planning", description: "View team workload and balance work", path: "/ws-1/reports" }
-            ]
-        },
-        {
-            category: "Bug Tracking",
-            icon: <Bug size={20} />,
-            items: [
-                { name: "Bugs Queue", description: "Dedicated bug tracking with SLA and priority management", path: "/ws-1/bugs" },
-                { name: "Bug Workflows", description: "Custom statuses and automated triage" }
-            ]
+            id: "reports",
+            icon: <BarChart3 size={24} color="#0052CC" />,
+            title: "Reports & Analytics",
+            tagline: "Data-driven decision making",
+            description: "Reports provide insights into team performance, project health, and delivery predictability. Use data to identify bottlenecks, forecast completion dates, and continuously improve your process.",
+            whyUse: [
+                "Measure team velocity and predictability",
+                "Identify process bottlenecks",
+                "Forecast project completion dates",
+                "Track quality trends (bug rates)",
+                "Support retrospective discussions with data"
+            ],
+            keyReports: [
+                {
+                    name: "Velocity Chart",
+                    purpose: "Shows story points completed per sprint. Used to predict future capacity.",
+                    insight: "If velocity is 40 pts/sprint, you can confidently commit to ~40 pts next sprint"
+                },
+                {
+                    name: "Burndown Chart",
+                    purpose: "Daily remaining work in current sprint. Ideal line vs actual progress.",
+                    insight: "If actual line is above ideal, team is behind pace - may need to reduce scope"
+                },
+                {
+                    name: "Cumulative Flow Diagram",
+                    purpose: "Work distribution across statuses over time. Identifies bottlenecks.",
+                    insight: "If 'In Review' column grows, you have a review bottleneck"
+                },
+                {
+                    name: "Sprint Report",
+                    purpose: "Compares planned vs completed work. Shows scope changes.",
+                    insight: "Frequent scope changes indicate poor planning or unclear requirements"
+                },
+                {
+                    name: "Bug Report",
+                    purpose: "Bugs opened vs resolved over time. Resolution time trends.",
+                    insight: "Growing backlog of bugs indicates quality issues"
+                }
+            ],
+            bestPractices: [
+                "Review velocity after every sprint",
+                "Check burndown daily during sprint",
+                "Use CFD weekly to spot bottlenecks",
+                "Share reports in retrospectives",
+                "Don't game the metrics - use them to improve"
+            ],
+            path: "/ws-1/reports"
         }
     ];
 
     return (
-        <Box sx={{ bgcolor: '#f4f5f7', minHeight: '100vh' }}>
+        <Box sx={{ bgcolor: '#f4f5f7', minHeight: '100vh', pb: 8 }}>
             {/* Header */}
-            <Box sx={{ bgcolor: 'white', borderBottom: '1px solid #dfe1e6', py: 2, mb: 4 }}>
+            <Box sx={{ bgcolor: 'white', borderBottom: '1px solid #dfe1e6', py: 3, mb: 6 }}>
                 <Container maxWidth="lg">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Zap size={28} color="#0052CC" />
-                            <Typography variant="h5" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                ForgeAI
+                        <Box>
+                            <Typography variant="h3" fontWeight={500} gutterBottom sx={{ color: '#172B4D' }}>
+                                Getting Started with ForgeAI
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: '#42526E' }}>
+                                Your complete guide to agile project management
                             </Typography>
                         </Box>
                         <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-                            <Button
-                                variant="contained"
+                            <Box
                                 sx={{
                                     bgcolor: '#0052CC',
                                     color: 'white',
-                                    textTransform: 'none',
-                                    fontWeight: 500,
                                     px: 3,
+                                    py: 1.5,
+                                    borderRadius: '3px',
+                                    cursor: 'pointer',
                                     '&:hover': { bgcolor: '#0747A6' },
-                                    boxShadow: 'none'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1
                                 }}
                             >
-                                Go to Dashboard
-                            </Button>
+                                <Play size={16} />
+                                <span>Go to Dashboard</span>
+                            </Box>
                         </Link>
                     </Box>
                 </Container>
             </Box>
 
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-                {/* Page Header */}
-                <Box sx={{ mb: 6 }}>
-                    <Chip
-                        label="DOCUMENTATION"
-                        sx={{
-                            bgcolor: '#DEEBFF',
-                            color: '#0052CC',
-                            fontWeight: 500,
-                            mb: 2,
-                            fontSize: '0.75rem',
-                            letterSpacing: '0.5px'
-                        }}
-                    />
-                    <Typography variant="h3" fontWeight={500} gutterBottom sx={{ color: '#172B4D' }}>
-                        Get Started with ForgeAI
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#42526E', maxWidth: 700 }}>
-                        Everything you need to know to master ForgeAI and supercharge your team's productivity
-                    </Typography>
-                </Box>
-
+            <Container maxWidth="lg">
                 {/* Quick Start */}
-                <Paper sx={{ p: 4, mb: 4, bgcolor: 'white', border: '1px solid #DFE1E6', borderRadius: '3px', boxShadow: 'none' }}>
-                    <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#172B4D' }}>
-                        <Zap size={24} color="#0052CC" />
-                        Quick Start Guide
+                <Alert severity="info" sx={{ mb: 4, bgcolor: '#DEEBFF', color: '#172B4D', '& .MuiAlert-icon': { color: '#0052CC' } }}>
+                    <Typography variant="h6" fontWeight={600} gutterBottom>
+                        Quick Start: Your First Sprint in 5 Steps
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#42526E', mb: 3 }}>
-                        Follow these 5 simple steps to get your team up and running
-                    </Typography>
-
-                    <List>
-                        {quickStartSteps.map((step, idx) => (
-                            <ListItem
-                                key={idx}
-                                sx={{
-                                    bgcolor: '#F4F5F7',
-                                    borderRadius: '3px',
-                                    mb: 1.5,
-                                    border: '1px solid #DFE1E6',
-                                    '&:hover': { bgcolor: '#EBECF0' },
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <ListItemIcon>
-                                    <Box
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: '50%',
-                                            bgcolor: '#0052CC',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            fontSize: '0.875rem'
-                                        }}
-                                    >
-                                        {idx + 1}
-                                    </Box>
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={
-                                        <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                            {step.title}
-                                        </Typography>
-                                    }
-                                    secondary={
-                                        <Typography variant="body2" sx={{ color: '#42526E', mt: 0.5 }}>
-                                            {step.description}
-                                        </Typography>
-                                    }
-                                />
-                            </ListItem>
-                        ))}
+                    <List dense>
+                        <ListItem><ListItemText primary="1. Create user stories in the Backlog with clear descriptions" /></ListItem>
+                        <ListItem><ListItemText primary="2. Estimate story points as a team (use Planning Poker)" /></ListItem>
+                        <ListItem><ListItemText primary="3. Create a Sprint with a clear goal (e.g., 'User can login and view dashboard')" /></ListItem>
+                        <ListItem><ListItemText primary="4. Pull top-priority stories from Backlog into Sprint" /></ListItem>
+                        <ListItem><ListItemText primary="5. Start the Sprint and track progress on your Board" /></ListItem>
                     </List>
-                </Paper>
+                </Alert>
 
-                {/* Features Documentation */}
-                <Typography variant="h5" fontWeight={600} gutterBottom sx={{ mb: 3, color: '#172B4D', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Book size={24} />
-                    Feature Documentation
+                {/* Core Concepts */}
+                <Typography variant="h4" fontWeight={500} gutterBottom sx={{ mb: 4, color: '#172B4D' }}>
+                    Core Concepts
                 </Typography>
 
-                {features.map((section, sectionIdx) => (
+                {concepts.map((concept, index) => (
                     <Accordion
-                        key={sectionIdx}
+                        key={concept.id}
+                        defaultExpanded={index === 0}
                         sx={{
+                            mb: 2,
                             bgcolor: 'white',
                             border: '1px solid #DFE1E6',
-                            borderRadius: '3px',
-                            mb: 2,
-                            boxShadow: 'none',
+                            borderRadius: '3px !important',
                             '&:before': { display: 'none' },
-                            '&.Mui-expanded': { margin: '0 0 16px 0' }
+                            boxShadow: 'none'
                         }}
                     >
                         <AccordionSummary
                             expandIcon={<ChevronDown size={20} color="#42526E" />}
-                            sx={{
-                                '&:hover': { bgcolor: '#F4F5F7' },
-                                borderRadius: '3px'
-                            }}
+                            sx={{ '&:hover': { bgcolor: '#F4F5F7' } }}
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ color: '#0052CC' }}>{section.icon}</Box>
-                                <Typography variant="h6" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                    {section.category}
-                                </Typography>
-                                <Chip
-                                    label={`${section.items.length} features`}
-                                    size="small"
-                                    sx={{ bgcolor: '#F4F5F7', color: '#42526E', fontSize: '0.75rem' }}
-                                />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                                {concept.icon}
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="h6" fontWeight={600} sx={{ color: '#172B4D' }}>
+                                        {concept.title}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                                        {concept.tagline}
+                                    </Typography>
+                                </Box>
+                                {concept.path && (
+                                    <Link href={concept.path} style={{ textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>
+                                        <Box
+                                            sx={{
+                                                bgcolor: '#0052CC',
+                                                color: 'white',
+                                                px: 2,
+                                                py: 0.75,
+                                                borderRadius: '3px',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 500,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                '&:hover': { bgcolor: '#0747A6' }
+                                            }}
+                                        >
+                                            Try it <ArrowRight size={14} />
+                                        </Box>
+                                    </Link>
+                                )}
                             </Box>
                         </AccordionSummary>
                         <AccordionDetails sx={{ pt: 0 }}>
-                            <List>
-                                {section.items.map((item, itemIdx) => (
-                                    <ListItem
-                                        key={itemIdx}
-                                        sx={{
-                                            flexDirection: 'column',
-                                            alignItems: 'flex-start',
-                                            bgcolor: '#F4F5F7',
-                                            borderRadius: '3px',
-                                            mb: 1,
-                                            p: 2,
-                                            border: '1px solid #DFE1E6'
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 0.5 }}>
-                                            <CheckCircle2 size={16} color="#00875A" style={{ marginRight: 8 }} />
-                                            <Typography variant="subtitle2" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                                {item.name}
-                                            </Typography>
-                                            {item.path && (
-                                                <Link href={item.path} style={{ marginLeft: 'auto', textDecoration: 'none' }}>
-                                                    <Button
-                                                        size="small"
-                                                        sx={{
-                                                            textTransform: 'none',
-                                                            color: '#0052CC',
-                                                            fontWeight: 500,
-                                                            '&:hover': { bgcolor: '#DEEBFF' }
-                                                        }}
-                                                    >
-                                                        Try it →
-                                                    </Button>
-                                                </Link>
-                                            )}
-                                        </Box>
-                                        <Typography variant="body2" sx={{ color: '#42526E', pl: 3 }}>
-                                            {item.description}
-                                        </Typography>
+                            <Divider sx={{ mb: 3 }} />
+
+                            {/* Description */}
+                            <Typography variant="body1" sx={{ color: '#172B4D', mb: 3, lineHeight: 1.6 }}>
+                                {concept.description}
+                            </Typography>
+
+                            {/* Why Use It */}
+                            <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mt: 3 }}>
+                                Why Use It?
+                            </Typography>
+                            <List dense>
+                                {concept.whyUse.map((reason, idx) => (
+                                    <ListItem key={idx}>
+                                        <ListItemIcon sx={{ minWidth: 32 }}>
+                                            <CheckCircle2 size={18} color="#00875A" />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={reason}
+                                            primaryTypographyProps={{ variant: 'body2', color: '#42526E' }}
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+
+                            {/* Workflow */}
+                            {concept.workflow && (
+                                <>
+                                    <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mt: 3 }}>
+                                        Typical Workflow
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, ml: 2 }}>
+                                        {concept.workflow.map((step, idx) => (
+                                            <Box key={idx} sx={{ display: 'flex', gap: 2 }}>
+                                                <Box
+                                                    sx={{
+                                                        width: 32,
+                                                        height: 32,
+                                                        borderRadius: '50%',
+                                                        bgcolor: '#DEEBFF',
+                                                        color: '#0052CC',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.875rem',
+                                                        flexShrink: 0
+                                                    }}
+                                                >
+                                                    {idx + 1}
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight={600} sx={{ color: '#172B4D' }}>
+                                                        {step.step}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                                                        {step.desc}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </>
+                            )}
+
+                            {/* Key Reports (for reports section) */}
+                            {concept.keyReports && (
+                                <>
+                                    <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mt: 3 }}>
+                                        Key Reports
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        {concept.keyReports.map((report, idx) => (
+                                            <Grid item xs={12} md={6} key={idx}>
+                                                <Card sx={{ border: '1px solid #DFE1E6', boxShadow: 'none' }}>
+                                                    <CardContent>
+                                                        <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>
+                                                            {report.name}
+                                                        </Typography>
+                                                        <Typography variant="caption" display="block" gutterBottom sx={{ color: '#6B778C' }}>
+                                                            {report.purpose}
+                                                        </Typography>
+                                                        <Alert severity="success" sx={{ mt: 1, fontSize: '0.75rem' }}>
+                                                            <strong>Insight:</strong> {report.insight}
+                                                        </Alert>
+                                                    </CardContent>
+                                                </Card>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </>
+                            )}
+
+                            {/* Severity Levels (for bugs) */}
+                            {concept.severityLevels && (
+                                <>
+                                    <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mt: 3 }}>
+                                        Severity Levels
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        {concept.severityLevels.map((level, idx) => (
+                                            <Box
+                                                key={idx}
+                                                sx={{
+                                                    display: 'flex',
+                                                    gap: 2,
+                                                    p: 1.5,
+                                                    bgcolor: '#F4F5F7',
+                                                    borderRadius: '3px',
+                                                    border: '1px solid #DFE1E6'
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        px: 1.5,
+                                                        py: 0.5,
+                                                        bgcolor: level.level === 'Critical' ? '#FFEBE6' :
+                                                            level.level === 'High' ? '#FFF0B3' :
+                                                                level.level === 'Medium' ? '#E3FCEF' : '#F4F5F7',
+                                                        color: level.level === 'Critical' ? '#BF2600' :
+                                                            level.level === 'High' ? '#FF8B00' :
+                                                                level.level === 'Medium' ? '#006644' : '#42526E',
+                                                        borderRadius: '3px',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
+                                                >
+                                                    {level.level}
+                                                </Box>
+                                                <Typography variant="body2" sx={{ color: '#42526E' }}>
+                                                    {level.desc}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </>
+                            )}
+
+                            {/* Examples (for epics) */}
+                            {concept.examples && (
+                                <>
+                                    <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mt: 3 }}>
+                                        Real-World Examples
+                                    </Typography>
+                                    <List dense>
+                                        {concept.examples.map((example, idx) => (
+                                            <ListItem key={idx}>
+                                                <ListItemIcon sx={{ minWidth: 32 }}>
+                                                    <Target size={16} color="#0052CC" />
+                                                </ListItemIcon>
+                                                <ListItemText
+                                                    primary={example}
+                                                    primaryTypographyProps={{ variant: 'body2', color: '#42526E', fontFamily: 'monospace' }}
+                                                />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </>
+                            )}
+
+                            {/* Best Practices */}
+                            <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mt: 3 }}>
+                                Best Practices
+                            </Typography>
+                            <List dense>
+                                {concept.bestPractices.map((practice, idx) => (
+                                    <ListItem key={idx}>
+                                        <ListItemIcon sx={{ minWidth: 32 }}>
+                                            <Zap size={16} color="#FF8B00" />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={practice}
+                                            primaryTypographyProps={{ variant: 'body2', color: '#42526E' }}
+                                        />
                                     </ListItem>
                                 ))}
                             </List>
@@ -270,29 +483,36 @@ export default function GetStartedPage() {
                     </Accordion>
                 ))}
 
-                {/* Tips */}
-                <Paper sx={{ p: 4, mt: 4, bgcolor: 'white', border: '1px solid #DFE1E6', borderRadius: '3px', boxShadow: 'none' }}>
+                {/* Footer CTA */}
+                <Paper sx={{ p: 4, mt: 6, textAlign: 'center', bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none' }}>
                     <Typography variant="h5" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>
-                        Tips & Best Practices
+                        Ready to Start Your First Sprint?
                     </Typography>
-                    <List>
-                        {[
-                            { title: "Use story points consistently", desc: "Establish a baseline and stick to it for accurate velocity tracking" },
-                            { title: "Review velocity after each sprint", desc: "Identify trends and adjust commitments" },
-                            { title: "Monitor team capacity weekly", desc: "Prevent burnout and maintain sustainable pace" },
-                            { title: "Update roadmap monthly", desc: "Keep stakeholders informed with regular reviews" }
-                        ].map((tip, idx) => (
-                            <ListItem key={idx} alignItems="flex-start" sx={{ py: 1 }}>
-                                <ListItemIcon sx={{ mt: 0.5 }}>
-                                    <CheckCircle2 size={18} color="#00875A" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={<Typography fontWeight={600} sx={{ color: '#172B4D' }}>{tip.title}</Typography>}
-                                    secondary={<Typography variant="body2" sx={{ color: '#42526E' }}>{tip.desc}</Typography>}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
+                    <Typography variant="body1" sx={{ color: '#42526E', mb: 3 }}>
+                        Head to your workspace and start planning with your team
+                    </Typography>
+                    <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+                        <Box
+                            component="span"
+                            sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                bgcolor: '#0052CC',
+                                color: 'white',
+                                px: 4,
+                                py: 1.5,
+                                borderRadius: '3px',
+                                fontSize: '1rem',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                '&:hover': { bgcolor: '#0747A6' }
+                            }}
+                        >
+                            <Play size={18} />
+                            Go to Dashboard
+                        </Box>
+                    </Link>
                 </Paper>
             </Container>
         </Box>

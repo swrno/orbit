@@ -1,384 +1,396 @@
 "use client";
 
-import { useAppStore, Epic } from "@/lib/store";
-import { formatDate } from "@/lib/date-utils";
+import { use, useState } from "react";
 import {
-    Box, Paper, Typography, Button, Chip, Tooltip, IconButton,
-    Select, MenuItem, FormControl, InputLabel, Dialog, DialogTitle,
-    DialogContent, DialogActions, TextField
+    Box, Container, Typography, Paper, Button, Chip, Select, MenuItem,
+    FormControl, InputLabel, Tabs, Tab, Card, CardContent, Grid
 } from "@mui/material";
 import {
-    Calendar, ChevronLeft, ChevronRight, Plus, Filter,
-    TrendingUp, Target, Clock, User, Layers
+    Calendar, Target, TrendingUp, Plus, Filter, ChevronRight
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useAppStore } from "@/lib/store";
+import Link from "next/link";
 
-interface RoadmapPageProps {
-    workspaceId: string;
-}
+export default function RoadmapPage({ params }: { params: Promise<{ workspaceId: string }> }) {
+    const { workspaceId } = use(params);
+    const { workspaces } = useAppStore();
+    const workspace = workspaces.find(w => w.id === workspaceId);
 
-type ViewMode = 'quarters' | 'months' | 'weeks';
+    const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
+    const [timeRange, setTimeRange] = useState<'quarter' | 'year'>('quarter');
 
-export default function RoadmapPage({ params }: { params: { workspaceId: string } }) {
-    const { workspaces, epics: storeEpics, addEpic, updateEpic } = useAppStore();
-    const workspace = workspaces.find(w => w.id === params.workspaceId);
-
-    const [viewMode, setViewMode] = useState<ViewMode>('months');
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [filterStatus, setFilterStatus] = useState<'all' | 'To Do' | 'In Progress' | 'Done'>('all');
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
-    const [newEpicName, setNewEpicName] = useState('');
-    const [newEpicDesc, setNewEpicDesc] = useState('');
-    const [newEpicStart, setNewEpicStart] = useState('');
-    const [newEpicEnd, setNewEpicEnd] = useState('');
-
-    if (!workspace) return null;
-
-    const epics = workspace.epics || [];
-
-    // Filter epics
-    const filteredEpics = useMemo(() => {
-        return epics.filter(epic =>
-            filterStatus === 'all' || epic.status === filterStatus
+    if (!workspace) {
+        return (
+            <Box sx={{ p: 4 }}>
+                <Typography>Workspace not found</Typography>
+            </Box>
         );
-    }, [epics, filterStatus]);
+    }
 
-    // Generate timeline periods
-    const timelinePeriods = useMemo(() => {
-        const periods: string[] = [];
-        const start = new Date(currentDate);
-        start.setMonth(start.getMonth() - 2);
+    // Generate timeline months
+    const getTimelineMonths = () => {
+        const months = [];
+        const now = new Date();
+        const count = timeRange === 'quarter' ? 3 : 12;
 
-        if (viewMode === 'months') {
-            for (let i = 0; i < 12; i++) {
-                const date = new Date(start);
-                date.setMonth(start.getMonth() + i);
-                periods.push(date.toLocaleString('en-US', { month: 'short', year: 'numeric' }));
-            }
-        } else if (viewMode === 'quarters') {
-            for (let i = 0; i < 8; i++) {
-                const date = new Date(start);
-                date.setMonth(start.getMonth() + i * 3);
-                const quarter = Math.floor(date.getMonth() / 3) + 1;
-                periods.push(`Q${quarter} ${date.getFullYear()}`);
-            }
+        for (let i = 0; i < count; i++) {
+            const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+            months.push({
+                month: date.toLocaleDateString('en-US', { month: 'short' }),
+                year: date.getFullYear()
+            });
         }
-        return periods;
-    }, [currentDate, viewMode]);
-
-    // Calculate epic position on timeline
-    const getEpicPosition = (epic: Epic) => {
-        if (!epic.startDate || !epic.targetDate) return null;
-
-        const start = new Date(epic.startDate);
-        const end = new Date(epic.targetDate);
-        const timelineStart = new Date(currentDate);
-        timelineStart.setMonth(timelineStart.getMonth() - 2);
-        const timelineEnd = new Date(currentDate);
-        timelineEnd.setMonth(timelineEnd.getMonth() + 10);
-
-        const totalDuration = timelineEnd.getTime() - timelineStart.getTime();
-        const epicStart = start.getTime() - timelineStart.getTime();
-        const epicDuration = end.getTime() - start.getTime();
-
-        return {
-            left: `${(epicStart / totalDuration) * 100}%`,
-            width: `${(epicDuration / totalDuration) * 100}%`,
-        };
+        return months;
     };
 
-    const calculateProgress = (epic: Epic) => {
-        const tasks = workspace.tasks.filter(t => t.epicId === epic.id);
-        if (tasks.length === 0) return 0;
-        const completed = tasks.filter(t => t.status === 'Done').length;
-        return Math.round((completed / tasks.length) * 100);
-    };
+    const timelineMonths = getTimelineMonths();
 
-    const handleCreateEpic = () => {
-        if (!workspace || !newEpicName.trim()) return;
-
-        const workspaceKey = workspace.key || 'PROJ';
-        const epicCounter = (workspace.epicCounter || 0) + 1;
-
-        // addEpic needs to be implemented in store
-        setCreateDialogOpen(false);
-        setNewEpicName('');
-        setNewEpicDesc('');
-        setNewEpicStart('');
-        setNewEpicEnd('');
+    // Epic progress calculation
+    const getEpicProgress = (epicId: string) => {
+        const stories = workspace.tasks.filter(t => t.epic === epicId);
+        const completed = stories.filter(t => t.status === 'Done').length;
+        return stories.length > 0 ? (completed / stories.length) * 100 : 0;
     };
 
     return (
-        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f4f5f7' }}>
             {/* Header */}
-            <Paper elevation={0} sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Target size={28} />
-                        <Typography variant="h5" fontWeight={700}>
-                            Roadmap
-                        </Typography>
-                        <Chip label={`${filteredEpics.length} epics`} size="small" />
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                            <InputLabel>View</InputLabel>
-                            <Select
-                                value={viewMode}
-                                onChange={(e) => setViewMode(e.target.value as ViewMode)}
-                                label="View"
-                            >
-                                <MenuItem value="months">Months</MenuItem>
-                                <MenuItem value="quarters">Quarters</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                            <InputLabel>Filter</InputLabel>
-                            <Select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                                label="Filter"
-                            >
-                                <MenuItem value="all">All Status</MenuItem>
-                                <MenuItem value="To Do">To Do</MenuItem>
-                                <MenuItem value="In Progress">In Progress</MenuItem>
-                                <MenuItem value="Done">Done</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <Button
-                            variant="contained"
-                            startIcon={<Plus size={18} />}
-                            onClick={() => setCreateDialogOpen(true)}
-                        >
-                            Create Epic
-                        </Button>
-                    </Box>
-                </Box>
-
-                {/* Timeline Navigation */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                    <IconButton
-                        size="small"
-                        onClick={() => {
-                            const newDate = new Date(currentDate);
-                            newDate.setMonth(newDate.getMonth() - (viewMode === 'quarters' ? 3 : 1));
-                            setCurrentDate(newDate);
-                        }}
-                    >
-                        <ChevronLeft size={20} />
-                    </IconButton>
-                    <Typography variant="body2" fontWeight={600}>
-                        {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
-                    </Typography>
-                    <IconButton
-                        size="small"
-                        onClick={() => {
-                            const newDate = new Date(currentDate);
-                            newDate.setMonth(newDate.getMonth() + (viewMode === 'quarters' ? 3 : 1));
-                            setCurrentDate(newDate);
-                        }}
-                    >
-                        <ChevronRight size={20} />
-                    </IconButton>
-                    <Button size="small" onClick={() => setCurrentDate(new Date())}>
-                        Today
-                    </Button>
-                </Box>
-            </Paper>
-
-            {/* Timeline */}
-            <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-                {/* Timeline Header */}
-                <Box sx={{ display: 'flex', borderBottom: '2px solid', borderColor: 'divider', mb: 3 }}>
-                    <Box sx={{ width: 250, flexShrink: 0, pr: 2, pb: 2 }}>
-                        <Typography variant="caption" fontWeight={600} color="text.secondary">
-                            EPIC
-                        </Typography>
-                    </Box>
-                    <Box sx={{ flex: 1, display: 'flex' }}>
-                        {timelinePeriods.map((period, idx) => (
-                            <Box
-                                key={idx}
+            <Box sx={{ bgcolor: 'white', borderBottom: '1px solid #DFE1E6', p: 3 }}>
+                <Container maxWidth="xl">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box>
+                            <Typography variant="h5" fontWeight={600} sx={{ color: '#172B4D', mb: 0.5 }}>
+                                Roadmap
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                                Strategic planning and epic timeline visualization
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Link href={`/${workspaceId}/epics`} style={{ textDecoration: 'none' }}>
+                                <Button
+                                    variant="outlined"
+                                    sx={{
+                                        borderColor: '#DFE1E6',
+                                        color: '#42526E',
+                                        textTransform: 'none',
+                                        '&:hover': { borderColor: '#B3BAC5', bgcolor: '#F4F5F7' }
+                                    }}
+                                >
+                                    Manage Epics
+                                </Button>
+                            </Link>
+                            <Button
+                                variant="contained"
+                                startIcon={<Plus size={16} />}
                                 sx={{
-                                    flex: 1,
-                                    textAlign: 'center',
-                                    pb: 1,
-                                    borderLeft: '1px solid',
-                                    borderColor: 'divider'
+                                    bgcolor: '#0052CC',
+                                    color: 'white',
+                                    textTransform: 'none',
+                                    '&:hover': { bgcolor: '#0747A6' },
+                                    boxShadow: 'none'
                                 }}
                             >
-                                <Typography variant="caption" fontWeight={600} color="text.secondary">
-                                    {period}
-                                </Typography>
-                            </Box>
-                        ))}
+                                Create Epic
+                            </Button>
+                        </Box>
                     </Box>
-                </Box>
 
-                {/* Epic Rows */}
-                {filteredEpics.length > 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {filteredEpics.map((epic) => {
-                            const position = getEpicPosition(epic);
-                            const progress = calculateProgress(epic);
-                            const taskCount = workspace.tasks.filter(t => t.epicId === epic.id).length;
+                    {/* Controls */}
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Tabs value={viewMode} onChange={(e, v) => setViewMode(v)}>
+                            <Tab label="Timeline" value="timeline" sx={{ textTransform: 'none' }} />
+                            <Tab label="List" value="list" sx={{ textTransform: 'none' }} />
+                        </Tabs>
+                        <FormControl size="small" sx={{ minWidth: 150 }}>
+                            <InputLabel>Time Range</InputLabel>
+                            <Select
+                                value={timeRange}
+                                label="Time Range"
+                                onChange={(e) => setTimeRange(e.target.value as 'quarter' | 'year')}
+                            >
+                                <MenuItem value="quarter">Quarter (3 months)</MenuItem>
+                                <MenuItem value="year">Year (12 months)</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Container>
+            </Box>
 
-                            return (
-                                <Box key={epic.id} sx={{ display: 'flex', alignItems: 'center', minHeight: 60 }}>
-                                    {/* Epic Info */}
-                                    <Box sx={{ width: 250, flexShrink: 0, pr: 2 }}>
-                                        <Typography variant="body2" fontWeight={600} noWrap>
-                                            {epic.name}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                                            <Chip
-                                                label={epic.status}
-                                                size="small"
-                                                sx={{
-                                                    height: 20,
-                                                    fontSize: '0.65rem',
-                                                    bgcolor: epic.status === 'Done' ? '#d1fae5' : epic.status === 'In Progress' ? '#fef3c7' : '#f1f5f9',
-                                                    color: epic.status === 'Done' ? '#10b981' : epic.status === 'In Progress' ? '#f59e0b' : '#64748b',
-                                                }}
-                                            />
-                                            <Typography variant="caption" color="text.secondary">
-                                                {taskCount} tasks
+            {/* Content */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+                <Container maxWidth="xl">
+                    {viewMode === 'timeline' ? (
+                        <Paper sx={{ p: 0, bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none', overflow: 'hidden' }}>
+                            {/* Timeline Header */}
+                            <Box sx={{ display: 'flex', borderBottom: '1px solid #DFE1E6', bgcolor: '#FAFBFC' }}>
+                                <Box sx={{ width: 250, p: 2, borderRight: '1px solid #DFE1E6', flexShrink: 0 }}>
+                                    <Typography variant="subtitle2" fontWeight={600} sx={{ color: '#42526E' }}>
+                                        Epic
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', flex: 1, overflow: 'auto' }}>
+                                    {timelineMonths.map((tm, idx) => (
+                                        <Box
+                                            key={idx}
+                                            sx={{
+                                                minWidth: 120,
+                                                p: 2,
+                                                borderRight: idx < timelineMonths.length - 1 ? '1px solid #DFE1E6' : 'none',
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            <Typography variant="caption" fontWeight={600} sx={{ color: '#42526E' }}>
+                                                {tm.month} {tm.year}
                                             </Typography>
                                         </Box>
-                                    </Box>
+                                    ))}
+                                </Box>
+                            </Box>
 
-                                    {/* Timeline Bar */}
-                                    <Box sx={{ flex: 1, position: 'relative', height: 40 }}>
-                                        {position && (
-                                            <Tooltip
-                                                title={
-                                                    <Box>
-                                                        <Typography variant="caption" fontWeight={600}>{epic.name}</Typography>
-                                                        <Typography variant="caption" display="block">
-                                                            {epic.startDate && epic.targetDate &&
-                                                                `${formatDate(epic.startDate)} - ${formatDate(epic.targetDate)}`
-                                                            }
-                                                        </Typography>
-                                                        <Typography variant="caption" display="block">
-                                                            Progress: {progress}%
-                                                        </Typography>
+                            {/* Epic Rows */}
+                            {workspace.epics && workspace.epics.length > 0 ? (
+                                workspace.epics.map((epic, epicIdx) => {
+                                    const progress = getEpicProgress(epic.id);
+                                    const storyCount = workspace.tasks.filter(t => t.epic === epic.id).length;
+
+                                    return (
+                                        <Box
+                                            key={epic.id}
+                                            sx={{
+                                                display: 'flex',
+                                                borderBottom: epicIdx < workspace.epics!.length - 1 ? '1px solid #DFE1E6' : 'none',
+                                                '&:hover': { bgcolor: '#F4F5F7' }
+                                            }}
+                                        >
+                                            {/* Epic Info */}
+                                            <Box sx={{ width: 250, p: 2, borderRight: '1px solid #DFE1E6', flexShrink: 0 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                    <Target size={16} color="#6554C0" />
+                                                    <Typography variant="body2" fontWeight={600} sx={{ color: '#172B4D' }}>
+                                                        {epic.name}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                                    <Chip
+                                                        label={epic.status}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: epic.status === 'Done' ? '#E3FCEF' :
+                                                                epic.status === 'In Progress' ? '#DEEBFF' : '#DFE1E6',
+                                                            color: epic.status === 'Done' ? '#006644' :
+                                                                epic.status === 'In Progress' ? '#0052CC' : '#42526E',
+                                                            fontSize: '0.7rem',
+                                                            height: 20
+                                                        }}
+                                                    />
+                                                    <Chip
+                                                        label={`${storyCount} stories`}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: '#F4F5F7',
+                                                            color: '#6B778C',
+                                                            fontSize: '0.7rem',
+                                                            height: 20
+                                                        }}
+                                                    />
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box
+                                                        sx={{
+                                                            flex: 1,
+                                                            height: 6,
+                                                            bgcolor: '#DFE1E6',
+                                                            borderRadius: 3,
+                                                            overflow: 'hidden'
+                                                        }}
+                                                    >
+                                                        <Box
+                                                            sx={{
+                                                                width: `${progress}%`,
+                                                                height: '100%',
+                                                                bgcolor: '#00875A',
+                                                                transition: 'width 0.3s'
+                                                            }}
+                                                        />
                                                     </Box>
-                                                }
-                                            >
+                                                    <Typography variant="caption" sx={{ color: '#6B778C', minWidth: 35 }}>
+                                                        {Math.round(progress)}%
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            {/* Timeline Bar */}
+                                            <Box sx={{ display: 'flex', flex: 1, p: 2, alignItems: 'center', position: 'relative' }}>
+                                                {/* Timeline bar visualization */}
                                                 <Box
                                                     sx={{
                                                         position: 'absolute',
-                                                        left: position.left,
-                                                        width: position.width,
+                                                        left: `${(epicIdx * 15) % 60}%`,
+                                                        width: `${40 - (epicIdx * 5)}%`,
                                                         height: 32,
-                                                        borderRadius: 1,
-                                                        bgcolor: epic.color || '#3b82f6',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s',
-                                                        '&:hover': {
-                                                            transform: 'scaleY(1.1)',
-                                                            boxShadow: 2,
-                                                        }
+                                                        bgcolor: epic.status === 'Done' ? '#00875A' :
+                                                            epic.status === 'In Progress' ? '#0052CC' : '#6554C0',
+                                                        opacity: 0.3,
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${epic.status === 'Done' ? '#00875A' :
+                                                            epic.status === 'In Progress' ? '#0052CC' : '#6554C0'}`,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        px: 1
                                                     }}
                                                 >
-                                                    <Box
-                                                        sx={{
-                                                            height: '100%',
-                                                            width: `${progress}%`,
-                                                            bgcolor: 'rgba(255,255,255,0.3)',
-                                                            borderRadius: 1,
-                                                            transition: 'width 0.3s',
-                                                        }}
-                                                    />
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{
-                                                            position: 'absolute',
-                                                            top: '50%',
-                                                            left: '50%',
-                                                            transform: 'translate(-50%, -50%)',
-                                                            color: 'white',
-                                                            fontWeight: 600,
-                                                            fontSize: '0.7rem',
-                                                        }}
-                                                    >
-                                                        {progress}%
+                                                    <Typography variant="caption" fontWeight={600} sx={{ color: '#172B4D' }}>
+                                                        Q{Math.floor(epicIdx / 3) + 1} 2026
                                                     </Typography>
                                                 </Box>
-                                            </Tooltip>
-                                        )}
-                                    </Box>
+                                            </Box>
+                                        </Box>
+                                    );
+                                })
+                            ) : (
+                                <Box sx={{ p: 8, textAlign: 'center' }}>
+                                    <Target size={48} color="#DFE1E6" style={{ marginBottom: 16 }} />
+                                    <Typography variant="h6" gutterBottom sx={{ color: '#42526E' }}>
+                                        No Epics Yet
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#6B778C', mb: 3 }}>
+                                        Create your first epic to start planning your roadmap
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<Plus size={16} />}
+                                        sx={{
+                                            bgcolor: '#0052CC',
+                                            color: 'white',
+                                            textTransform: 'none',
+                                            '&:hover': { bgcolor: '#0747A6' }
+                                        }}
+                                    >
+                                        Create Epic
+                                    </Button>
                                 </Box>
-                            );
-                        })}
-                    </Box>
-                ) : (
-                    <Box sx={{ textAlign: 'center', py: 10 }}>
-                        <Target size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-                        <Typography variant="h6" gutterBottom>
-                            No Epics Found
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Create epics to visualize your product roadmap
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            startIcon={<Plus size={18} />}
-                            onClick={() => setCreateDialogOpen(true)}
-                        >
-                            Create First Epic
-                        </Button>
-                    </Box>
-                )}
-            </Box>
+                            )}
+                        </Paper>
+                    ) : (
+                        // List View
+                        <Grid container spacing={2}>
+                            {workspace.epics && workspace.epics.length > 0 ? (
+                                workspace.epics.map((epic) => {
+                                    const progress = getEpicProgress(epic.id);
+                                    const stories = workspace.tasks.filter(t => t.epic === epic.id);
 
-            {/* Create Epic Dialog */}
-            <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create New Epic</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-                        <TextField
-                            autoFocus
-                            label="Epic Name"
-                            fullWidth
-                            value={newEpicName}
-                            onChange={(e) => setNewEpicName(e.target.value)}
-                        />
-                        <TextField
-                            label="Description"
-                            fullWidth
-                            multiline
-                            rows={3}
-                            value={newEpicDesc}
-                            onChange={(e) => setNewEpicDesc(e.target.value)}
-                        />
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <TextField
-                                label="Start Date"
-                                type="date"
-                                fullWidth
-                                value={newEpicStart}
-                                onChange={(e) => setNewEpicStart(e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                            <TextField
-                                label="Target Date"
-                                type="date"
-                                fullWidth
-                                value={newEpicEnd}
-                                onChange={(e) => setNewEpicEnd(e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleCreateEpic} variant="contained" disabled={!newEpicName.trim()}>
-                        Create Epic
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                                    return (
+                                        <Grid item xs={12} md={6} lg={4} key={epic.id}>
+                                            <Card sx={{ border: '1px solid #DFE1E6', boxShadow: 'none', height: '100%' }}>
+                                                <CardContent>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                                        <Target size={20} color="#6554C0" />
+                                                        <Typography variant="h6" fontWeight={600} sx={{ color: '#172B4D' }}>
+                                                            {epic.name}
+                                                        </Typography>
+                                                    </Box>
+
+                                                    <Typography variant="body2" sx={{ color: '#6B778C', mb: 2 }}>
+                                                        {epic.description || 'No description'}
+                                                    </Typography>
+
+                                                    <Box sx={{ mb: 2 }}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                            <Typography variant="caption" sx={{ color: '#6B778C' }}>
+                                                                Progress
+                                                            </Typography>
+                                                            <Typography variant="caption" fontWeight={600} sx={{ color: '#172B4D' }}>
+                                                                {Math.round(progress)}%
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box
+                                                            sx={{
+                                                                width: '100%',
+                                                                height: 8,
+                                                                bgcolor: '#DFE1E6',
+                                                                borderRadius: 4,
+                                                                overflow: 'hidden'
+                                                            }}
+                                                        >
+                                                            <Box
+                                                                sx={{
+                                                                    width: `${progress}%`,
+                                                                    height: '100%',
+                                                                    bgcolor: '#00875A',
+                                                                    transition: 'width 0.3s'
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    </Box>
+
+                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                                                        <Chip
+                                                            label={epic.status}
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: epic.status === 'Done' ? '#E3FCEF' :
+                                                                    epic.status === 'In Progress' ? '#DEEBFF' : '#DFE1E6',
+                                                                color: epic.status === 'Done' ? '#006644' :
+                                                                    epic.status === 'In Progress' ? '#0052CC' : '#42526E',
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        />
+                                                        <Chip
+                                                            label={`${stories.length} stories`}
+                                                            size="small"
+                                                            sx={{ bgcolor: '#F4F5F7', color: '#6B778C', fontSize: '0.75rem' }}
+                                                        />
+                                                    </Box>
+
+                                                    <Link href={`/${workspaceId}/epics`} style={{ textDecoration: 'none' }}>
+                                                        <Button
+                                                            fullWidth
+                                                            endIcon={<ChevronRight size={16} />}
+                                                            sx={{
+                                                                color: '#0052CC',
+                                                                textTransform: 'none',
+                                                                justifyContent: 'space-between',
+                                                                '&:hover': { bgcolor: '#DEEBFF' }
+                                                            }}
+                                                        >
+                                                            View Details
+                                                        </Button>
+                                                    </Link>
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    );
+                                })
+                            ) : (
+                                <Grid item xs={12}>
+                                    <Paper sx={{ p: 8, textAlign: 'center', bgcolor: 'white', border: '1px solid #DFE1E6' }}>
+                                        <Target size={48} color="#DFE1E6" style={{ marginBottom: 16 }} />
+                                        <Typography variant="h6" gutterBottom sx={{ color: '#42526E' }}>
+                                            No Epics Yet
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: '#6B778C', mb: 3 }}>
+                                            Create your first epic to start planning your roadmap
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<Plus size={16} />}
+                                            sx={{
+                                                bgcolor: '#0052CC',
+                                                color: 'white',
+                                                textTransform: 'none',
+                                                '&:hover': { bgcolor: '#0747A6' }
+                                            }}
+                                        >
+                                            Create Epic
+                                        </Button>
+                                    </Paper>
+                                </Grid>
+                            )}
+                        </Grid>
+                    )}
+                </Container>
+            </Box>
         </Box>
     );
 }

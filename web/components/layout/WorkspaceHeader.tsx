@@ -1,0 +1,187 @@
+"use client";
+
+import { useState } from "react";
+import {
+    Box, Button, IconButton, Menu, MenuItem, ListItemIcon, ListItemText,
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField,
+    FormControl, InputLabel, Select, MenuItem as SelectItem, Typography
+} from "@mui/material";
+import {
+    Plus, CheckSquare, Filter, Search, Settings, MoreVertical
+} from "lucide-react";
+import { useParams } from "next/navigation";
+import { useAppStore , TaskStatus } from "@/lib/store";
+
+export default function WorkspaceHeader() {
+    const params = useParams();
+    const workspaceId = params.workspaceId as string;
+    const { addTask } = useAppStore();
+
+    const [createTaskOpen, setCreateTaskOpen] = useState(false);
+    const [taskTitle, setTaskTitle] = useState('');
+    const [taskDescription, setTaskDescription] = useState('');
+
+    const handleCreateTask = () => {
+        if (taskTitle.trim()) {
+            addTask(workspaceId, {
+                title: taskTitle.trim(),
+                description: taskDescription || undefined,
+                status: 'Todo',
+                priority: 'Medium',
+                type: 'Task'
+            });
+            setTaskTitle('');
+            setTaskDescription('');
+            setCreateTaskOpen(false);
+        }
+    };
+
+    return (
+        <>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    px: 3,
+                    py: 1.5,
+                    bgcolor: 'white',
+                    borderBottom: '1px solid #DFE1E6'
+                }}
+            >
+                {/* Left side - empty or breadcrumbs */}
+                <Box />
+
+                {/* Right side - Actions */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    {/* Search */}
+                    <IconButton
+                        size="small"
+                        sx={{
+                            color: '#42526E',
+                            '&:hover': {
+                                bgcolor: '#F4F5F7'
+                            }
+                        }}
+                    >
+                        <Search size={18} />
+                    </IconButton>
+
+                    {/* Filter */}
+                    <IconButton
+                        size="small"
+                        sx={{
+                            color: '#42526E',
+                            '&:hover': {
+                                bgcolor: '#F4F5F7'
+                            }
+                        }}
+                    >
+                        <Filter size={18} />
+                    </IconButton>
+
+                    {/* Settings */}
+                    <IconButton
+                        size="small"
+                        sx={{
+                            color: '#42526E',
+                            '&:hover': {
+                                bgcolor: '#F4F5F7'
+                            }
+                        }}
+                    >
+                        <Settings size={18} />
+                    </IconButton>
+
+                    {/* More */}
+                    <IconButton
+                        size="small"
+                        sx={{
+                            color: '#42526E',
+                            '&:hover': {
+                                bgcolor: '#F4F5F7'
+                            }
+                        }}
+                    >
+                        <MoreVertical size={18} />
+                    </IconButton>
+
+                    {/* Create Button (JIRA-style) */}
+                    <Button
+                        variant="contained"
+                        startIcon={<Plus size={18} />}
+                        onClick={() => setCreateTaskOpen(true)}
+                        sx={{
+                            bgcolor: '#0052CC',
+                            color: 'white',
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            px: 2,
+                            '&:hover': {
+                                bgcolor: '#0747A6'
+                            }
+                        }}
+                    >
+                        Create
+                    </Button>
+                </Box>
+            </Box>
+
+            {/* Create Task Dialog */}
+            <Dialog
+                open={createTaskOpen}
+                onClose={() => setCreateTaskOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>
+                    Create Issue
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            label="Summary *"
+                            value={taskTitle}
+                            onChange={(e) => setTaskTitle(e.target.value)}
+                            placeholder="What needs to be done?"
+                            sx={{ mb: 2 }}
+                            autoFocus
+                        />
+
+                        <TextField
+                            fullWidth
+                            label="Description"
+                            value={taskDescription}
+                            onChange={(e) => setTaskDescription(e.target.value)}
+                            placeholder="Add more details..."
+                            multiline
+                            rows={4}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                    <Button
+                        onClick={() => setCreateTaskOpen(false)}
+                        sx={{ color: '#42526E', textTransform: 'none' }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleCreateTask}
+                        variant="contained"
+                        disabled={!taskTitle.trim()}
+                        sx={{
+                            bgcolor: '#0052CC',
+                            color: 'white',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: '#0747A6' }
+                        }}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
+}
