@@ -228,261 +228,22 @@ interface AppState {
 }
 
 // Default Labels
-const DEFAULT_LABELS: Label[] = [
-  { id: 'l-1', name: 'Bug', color: '#ef4444' },
-  { id: 'l-2', name: 'Feature', color: '#3b82f6' },
-  { id: 'l-3', name: 'Enhancement', color: '#8b5cf6' },
-  { id: 'l-4', name: 'Documentation', color: '#06b6d4' },
-  { id: 'l-5', name: 'Urgent', color: '#f97316' },
-];
+const DEFAULT_LABELS: Label[] = [];
 
 // Default Team Members
-const DEFAULT_TEAM: TeamMember[] = [
-  { id: 'tm-1', name: 'Swarnendu', email: 'swarnendu@forge.ai', role: 'admin', avatar: '' },
-  { id: 'tm-2', name: 'Alex Chen', email: 'alex@forge.ai', role: 'member', avatar: '' },
-  { id: 'tm-3', name: 'Sarah Miller', email: 'sarah@forge.ai', role: 'member', avatar: '' },
-];
+const DEFAULT_TEAM: TeamMember[] = [];
 
 // Default Sprints
-const DEFAULT_SPRINTS: Sprint[] = [
-  {
-    id: 'sprint-1',
-    name: 'Sprint 1',
-    goal: 'Complete core authentication and dashboard features',
-    startDate: '2026-01-27',
-    endDate: '2026-02-09',
-    status: 'active',
-    velocity: 21
-  },
-  {
-    id: 'sprint-2',
-    name: 'Sprint 2',
-    goal: 'Implement AI integration and analytics',
-    startDate: '2026-02-10',
-    endDate: '2026-02-23',
-    status: 'planning',
-    velocity: 0
-  },
-];
+const DEFAULT_SPRINTS: Sprint[] = [];
 
-// Initial Mock Data
-const INITIAL_WORKSPACES: Workspace[] = [
-  {
-    id: 'ws-1',
-    title: 'Orbit AI Workspace',
-    key: 'FORGE',
-    name: 'My Team',
-    color: '#0052CC',
-    plan: 'Pro',
-    groups: [
-      {
-        id: 'g-1',
-        title: 'Engineering',
-        pages: [
-          { id: 'p-1', title: 'Sprint Board', type: 'board' },
-          { id: 'p-2', title: 'Backlog', type: 'table' },
-        ]
-      },
-      {
-        id: 'g-2',
-        title: 'Product',
-        pages: [
-          { id: 'p-3', title: 'Roadmap', type: 'board' },
-          { id: 'p-4', title: 'Specs', type: 'document' },
-        ]
-      }
-    ],
-    sprints: DEFAULT_SPRINTS,
-    labels: DEFAULT_LABELS,
-    teamMembers: DEFAULT_TEAM,
-    activities: [],
-    taskCounter: 7,
-    epicCounter: 4,
-    epics: [
-      { id: 'epic-1', key: 'FORGE-E1', name: 'Infrastructure', description: 'Core platform infrastructure', color: '#8b5cf6', status: 'In Progress', createdAt: '2026-01-20T00:00:00Z' },
-      { id: 'epic-2', key: 'FORGE-E2', name: 'AI Core', description: 'AI and ML integration', color: '#3b82f6', status: 'In Progress', createdAt: '2026-01-20T00:00:00Z' },
-      { id: 'epic-3', key: 'FORGE-E3', name: 'Analytics', description: 'Reporting and analytics features', color: '#10b981', status: 'To Do', createdAt: '2026-01-20T00:00:00Z' },
-      { id: 'epic-4', key: 'FORGE-E4', name: 'UI/UX', description: 'User interface improvements', color: '#f59e0b', status: 'To Do', createdAt: '2026-01-20T00:00:00Z' },
-    ],
-    tasks: [
-      {
-        id: 't-1',
-        key: 'FORGE-1',
-        title: 'Design new sidebar navigation',
-        description: 'Create a modern sidebar with collapsible groups and smooth transitions',
-        status: 'In Progress',
-        priority: 'High',
-        owner: 'Swarnendu',
-        reporter: 'Swarnendu',
-        sprintId: 'sprint-1',
-        estimatedPoints: 3,
-        originalEstimate: 8,
-        epicId: 'epic-1',
-        labels: ['l-3'],
-        dueDate: '2026-02-05',
-        createdAt: '2026-01-28T10:00:00Z',
-        updatedAt: '2026-02-01T14:30:00Z',
-        order: 0,
-        subtasks: [
-          { id: 'st-1', title: 'Create sidebar component structure', status: 'Done', createdAt: '2026-01-28T10:00:00Z' },
-          { id: 'st-2', title: 'Add collapsible group animations', status: 'Todo', createdAt: '2026-01-28T10:00:00Z' },
-        ],
-        timeLogs: [
-          { id: 'tl-1', userId: 'tm-1', userName: 'Swarnendu', hours: 4, description: 'Initial implementation', date: '2026-02-01', createdAt: '2026-02-01T14:30:00Z' }
-        ]
-      },
-      {
-        id: 't-2',
-        key: 'FORGE-2',
-        title: 'Fix authentication redirect loop',
-        description: 'Users are experiencing infinite redirects after login',
-        status: 'Todo',
-        priority: 'Critical',
-        owner: 'Alex Chen',
-        reporter: 'Sarah Miller',
-        sprintId: 'sprint-1',
-        estimatedPoints: 2,
-        originalEstimate: 4,
-        epicId: 'epic-1',
-        labels: ['l-1', 'l-5'],
-        dueDate: '2026-02-03',
-        createdAt: '2026-01-29T09:00:00Z',
-        updatedAt: '2026-01-29T09:00:00Z',
-        order: 1
-      },
-      {
-        id: 't-3',
-        key: 'FORGE-3',
-        title: 'Integrate OpenAI Stream API',
-        description: 'Implement streaming responses for AI chat feature',
-        status: 'Done',
-        priority: 'High',
-        owner: 'Swarnendu',
-        reporter: 'Swarnendu',
-        sprintId: 'sprint-1',
-        estimatedPoints: 5,
-        originalEstimate: 12,
-        epicId: 'epic-2',
-        labels: ['l-2'],
-        createdAt: '2026-01-25T11:00:00Z',
-        updatedAt: '2026-02-01T16:00:00Z',
-        resolvedAt: '2026-02-01T16:00:00Z',
-        order: 2,
-        timeLogs: [
-          { id: 'tl-2', userId: 'tm-1', userName: 'Swarnendu', hours: 10, description: 'Full implementation', date: '2026-02-01', createdAt: '2026-02-01T16:00:00Z' }
-        ]
-      },
-      {
-        id: 't-4',
-        key: 'FORGE-4',
-        title: 'Create analytics dashboard',
-        description: 'Build comprehensive analytics with charts and metrics',
-        status: 'In Review',
-        priority: 'Medium',
-        owner: 'Sarah Miller',
-        reporter: 'Swarnendu',
-        sprintId: 'sprint-1',
-        estimatedPoints: 8,
-        originalEstimate: 16,
-        epicId: 'epic-3',
-        labels: ['l-2'],
-        dueDate: '2026-02-07',
-        createdAt: '2026-01-26T08:00:00Z',
-        updatedAt: '2026-02-02T10:00:00Z',
-        order: 3
-      },
-      {
-        id: 't-5',
-        key: 'FORGE-5',
-        title: 'Implement dark mode toggle',
-        description: 'Add theme switching capability with system preference detection',
-        status: 'Todo',
-        priority: 'Low',
-        owner: 'Alex Chen',
-        reporter: 'Alex Chen',
-        sprintId: 'backlog',
-        estimatedPoints: 2,
-        originalEstimate: 4,
-        epicId: 'epic-4',
-        labels: ['l-3'],
-        createdAt: '2026-01-20T14:00:00Z',
-        updatedAt: '2026-01-20T14:00:00Z',
-        order: 4
-      },
-      {
-        id: 't-6',
-        key: 'FORGE-6',
-        title: 'API rate limiting middleware',
-        description: 'Implement rate limiting to prevent abuse',
-        status: 'Todo',
-        priority: 'Medium',
-        owner: 'Swarnendu',
-        reporter: 'Swarnendu',
-        sprintId: 'backlog',
-        estimatedPoints: 3,
-        originalEstimate: 6,
-        epicId: 'epic-1',
-        labels: ['l-2'],
-        createdAt: '2026-01-22T09:00:00Z',
-        updatedAt: '2026-01-22T09:00:00Z',
-        order: 5,
-        blockedBy: ['t-2'] // Blocked by auth fix
-      },
-      {
-        id: 't-7',
-        key: 'FORGE-7',
-        title: 'Write API documentation',
-        description: 'Document all REST endpoints with examples',
-        status: 'Blocked',
-        priority: 'Medium',
-        owner: 'Sarah Miller',
-        reporter: 'Swarnendu',
-        sprintId: 'sprint-1',
-        estimatedPoints: 3,
-        originalEstimate: 8,
-        epicId: 'epic-1',
-        labels: ['l-4'],
-        createdAt: '2026-01-30T11:00:00Z',
-        updatedAt: '2026-02-01T09:00:00Z',
-        order: 6,
-        blockedBy: ['t-6'],
-        comments: [
-          { id: 'c-1', author: 'Swarnendu', content: 'Waiting for API finalization', createdAt: '2026-02-01T09:00:00Z' }
-        ]
-      },
-    ]
-  },
-  {
-    id: 'ws-2',
-    title: 'Personal',
-    name: 'Personal',
-    key: 'PERS',
-    plan: 'Free',
-    groups: [
-      {
-        id: 'g-3',
-        title: 'Life',
-        pages: [
-          { id: 'p-5', title: 'Goals', type: 'document' },
-        ]
-      }
-    ],
-    sprints: [],
-    epics: [],
-    labels: DEFAULT_LABELS,
-    teamMembers: DEFAULT_TEAM,
-    activities: [],
-    tasks: [],
-    taskCounter: 0,
-    epicCounter: 0
-  }
-];
+// Initial Mock Data - Empty workspaces
+const INITIAL_WORKSPACES: Workspace[] = [];
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       workspaces: INITIAL_WORKSPACES,
-      currentWorkspaceId: 'ws-1', // Default to first
+      currentWorkspaceId: null, // No default workspace
 
       createWorkspace: (title, id) => set((state) => {
         // Generate a key from the title (uppercase, first 4 letters, no spaces)
@@ -1118,7 +879,7 @@ export const useAppStore = create<AppState>()(
       })),
     }),
     {
-      name: 'forge-ai-storage',
+      name: 'ORBIT-ai-storage',
       merge: (persistedState: any, currentState: AppState) => {
         // Quick merge - only transform when absolutely necessary
         if (!persistedState?.workspaces) {

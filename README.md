@@ -1,5 +1,8 @@
 # Orbit AI Workspace - Enterprise Agile Project Management Platform
 
+> **Built for Hackathon**: Complete JIRA-like agile workflow implementation with production-ready features
+
+## 🎯 Overview
 
 Orbit AI Workspace is a modern, enterprise-grade agile project management platform that provides complete workflow coverage from strategic planning to tactical execution. Built with the same workflows and best practices used by teams at companies like Atlassian, Linear, and Monday.com.
 

@@ -332,7 +332,7 @@ export default function HomePage() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Zap size={20} color="#0052CC" />
               <Typography variant="body2" fontWeight={600} sx={{ color: '#172B4D' }}>
-                ForgeAI
+                Orbit AI Workspace
               </Typography>
               <Typography variant="caption" sx={{ color: '#6B778C', ml: 2 }}>
                 Agile Project Management Platform
