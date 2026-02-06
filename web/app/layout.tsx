@@ -3,6 +3,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 
 import ThemeRegistry from "@/components/layout/ThemeRegistry";
+import { TamboProviderWrapper } from "@/components/providers/TamboProviderWrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +31,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
       <body className="bg-background text-foreground">
         <ThemeRegistry>
+          <TamboProviderWrapper>
             {children}
+          </TamboProviderWrapper>
         </ThemeRegistry>
       </body>
     </html>

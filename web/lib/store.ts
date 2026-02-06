@@ -161,6 +161,8 @@ interface AppState {
 
   // Actions
   createWorkspace: (title: string, id?: string) => void;
+  updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
+  deleteWorkspace: (id: string) => void;
   selectWorkspace: (id: string) => void;
   addGroup: (workspaceId: string, title: string, icon?: string) => void;
   addPage: (workspaceId: string, groupId: string, title: string, type: PageType) => void;
@@ -505,6 +507,19 @@ export const useAppStore = create<AppState>()(
           }]
         };
       }),
+
+      updateWorkspace: (id, updates) => set((state) => ({
+        workspaces: state.workspaces.map(ws =>
+          ws.id === id ? { ...ws, ...updates } : ws
+        )
+      })),
+
+      deleteWorkspace: (id) => set((state) => ({
+        workspaces: state.workspaces.filter(ws => ws.id !== id),
+        currentWorkspaceId: state.currentWorkspaceId === id
+          ? (state.workspaces.find(ws => ws.id !== id)?.id || null)
+          : state.currentWorkspaceId
+      })),
 
       selectWorkspace: (id) => set({ currentWorkspaceId: id }),
 
