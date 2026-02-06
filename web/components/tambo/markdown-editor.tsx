@@ -23,6 +23,16 @@ export function MarkdownEditor({ initialContent = "", title }: MarkdownEditorPro
   const [isCopied, setIsCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Sync state with prop updates (handles streaming/late content)
+  useEffect(() => {
+    if (initialContent) {
+      setContent(initialContent);
+      if (mode === 'edit' && initialContent.length > 0 && content.length === 0) {
+         setMode('preview'); // Switch to preview if content arrives and we were empty
+      }
+    }
+  }, [initialContent]);
+
   // Simple copy handler
   const handleCopy = async () => {
     try {
