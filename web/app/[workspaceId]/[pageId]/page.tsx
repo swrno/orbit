@@ -3,6 +3,10 @@
 import { DataGrid } from "@/components/views/DataGrid";
 import { BoardView } from "@/components/views/BoardView";
 import { DocumentView } from "@/components/views/DocumentView";
+import { GanttView } from "@/components/views/GanttView";
+import { RoadmapView } from "@/components/views/RoadmapView";
+import { CalendarView } from "@/components/views/CalendarView";
+import { ChartView } from "@/components/views/ChartView";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 
@@ -35,12 +39,24 @@ export default function GenericPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {currentPage.type === 'table' && (
+    <div className="flex flex-col flex-1 min-h-0">
+      {(currentPage.type === 'table' || currentPage.type === 'list') && (
         <DataGrid workspaceId={workspaceId} pageId={currentPage.id} />
       )}
       {currentPage.type === 'board' && (
         <BoardView workspaceId={workspaceId} />
+      )}
+      {currentPage.type === 'gantt' && (
+          <GanttView workspaceId={workspaceId} />
+      )}
+      {currentPage.type === 'roadmap' && (
+          <RoadmapView workspaceId={workspaceId} />
+      )}
+      {currentPage.type === 'calendar' && (
+          <CalendarView workspaceId={workspaceId} />
+      )}
+      {currentPage.type === 'chart' && (
+          <ChartView workspaceId={workspaceId} />
       )}
       {currentPage.type === 'document' && (
         <DocumentView workspaceId={workspaceId} pageId={currentPage.id} />

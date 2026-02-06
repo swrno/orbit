@@ -2,7 +2,6 @@
 
 import { Shell } from "@/components/layout/Shell";
 import Sidebar from "@/components/layout/Sidebar";
-import WorkspaceHeader from "@/components/layout/WorkspaceHeader";
 import TabsHeader from "@/components/layout/TabsHeader";
 import { useAppStore } from "@/lib/store";
 import { useParams, useRouter } from "next/navigation";
@@ -36,8 +35,7 @@ export default function WorkspaceLayout({
       <Shell>
         <Sidebar />
         <main className="flex-1 relative z-10 flex flex-col h-full overflow-hidden bg-background">
-          <WorkspaceHeader />
-          <TabsHeader workspaceId={workspaceId} />
+          <TabsHeader key={workspaceId} workspaceId={workspaceId} />
           {children}
         </main>
       </Shell>

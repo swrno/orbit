@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type PageType = 'board' | 'table' | 'document';
+export type PageType = 'board' | 'table' | 'document' | 'gantt' | 'roadmap' | 'calendar' | 'chart' | 'list';
 export type TaskStatus = 'Todo' | 'In Progress' | 'In Review' | 'Done' | 'Blocked';
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
@@ -222,6 +222,7 @@ interface AppState {
   // Delete Actions
   deleteGroup: (workspaceId: string, groupId: string) => void;
   deletePage: (workspaceId: string, groupId: string, pageId: string) => void;
+  reorderPage: (workspaceId: string, groupId: string, startIndex: number, endIndex: number) => void;
 }
 
 // Default Labels
@@ -1079,6 +1080,23 @@ export const useAppStore = create<AppState>()(
                   ? { ...g, pages: g.pages.filter(p => p.id !== pageId) }
                   : g
               )
+            }
+            : ws
+        )
+      })),
+
+      reorderPage: (workspaceId, groupId, startIndex, endIndex) => set((state) => ({
+        workspaces: state.workspaces.map(ws =>
+          ws.id === workspaceId
+            ? {
+              ...ws,
+              groups: ws.groups.map(g => {
+                if (g.id !== groupId) return g;
+                const newPages = Array.from(g.pages);
+                const [reorderedItem] = newPages.splice(startIndex, 1);
+                newPages.splice(endIndex, 0, reorderedItem);
+                return { ...g, pages: newPages };
+              })
             }
             : ws
         )

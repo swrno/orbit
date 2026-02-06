@@ -1,10 +1,11 @@
 "use client";
 
-import { useAppStore } from "@/lib/store";
+import { useAppStore, PageType } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
-    LayoutGrid, Search, Layers, Calendar, Users, Bug, TrendingUp,
-    BarChart3, ListTodo, ChevronDown, FileText, Plus
+    BarChart3, ListTodo, ChevronDown, FileText, Plus, Kanban,
+    LayoutGrid, Search, Layers, Calendar, Users, Bug, TrendingUp, Table, List as ListIcon,
+    MoreHorizontal, Trash2, Edit
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
@@ -12,9 +13,11 @@ import { useState, useEffect } from "react";
 import {
     Drawer, List, ListItemButton, ListItemIcon, ListItemText,
     Typography, Box, Select, MenuItem, FormControl, Divider, Button,
-    Dialog, DialogTitle, DialogContent, DialogActions, TextField
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField,
+    Menu, MenuItem as MuiMenuItem, InputLabel, IconButton
 } from "@mui/material";
 import { SearchModal } from "@/components/search/SearchModal";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 export default function Sidebar({ className }: { className?: string }) {
     const params = useParams();
@@ -22,13 +25,196 @@ export default function Sidebar({ className }: { className?: string }) {
     const router = useRouter();
     const workspaceId = params.workspaceId as string;
 
-    const { workspaces, createWorkspace } = useAppStore();
+    const { workspaces, createWorkspace, addPage, renamePage, deletePage, reorderPage, addGroup, renameGroup, deleteGroup } = useAppStore();
     const workspace = workspaces.find(w => w.id === workspaceId);
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedWorkspace, setSelectedWorkspace] = useState(workspaceId || 'ws-1');
     const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
     const [newWorkspaceName, setNewWorkspaceName] = useState('');
+    
+    // View Creation State
+    const [addMenuAnchor, setAddMenuAnchor] = useState<null | HTMLElement>(null);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [newViewName, setNewViewName] = useState('');
+    const [newViewType, setNewViewType] = useState<PageType>('table');
+
+    // View Management State (Context Menu, Rename, Delete)
+    const [contextMenuAnchor, setContextMenuAnchor] = useState<null | HTMLElement>(null);
+    const [selectedPageForAction, setSelectedPageForAction] = useState<{ groupId: string, pageId: string, title: string } | null>(null);
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    const [renameValue, setRenameValue] = useState('');
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    const viewTypes = [
+        { value: 'table', label: 'Table View', icon: <Table size={18} />, description: 'Spreadsheet-style table' },
+        { value: 'board', label: 'Board View', icon: <Kanban size={18} />, description: 'Kanban-style workflow' },
+        { value: 'gantt', label: 'Gantt Chart', icon: <Calendar size={18} />, description: 'Timeline and dependencies' },
+        { value: 'roadmap', label: 'Roadmap', icon: <TrendingUp size={18} />, description: 'Strategic planning timeline' },
+        { value: 'calendar', label: 'Calendar View', icon: <Calendar size={18} />, description: 'Calendar view' },
+        { value: 'chart', label: 'Chart View', icon: <BarChart3 size={18} />, description: 'Data visualization' },
+        { value: 'document', label: 'Document', icon: <FileText size={18} />, description: 'Rich text document' }
+    ];
+
+    const [targetGroupId, setTargetGroupId] = useState<string | null>(null);
+
+    const handleAddClick = (event: React.MouseEvent<HTMLElement>) => {
+        setTargetGroupId(null); // Reset target group (global add)
+        setAddMenuAnchor(event.currentTarget);
+    };
+
+    const handleGroupAddClick = (event: React.MouseEvent<HTMLElement>, groupId: string) => {
+        event.stopPropagation();
+        setTargetGroupId(groupId);
+        setAddMenuAnchor(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+        setAddMenuAnchor(null);
+    };
+
+    const handleCreateView = () => {
+        handleCloseMenu();
+        setCreateDialogOpen(true);
+    };
+
+    const handleCreateConfirm = () => {
+        if (newViewName.trim() && workspaceId) {
+            // If targetGroupId is set, use it. Otherwise, default to the first group.
+            let groupId = targetGroupId;
+            if (!groupId && workspace && workspace.groups.length > 0) {
+                groupId = workspace.groups[0].id;
+            }
+            
+            if (groupId) {
+                addPage(workspaceId, groupId, newViewName.trim(), newViewType);
+                setNewViewName('');
+                setCreateDialogOpen(false);
+                setTargetGroupId(null);
+                
+                // Navigate to the new page (optimistic)
+                // Note: In a real app we'd wait for ID or use a deterministic ID
+            }
+        }
+    };
+
+    // Context Menu Handlers
+    const handleContextMenuOpen = (event: React.MouseEvent<HTMLElement>, groupId: string, pageId: string, title: string) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setContextMenuAnchor(event.currentTarget);
+        setSelectedPageForAction({ groupId, pageId, title });
+    };
+
+    const handleContextMenuClose = () => {
+        setContextMenuAnchor(null);
+        // Don't clear selectedPageForAction immediately so dialogs can use it
+    };
+
+    const handleRenameClick = () => {
+        if (selectedPageForAction) {
+            setRenameValue(selectedPageForAction.title);
+            setRenameDialogOpen(true);
+            handleContextMenuClose();
+        }
+    };
+
+    const handleRenameSubmit = () => {
+        if (selectedPageForAction && renameValue.trim()) {
+            renamePage(workspaceId, selectedPageForAction.groupId, selectedPageForAction.pageId, renameValue.trim());
+            setRenameDialogOpen(false);
+            setSelectedPageForAction(null);
+        }
+    };
+
+    const handleDeleteClick = () => {
+        setDeleteDialogOpen(true);
+        handleContextMenuClose();
+    };
+
+    const handleDeleteConfirm = () => {
+        if (selectedPageForAction) {
+            deletePage(workspaceId, selectedPageForAction.groupId, selectedPageForAction.pageId);
+            setDeleteDialogOpen(false);
+            setSelectedPageForAction(null);
+            
+            // If we deleted the current page, navigate to backlog
+            if (pathname?.includes(selectedPageForAction.pageId)) {
+                router.push(`/${workspaceId}/backlog`);
+            }
+        }
+    };
+
+    // Group Management State
+    const [createGroupOpen, setCreateGroupOpen] = useState(false);
+    const [newGroupName, setNewGroupName] = useState('');
+    const [groupContextMenuAnchor, setGroupContextMenuAnchor] = useState<null | HTMLElement>(null);
+    const [selectedGroupForAction, setSelectedGroupForAction] = useState<{ groupId: string, title: string } | null>(null);
+    const [renameGroupOpen, setRenameGroupOpen] = useState(false);
+    const [renameGroupValue, setRenameGroupValue] = useState('');
+    const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
+
+    const handleCreateGroup = () => {
+        if (newGroupName.trim() && workspaceId) {
+            addGroup(workspaceId, newGroupName.trim());
+            setNewGroupName('');
+            setCreateGroupOpen(false);
+        }
+    };
+
+    const handleGroupContextMenuOpen = (event: React.MouseEvent<HTMLElement>, groupId: string, title: string) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setGroupContextMenuAnchor(event.currentTarget);
+        setSelectedGroupForAction({ groupId, title });
+    };
+
+    const handleGroupContextMenuClose = () => {
+        setGroupContextMenuAnchor(null);
+    };
+
+    const handleRenameGroupClick = () => {
+        if (selectedGroupForAction) {
+            setRenameGroupValue(selectedGroupForAction.title);
+            setRenameGroupOpen(true);
+            handleGroupContextMenuClose();
+        }
+    };
+
+    const handleRenameGroupSubmit = () => {
+        if (selectedGroupForAction && renameGroupValue.trim()) {
+            renameGroup(workspaceId, selectedGroupForAction.groupId, renameGroupValue.trim());
+            setRenameGroupOpen(false);
+            setSelectedGroupForAction(null);
+        }
+    };
+
+    const handleDeleteGroupClick = () => {
+        setDeleteGroupOpen(true);
+        handleGroupContextMenuClose();
+    };
+
+    const handleDeleteGroupConfirm = () => {
+        if (selectedGroupForAction) {
+            deleteGroup(workspaceId, selectedGroupForAction.groupId);
+            setDeleteGroupOpen(false);
+            setSelectedGroupForAction(null);
+        }
+    };
+
+    const handleDragEnd = (result: DropResult) => {
+        if (!result.destination || !workspace) return;
+
+        const { source, destination } = result;
+
+        // Extract group ID from droppableId (format: "group-[groupId]")
+        const groupId = source.droppableId.replace('group-', '');
+        
+        // Ensure dropping in same group for now
+        if (source.droppableId !== destination.droppableId) return;
+
+        reorderPage(workspaceId, groupId, source.index, destination.index);
+    };
 
     // Keyboard shortcut for search (Cmd+K or Ctrl+K)
     useEffect(() => {
@@ -90,7 +276,7 @@ export default function Sidebar({ className }: { className?: string }) {
             id: 'getting-started',
             label: 'Getting Started',
             icon: <FileText size={16} />,
-            path: '/get-started'
+            path: `/${selectedWorkspace}/get-started`
         }
     ];
 
@@ -265,6 +451,55 @@ export default function Sidebar({ className }: { className?: string }) {
                         </Box>
                     </Box>
 
+                    {/* Add View / Group Action */}
+                    <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#6B778C' }}>
+                            VIEWS
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                             <Box
+                                onClick={() => setCreateGroupOpen(true)}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '3px',
+                                    cursor: 'pointer',
+                                    color: '#6B778C',
+                                    '&:hover': {
+                                        bgcolor: '#DEEBFF',
+                                        color: '#0052CC'
+                                    }
+                                }}
+                                title="Add Group"
+                            >
+                                <Layers size={14} />
+                            </Box>
+                            <Box
+                                onClick={handleAddClick}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '3px',
+                                    cursor: 'pointer',
+                                    color: '#6B778C',
+                                    '&:hover': {
+                                        bgcolor: '#DEEBFF',
+                                        color: '#0052CC'
+                                    }
+                                }}
+                                title="Add View"
+                            >
+                                <Plus size={16} />
+                            </Box>
+                        </Box>
+                    </Box>
+
                     <Divider sx={{ borderColor: '#DFE1E6' }} />
 
                     {/* Navigation Items */}
@@ -315,6 +550,178 @@ export default function Sidebar({ className }: { className?: string }) {
                                 );
                             })}
                         </List>
+
+                        {/* Dynamic Groups & Pages */}
+                        {workspace.groups && workspace.groups.length > 0 && (
+                            <DragDropContext onDragEnd={handleDragEnd}>
+                                <Divider sx={{ my: 1, mx: 2, borderColor: '#DFE1E6' }} />
+                                <Box sx={{ px: 2, py: 1 }}>
+                                    {workspace.groups.map(group => (
+                                        <Box key={group.id} sx={{ mb: 2 }}>
+                                            <Box 
+                                                sx={{ 
+                                                    px: 1.5,
+                                                    mb: 1, 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'space-between',
+                                                    '&:hover .group-actions': { opacity: 1 }
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: '#6B778C',
+                                                        fontWeight: 600,
+                                                        textTransform: 'uppercase',
+                                                        fontSize: '0.75rem'
+                                                    }}
+                                                >
+                                                    {group.title}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                    <Box
+                                                        className="group-actions"
+                                                        onClick={(e) => handleGroupAddClick(e, group.id)}
+                                                        sx={{
+                                                            opacity: 0,
+                                                            transition: 'opacity 0.2s',
+                                                            cursor: 'pointer',
+                                                            p: 0.5,
+                                                            borderRadius: '3px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            color: '#6B778C',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                                                color: '#0052CC'
+                                                            }
+                                                        }}
+                                                        title="Add View to Group"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </Box>
+                                                    <Box
+                                                        className="group-actions"
+                                                        onClick={(e) => handleGroupContextMenuOpen(e, group.id, group.title)}
+                                                        sx={{
+                                                            opacity: 0,
+                                                            transition: 'opacity 0.2s',
+                                                            cursor: 'pointer',
+                                                            p: 0.5,
+                                                            borderRadius: '3px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            color: '#6B778C',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                                                color: '#172B4D'
+                                                            }
+                                                        }}
+                                                    >
+                                                        <MoreHorizontal size={14} />
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                            <Droppable droppableId={`group-${group.id}`}>
+                                                {(provided) => (
+                                                    <List disablePadding ref={provided.innerRef} {...provided.droppableProps}>
+                                                        {group.pages.map((page, index) => {
+                                                            const pagePath = `/${selectedWorkspace}/${page.id}`;
+                                                            const isActive = pathname === pagePath;
+
+                                                            // Determine icon based on page type
+                                                            let PageIcon = FileText;
+                                                            if (page.type === 'board') PageIcon = Kanban;
+                                                            if (page.type === 'table') PageIcon = ListTodo;
+                                                            if (page.type === 'gantt' || page.type === 'calendar') PageIcon = Calendar;
+                                                            if (page.type === 'roadmap') PageIcon = TrendingUp;
+                                                            if (page.type === 'chart') PageIcon = BarChart3;
+                                                            if (page.type === 'list') PageIcon = ListIcon;
+
+                                                            return (
+                                                                <Draggable key={page.id} draggableId={page.id} index={index}>
+                                                                    {(provided, snapshot) => (
+                                                                        <Box
+                                                                            ref={provided.innerRef}
+                                                                            {...provided.draggableProps}
+                                                                            {...provided.dragHandleProps}
+                                                                            sx={{ mb: 0.5 }}
+                                                                        >
+                                                                            <ListItemButton
+                                                                                component={Link}
+                                                                                href={pagePath}
+                                                                                selected={isActive}
+                                                                                sx={{
+                                                                                    borderRadius: '3px',
+                                                                                    py: 0.75,
+                                                                                    px: 1.5,
+                                                                                    // Add group for hover effect on More button
+                                                                                    '&:hover .more-actions': {
+                                                                                        opacity: 1
+                                                                                    },
+                                                                                    '&.Mui-selected': {
+                                                                                        bgcolor: '#DEEBFF',
+                                                                                        color: '#0052CC',
+                                                                                        '& .MuiListItemIcon-root': {
+                                                                                            color: '#0052CC'
+                                                                                        },
+                                                                                        '&:hover': {
+                                                                                            bgcolor: '#DEEBFF'
+                                                                                        }
+                                                                                    },
+                                                                                    '&:hover': {
+                                                                                        bgcolor: snapshot.isDragging ? '#DEEBFF' : 'white'
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#0052CC' : '#42526E' }}>
+                                                                                    <PageIcon size={16} />
+                                                                                </ListItemIcon>
+                                                                                <ListItemText
+                                                                                    primary={page.title}
+                                                                                    primaryTypographyProps={{
+                                                                                        variant: 'body2',
+                                                                                        fontWeight: isActive ? 500 : 400,
+                                                                                        color: isActive ? '#0052CC' : '#172B4D',
+                                                                                        noWrap: true
+                                                                                    }}
+                                                                                />
+                                                                                <Box
+                                                                                    component="div"
+                                                                                    className="more-actions"
+                                                                                    onClick={(e) => handleContextMenuOpen(e, group.id, page.id, page.title)}
+                                                                                    sx={{
+                                                                                        opacity: 0,
+                                                                                        transition: 'opacity 0.2s',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        color: '#6B778C',
+                                                                                        p: 0.5,
+                                                                                        borderRadius: '3px',
+                                                                                        '&:hover': {
+                                                                                            bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                                                                            color: '#172B4D'
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    <MoreHorizontal size={14} />
+                                                                                </Box>
+                                                                            </ListItemButton>
+                                                                        </Box>
+                                                                    )}
+                                                                </Draggable>
+                                                            );
+                                                        })}
+                                                        {provided.placeholder}
+                                                    </List>
+                                                )}
+                                            </Droppable>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </DragDropContext>
+                        )}
                     </Box>
 
                     {/* Footer */}
@@ -375,6 +782,330 @@ export default function Sidebar({ className }: { className?: string }) {
                         }}
                     >
                         Create Workspace
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Add View Menu */}
+             <Menu
+                anchorEl={addMenuAnchor}
+                open={Boolean(addMenuAnchor)}
+                onClose={handleCloseMenu}
+                PaperProps={{
+                    sx: {
+                        mt: 1,
+                        minWidth: 280,
+                        boxShadow: '0 8px 16px rgba(23,43,77,0.12)',
+                        border: '1px solid #DFE1E6'
+                    }
+                }}
+            >
+                <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #DFE1E6' }}>
+                    <Typography variant="subtitle2" fontWeight={600} sx={{ color: '#172B4D' }}>
+                        Add View
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#6B778C' }}>
+                        Create a new view for this workspace
+                    </Typography>
+                </Box>
+
+                <MenuItem
+                    onClick={() => {
+                        handleCloseMenu();
+                        setCreateGroupOpen(true);
+                    }}
+                    sx={{ py: 1 }}
+                >
+                    <ListItemIcon><Layers size={18} /></ListItemIcon>
+                    <ListItemText
+                        primary="Create Group"
+                        secondary="Organize views into a new group"
+                        primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                        secondaryTypographyProps={{ variant: 'caption' }}
+                    />
+                </MenuItem>
+                <Divider />
+
+                {viewTypes.map((type) => (
+                    <MenuItem
+                        key={type.value}
+                        onClick={() => {
+                            setNewViewType(type.value as any);
+                            handleCreateView();
+                        }}
+                    >
+                        <ListItemIcon>{type.icon}</ListItemIcon>
+                        <ListItemText
+                            primary={type.label}
+                            secondary={type.description}
+                            primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                            secondaryTypographyProps={{ variant: 'caption' }}
+                        />
+                    </MenuItem>
+                ))}
+            </Menu>
+
+            {/* Create View Dialog */}
+            <Dialog
+                open={createDialogOpen}
+                onClose={() => setCreateDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>
+                    Create New View
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            label="View Name"
+                            value={newViewName}
+                            onChange={(e) => setNewViewName(e.target.value)}
+                            placeholder="e.g., Sprint Board, Bug Tracker"
+                            sx={{ mb: 3 }}
+                            autoFocus
+                        />
+
+                        <FormControl fullWidth>
+                            <InputLabel>View Type</InputLabel>
+                            <Select
+                                value={newViewType}
+                                label="View Type"
+                                onChange={(e) => setNewViewType(e.target.value as any)}
+                            >
+                                {viewTypes.map((type) => (
+                                    <MenuItem key={type.value} value={type.value}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            {type.icon}
+                                            <Box>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {type.label}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: '#6B778C' }}>
+                                                    {type.description}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                    <Button onClick={() => setCreateDialogOpen(false)} sx={{ color: '#42526E', textTransform: 'none' }}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleCreateConfirm}
+                        variant="contained"
+                        disabled={!newViewName.trim()}
+                        sx={{
+                            bgcolor: '#0052CC',
+                            color: 'white',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: '#0747A6' }
+                        }}
+                    >
+                        Create View
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Context Menu for Page Items */}
+            <Menu
+                anchorEl={contextMenuAnchor}
+                open={Boolean(contextMenuAnchor)}
+                onClose={handleContextMenuClose}
+                PaperProps={{
+                    sx: { minWidth: 160, boxShadow: '0 4px 8px rgba(9, 30, 66, 0.25)', border: '1px solid #DFE1E6' }
+                }}
+            >
+                <MenuItem onClick={handleRenameClick} sx={{ gap: 1.5, py: 1 }}>
+                    <Edit size={16} color="#42526E" />
+                    <Typography variant="body2" color="#172B4D">Rename</Typography>
+                </MenuItem>
+                <MenuItem onClick={handleDeleteClick} sx={{ gap: 1.5, py: 1 }}>
+                    <Trash2 size={16} color="#DE350B" />
+                    <Typography variant="body2" color="#DE350B">Delete</Typography>
+                </MenuItem>
+            </Menu>
+
+            {/* Rename Dialog */}
+            <Dialog
+                open={renameDialogOpen}
+                onClose={() => setRenameDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Rename View</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRenameSubmit();
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setRenameDialogOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                    <Button 
+                        onClick={handleRenameSubmit} 
+                        variant="contained" 
+                        disabled={!renameValue.trim()}
+                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
+                    >
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#DE350B', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Trash2 size={20} />
+                    Delete View?
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="#172B4D">
+                        Are you sure you want to delete <strong>{selectedPageForAction?.title}</strong>? This action cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setDeleteDialogOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                    <Button 
+                        onClick={handleDeleteConfirm} 
+                        variant="contained" 
+                        color="error"
+                        sx={{ bgcolor: '#DE350B', '&:hover': { bgcolor: '#BF2600' } }}
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Group Context Menu */}
+            <Menu
+                anchorEl={groupContextMenuAnchor}
+                open={Boolean(groupContextMenuAnchor)}
+                onClose={handleGroupContextMenuClose}
+                PaperProps={{
+                    sx: { minWidth: 160, boxShadow: '0 4px 8px rgba(9, 30, 66, 0.25)', border: '1px solid #DFE1E6' }
+                }}
+            >
+                <MenuItem onClick={handleRenameGroupClick} sx={{ gap: 1.5, py: 1 }}>
+                    <Edit size={16} color="#42526E" />
+                    <Typography variant="body2" color="#172B4D">Rename Group</Typography>
+                </MenuItem>
+                <MenuItem onClick={handleDeleteGroupClick} sx={{ gap: 1.5, py: 1 }}>
+                    <Trash2 size={16} color="#DE350B" />
+                    <Typography variant="body2" color="#DE350B">Delete Group</Typography>
+                </MenuItem>
+            </Menu>
+
+            {/* Create Group Dialog */}
+            <Dialog
+                open={createGroupOpen}
+                onClose={() => setCreateGroupOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Create New Group</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            label="Group Name"
+                            value={newGroupName}
+                            onChange={(e) => setNewGroupName(e.target.value)}
+                            placeholder="e.g., Marketing, QA"
+                            autoFocus
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setCreateGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                    <Button 
+                        onClick={handleCreateGroup} 
+                        variant="contained" 
+                        disabled={!newGroupName.trim()}
+                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Rename Group Dialog */}
+            <Dialog
+                open={renameGroupOpen}
+                onClose={() => setRenameGroupOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Rename Group</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            value={renameGroupValue}
+                            onChange={(e) => setRenameGroupValue(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRenameGroupSubmit();
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setRenameGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                    <Button 
+                        onClick={handleRenameGroupSubmit} 
+                        variant="contained" 
+                        disabled={!renameGroupValue.trim()}
+                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
+                    >
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Group Dialog */}
+            <Dialog
+                open={deleteGroupOpen}
+                onClose={() => setDeleteGroupOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 600, color: '#DE350B', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Trash2 size={20} />
+                    Delete Group?
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="#172B4D">
+                        Are you sure you want to delete <strong>{selectedGroupForAction?.title}</strong>? All pages within this group will be deleted.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setDeleteGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                    <Button 
+                        onClick={handleDeleteGroupConfirm} 
+                        variant="contained" 
+                        color="error"
+                        sx={{ bgcolor: '#DE350B', '&:hover': { bgcolor: '#BF2600' } }}
+                    >
+                        Delete
                     </Button>
                 </DialogActions>
             </Dialog>
