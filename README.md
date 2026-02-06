@@ -1,227 +1,126 @@
 # Orbit AI Workspace
 
-> **AI-First Agile Project Management** - Built with [Tambo AI](https://tambo.co) for intelligent workspace collaboration
+**Orbit** is an intelligent team collaboration platform that reimagines project management by embedding AI at its core. Built for modern development teams, Orbit combines the structure of traditional project management tools with the power of conversational AI, enabling you to manage tasks, sprints, and documentation through natural language interactions.
 
-Orbit is a modern agile project management platform that combines traditional workflows with AI-powered assistance through Tambo. Manage backlogs, sprints, epics, and bugs while leveraging AI to streamline your team's workflow.
+## What is Orbit?
 
----
+Orbit is a workspace management system designed to streamline how teams plan, track, and deliver software projects. Unlike conventional tools that require navigating through multiple screens and forms, Orbit lets you interact with your workspace conversationally while maintaining the full power of structured project management.
 
-## ✨ Features
+**Core capabilities include:**
+- Task and issue tracking with customizable workflows
+- Sprint planning and epic management
+- AI-powered document creation and editing
+- Team collaboration and workspace organization
+- Real-time data visualization and reporting
 
-- **Product Backlog** - Centralized work items with prioritization
-- **Sprint Planning** - Time-boxed iterations with velocity tracking
-- **Scrum Boards** - Visual workflow with drag-and-drop
-- **Epic Management** - Strategic roadmapping and progress tracking  
-- **Bug Tracking** - Comprehensive defect management
-- **Analytics** - Velocity charts, burndown, and CFD reports
-- **AI Assistant** - Powered by **[Tambo](https://docs.tambo.co)**
+## Powered by Tambo AI
 
----
+At the heart of Orbit lies [Tambo](https://docs.tambo.co), an advanced AI framework that transforms how users interact with software. Tambo isn't just a chatbot—it's a deeply integrated system that understands your workspace context and can perform actions on your behalf.
 
-## 🤖 Tambo AI Integration
+### How We Use Tambo
 
-Orbit extensively integrates **[Tambo](https://tambo.co)** - an AI platform that connects your entire workspace through natural language interactions.
+Orbit leverages Tambo's React SDK (`@tambo-ai/react`) to create a seamless AI-native experience:
 
-### AI-Powered Capabilities
+**1. Context-Aware Components**  
+We've registered custom UI components as Tambo components, allowing the AI to generate and control workspace elements dynamically. When you ask to "create a sprint" or "show my tasks," Tambo renders the appropriate interface component with pre-filled data.
 
-**Conversational Workspace Control**
-- Create tasks, sprints, and epics through natural language
-- Navigate between pages using AI commands
-- Query workspace data (tasks, team members, sprints)
-- Edit documents with AI-assisted markdown generation
+**2. Action-Oriented Tools**  
+Tambo tools enable the AI to read and modify workspace data programmatically. The AI can query tasks, create workspaces, update team members, and navigate your application—all through natural language commands.
 
-**Tambo Components** (`lib/tambo.ts`)
-- `WorkspaceCreator` - AI-driven workspace setup
-- `TaskCreator/TaskEditor` - Intelligent task management
-- `SprintCreator/EpicCreator` - Planning made conversational
-- `PageCreator/GroupCreator` - Structure your workspace via AI
-- `DocEditor` - AI-powered document editing
-- `Navigator` - Natural language navigation
-- `TeamList/TeamMemberCreator` - Team management
-- `MarkdownEditor` - AI content generation
+**3. Intelligent Document Generation**  
+Our Markdown editor integrates Tambo's generation capabilities, enabling the AI to draft meeting notes, sprint retrospectives, and technical documentation based on your workspace data and simple prompts.
 
-**Tambo Tools** (`lib/tambo.ts`)
-- `get_workspaces` - List all available workspaces
-- `create_workspace` - Generate new workspaces
-- `update_workspace` - Modify workspace settings
-- `delete_workspace` - Remove workspaces
-- `get_tasks` - Query tasks with filters
-- `get_sprints` - Retrieve sprint information
-- `get_epics` - Access epic data
-- `get_pages` - Navigate page hierarchy
-- `get_team_members` - Team roster access
+### Implementation Highlights
 
-### Chat Interface
+- **26+ Custom Components**: From `TaskCreator` to `SprintCard`, each component is registered with Tambo and can be invoked by the AI
+- **10+ Action Tools**: Functions like `get_tasks()`, `create_workspace()`, and `delete_workspace()` provide the AI with workspace manipulation capabilities
+- **Unified Provider**: `TamboProviderWrapper` wraps the entire application, maintaining conversation context across all interactions
+- **Type-Safe Schemas**: Zod validation ensures that AI-generated component props and tool inputs are always valid
 
-Press **⌘K** (Mac) or **Ctrl+K** (Windows) to open the AI assistant:
+## Why Orbit Stands Out
 
-```
-User: "Create a new task for fixing the login bug"
-AI: [Renders TaskCreator component with pre-filled data]
+### Traditional Tools vs. Orbit
 
-User: "Show me all tasks in the current sprint"
-AI: [Uses get_tasks tool to fetch and display results]
+**Traditional Project Management:**
+- Navigate through menus to create tasks
+- Fill out lengthy forms manually
+- Switch between multiple views to find information
+- Repeat the same actions across projects
 
-User: "Draft a sprint retrospective document"
-AI: [Opens MarkdownEditor with AI-generated content]
-```
+**Orbit with Tambo:**
+- Type: *"Create a high-priority task for fixing the login bug, assign to Sarah"*
+- Ask: *"What tasks are due this week?"*
+- Request: *"Draft a sprint retrospective for Sprint 5"*
+- Navigate: *"Show me the backlog"*
 
-The Tambo assistant is **always available** in the bottom-right corner - it understands your workspace context and can perform actions on your behalf.
+### Key Advantages
 
----
+**Natural Language Interface**  
+Perform complex workflows in seconds through conversation. No need to remember where features are located or click through multiple screens.
 
-## 🚀 Quick Start
+**Contextual Intelligence**  
+Tambo understands your workspace structure, current sprint, team members, and project state. It provides relevant suggestions and automates repetitive tasks.
+
+**Flexible Interaction Model**  
+Use the AI when it's faster, use the UI when you prefer visual control. Both approaches work seamlessly together—changes made through AI appear instantly in the interface.
+
+**Extensible Architecture**  
+Adding new capabilities is as simple as registering a new component or tool. The AI automatically learns to use them without requiring interface redesigns.
+
+**Developer-Friendly**  
+Built with Next.js 14, TypeScript, Material-UI, and modern React patterns. The codebase is clean, type-safe, and follows best practices.
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React 19, TypeScript
+- **UI Framework**: Material-UI (MUI), Radix UI primitives
+- **AI Integration**: Tambo AI React SDK
+- **Rich Text Editing**: Tiptap with AI-powered generation
+- **State Management**: Zustand
+- **Styling**: Tailwind CSS 4
+- **Validation**: Zod schemas
+- **Animations**: Framer Motion
+
+## Quick Start
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd orbit
+
+# Navigate to web directory
 cd web
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) and start creating your first workspace—try asking the AI assistant for help!
 
----
+## Documentation
 
-## �️ Tech Stack
+- **[User Guide](./docs/user-guide.md)** - Complete guide for using Orbit effectively
+- **[Tambo Documentation](https://docs.tambo.co)** - Learn more about Tambo AI capabilities
 
-- **Framework**: Next.js 16 with App Router + Turbopack
-- **Language**: TypeScript
-- **UI**: Material-UI (MUI) + Lucide Icons
-- **State**: Zustand with persistence
-- **AI Platform**: **[Tambo](https://docs.tambo.co)** (`@tambo-ai/react` + `@tambo-ai/typescript-sdk`)
-- **Styling**: Atlassian Design System (JIRA-inspired)
-
----
-
-## 📂 Project Structure
+## Project Structure
 
 ```
-web/
-├── app/
-│   ├── [workspaceId]/         # Workspace routes
-│   │   ├── backlog/           # Backlog management
-│   │   ├── sprints/           # Sprint planning
-│   │   ├── epics/             # Epic roadmapping
-│   │   ├── bugs/              # Bug tracking
-│   │   ├── reports/           # Analytics
-│   │   └── team/              # Team management
-│   └── page.tsx               # Landing page
-├── components/
-│   ├── tambo/                 # 🤖 Tambo AI components
-│   │   ├── task-components.tsx
-│   │   ├── planning-components.tsx
-│   │   ├── structure-components.tsx
-│   │   ├── team-components.tsx
-│   │   ├── workspace-components.tsx
-│   │   ├── markdown-editor.tsx
-│   │   ├── navigator.tsx
-│   │   └── message-thread-collapsible.tsx
-│   ├── layout/                # UI structure
-│   └── analytics/             # Reports & charts
-└── lib/
-    ├── tambo.ts               # 🤖 Tambo config & tools
-    ├── store.ts               # Zustand state
-    └── thread-hooks.ts        # Tambo thread management
+orbit/
+├── web/                      # Next.js application
+│   ├── app/                  # App router pages
+│   ├── components/
+│   │   ├── tambo/           # AI-integrated components (26+ files)
+│   │   └── ui/              # Base UI components
+│   ├── lib/
+│   │   ├── tambo.ts         # Central Tambo configuration
+│   │   └── store.ts         # Zustand state management
+│   └── ...
+└── docs/                     # Documentation
 ```
 
----
+## License
 
-## 🤖 Extending Tambo Integration
-
-### Adding New Components
-
-```typescript
-// lib/tambo.ts
-export const components: TamboComponent[] = [
-  {
-    name: "MyCustomComponent",
-    description: "Your component description for AI",
-    component: MyCustomComponent,
-    propsSchema: z.object({
-      myProp: z.string().describe("What this prop does")
-    }),
-  },
-  // ... existing components
-];
-```
-
-### Adding New Tools
-
-```typescript
-// lib/tambo.ts
-export const tools: TamboTool[] = [
-  {
-    name: "my_custom_action",
-    description: "What this action does",
-    tool: async ({ input }) => {
-      const state = useAppStore.getState();
-      // Your logic here
-      return result;
-    },
-    inputSchema: z.object({ input: z.string() }),
-    outputSchema: z.string(),
-  },
-  // ... existing tools
-];
-```
-
-Learn more: **[Tambo Documentation](https://docs.tambo.co)**
-
----
-
-## 🎯 Why Tambo?
-
-Traditional project management tools require clicking through menus and forms. **Tambo** lets you:
-
-- ✅ **Work naturally** - Just describe what you want in plain English
-- ✅ **Save time** - AI handles repetitive tasks automatically
-- ✅ **Stay in flow** - No context switching between tools
-- ✅ **Extend easily** - Add custom components and tools
-
-**Example**: Instead of:
-1. Click "Create Task"
-2. Fill in title field
-3. Fill in description field
-4. Select assignee from dropdown
-5. Click "Save"
-
-Just say: *"Create a task for implementing authentication and assign it to Sarah"*
-
----
-
-## 📖 Learn More
-
-- **Tambo Docs**: [https://docs.tambo.co](https://docs.tambo.co)
-- **Tambo React**: [@tambo-ai/react](https://www.npmjs.com/package/@tambo-ai/react)
-- **Tambo SDK**: [@tambo-ai/typescript-sdk](https://www.npmjs.com/package/@tambo-ai/typescript-sdk)
-
----
-
-## 📝 Environment Variables
-
-```bash
-# web/.env
-NEXT_PUBLIC_TAMBO_API_KEY=your_tambo_api_key_here
-```
-
-Get your API key at [tambo.co](https://tambo.co)
-
----
-
-## � Deployment
-
-Optimized for **Vercel** with configuration in `web/vercel.json`:
-
-```bash
-vercel deploy
-```
-
----
-
-## � License
-
-MIT License - Free to use and modify
-
----
-
-**Built with ❤️ and [Tambo AI](https://tambo.co)** - Making project management intelligent and conversational.
+This project is built with Tambo AI. Visit [docs.tambo.co](https://docs.tambo.co) to learn more about building AI-native applications.

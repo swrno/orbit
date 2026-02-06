@@ -451,52 +451,30 @@ export default function Sidebar({ className }: { className?: string }) {
                         </Box>
                     </Box>
 
-                    {/* Add View / Group Action */}
+                    {/* Add Group Action */}
                     <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 600, color: '#6B778C' }}>
                             VIEWS
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                             <Box
-                                onClick={() => setCreateGroupOpen(true)}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: '3px',
-                                    cursor: 'pointer',
-                                    color: '#6B778C',
-                                    '&:hover': {
-                                        bgcolor: '#DEEBFF',
-                                        color: '#0052CC'
-                                    }
-                                }}
-                                title="Add Group"
-                            >
-                                <Layers size={14} />
-                            </Box>
-                            <Box
-                                onClick={handleAddClick}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: '3px',
-                                    cursor: 'pointer',
-                                    color: '#6B778C',
-                                    '&:hover': {
-                                        bgcolor: '#DEEBFF',
-                                        color: '#0052CC'
-                                    }
-                                }}
-                                title="Add View"
-                            >
-                                <Plus size={16} />
-                            </Box>
+                        <Box
+                            onClick={() => setCreateGroupOpen(true)}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 24,
+                                height: 24,
+                                borderRadius: '3px',
+                                cursor: 'pointer',
+                                color: '#6B778C',
+                                '&:hover': {
+                                    bgcolor: '#DEEBFF',
+                                    color: '#0052CC'
+                                }
+                            }}
+                            title="Add Group"
+                        >
+                            <Plus size={16} />
                         </Box>
                     </Box>
 
