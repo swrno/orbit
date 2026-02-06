@@ -1,10 +1,10 @@
-# ForgeAI - Enterprise Agile Project Management Platform
+# Orbit AI Workspace - Enterprise Agile Project Management Platform
 
 > **Built for Hackathon**: Complete JIRA-like agile workflow implementation with production-ready features
 
 ## 🎯 Overview
 
-ForgeAI is a modern, enterprise-grade agile project management platform that provides complete workflow coverage from strategic planning to tactical execution. Built with the same workflows and best practices used by teams at companies like Atlassian, Linear, and Monday.com.
+Orbit AI Workspace is a modern, enterprise-grade agile project management platform that provides complete workflow coverage from strategic planning to tactical execution. Built with the same workflows and best practices used by teams at companies like Atlassian, Linear, and Monday.com.
 
 ---
 
@@ -351,7 +351,7 @@ Average Velocity: ~29 pts/sprint
 
 ---
 
-## 🏆 Why ForgeAI?
+## 🏆 Why Orbit AI Workspace?
 
 ### Compared to JIRA
 - ✅ **Simpler**: Less complexity, faster to learn
@@ -414,7 +414,7 @@ web/
 ## 🎬 Demo Script (For Hackathon)
 
 ### 1. Introduction (30 seconds)
-"ForgeAI is an enterprise agile project management platform with complete workflow coverage from backlog to delivery."
+"Orbit AI Workspace is an enterprise agile project management platform with complete workflow coverage from backlog to delivery."
 
 ### 2. Show Backlog (1 minute)
 - Navigate to Backlog
@@ -497,4 +497,4 @@ Built by a senior software engineer following industry best practices for agile 
 
 ---
 
-**ForgeAI - Ship Better Software, Faster** 🚀
+**Orbit AI Workspace - Ship Better Software, Faster** 🚀

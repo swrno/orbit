@@ -201,7 +201,7 @@ export default function GetStartedPage() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box>
                             <Typography variant="h3" fontWeight={500} gutterBottom sx={{ color: '#172B4D' }}>
-                                Getting Started with ForgeAI
+                                Getting Started with Orbit AI Workspace
                             </Typography>
                             <Typography variant="body1" sx={{ color: '#42526E' }}>
                                 Your complete guide to agile project management

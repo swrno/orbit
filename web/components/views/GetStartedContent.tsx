@@ -198,7 +198,7 @@ export default function GetStartedContent() {
             <Container maxWidth="lg">
                 <Box sx={{ mb: 6 }}>
                     <Typography variant="h4" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>
-                        Getting Started with ForgeAI
+                        Getting Started with Orbit AI Workspace
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#42526E' }}>
                         Your complete guide to agile project management

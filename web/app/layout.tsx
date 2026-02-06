@@ -18,7 +18,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ForgeAI Workspace",
+  title: "Orbit AI Workspace",
   description: "Intelligent Project Management",
 };
 

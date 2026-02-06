@@ -56,7 +56,7 @@ export default function HomePage() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Zap size={28} color="#0052CC" />
               <Typography variant="h5" fontWeight={600} sx={{ color: '#172B4D' }}>
-                ForgeAI
+                Orbit AI Workspace
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -299,7 +299,7 @@ export default function HomePage() {
               Start Your First Sprint Today
             </Typography>
             <Typography variant="body1" sx={{ mb: 4, color: '#42526E' }}>
-              Join teams using ForgeAI to deliver better software, faster
+              Join teams using Orbit AI Workspace to deliver better software, faster
             </Typography>
             <Link href="/dashboard" style={{ textDecoration: 'none' }}>
               <Button
@@ -339,7 +339,7 @@ export default function HomePage() {
               </Typography>
             </Box>
             <Typography variant="body2" sx={{ color: '#6B778C' }}>
-              © 2026 ForgeAI. Built for agile teams.
+              © 2026 Orbit AI Workspace. Built for agile teams.
             </Typography>
           </Box>
         </Container>

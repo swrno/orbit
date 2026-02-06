@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore, Workspace } from "@/lib/store";
-import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star } from "lucide-react";
+import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
@@ -15,14 +15,28 @@ import {
   IconButton,
   Chip,
   AppBar,
-  Toolbar
+  Toolbar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from "@mui/material";
 
 export default function Dashboard() {
-  const { workspaces, createWorkspace, selectWorkspace } = useAppStore();
+  const { workspaces, createWorkspace, selectWorkspace, updateWorkspace, deleteWorkspace } = useAppStore();
   const router = useRouter();
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; workspaceId: string } | null>(null);
+  const [renameDialog, setRenameDialog] = useState<{ open: boolean; workspaceId: string; name: string }>({
+    open: false,
+    workspaceId: "",
+    name: ""
+  });
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +50,45 @@ export default function Dashboard() {
   const handleSelect = (id: string) => {
     selectWorkspace(id);
     router.push(`/${id}`);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, workspaceId: string) => {
+    event.stopPropagation();
+    setMenuAnchor({ element: event.currentTarget, workspaceId });
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  const handleRenameClick = () => {
+    if (menuAnchor) {
+      const workspace = workspaces.find(w => w.id === menuAnchor.workspaceId);
+      if (workspace) {
+        setRenameDialog({ open: true, workspaceId: workspace.id, name: workspace.title });
+      }
+    }
+    handleMenuClose();
+  };
+
+  const handleRenameSubmit = () => {
+    if (renameDialog.name.trim()) {
+      updateWorkspace(renameDialog.workspaceId, { 
+        title: renameDialog.name, 
+        name: renameDialog.name 
+      });
+      setRenameDialog({ open: false, workspaceId: "", name: "" });
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (menuAnchor) {
+      const workspace = workspaces.find(w => w.id === menuAnchor.workspaceId);
+      if (workspace && confirm(`Are you sure you want to delete "${workspace.title}"? This cannot be undone.`)) {
+        deleteWorkspace(menuAnchor.workspaceId);
+      }
+    }
+    handleMenuClose();
   };
 
   return (
@@ -58,7 +111,7 @@ export default function Dashboard() {
               <LayoutGrid size={24} color="white" />
             </Box>
             <Typography variant="h6" fontWeight={600}>
-              ForgeAI
+              Orbit AI Workspace
             </Typography>
           </Box>
         </Toolbar>
@@ -150,9 +203,7 @@ export default function Dashboard() {
                     )}
                     <IconButton
                       size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
+                      onClick={(e) => handleMenuOpen(e, ws.id)}
                     >
                       <MoreVertical size={16} />
                     </IconButton>
@@ -282,6 +333,67 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <RecentActivity />
       </Container>
+
+      {/* Workspace Menu */}
+      <Menu
+        anchorEl={menuAnchor?.element}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+        onClick={(e) => e.stopPropagation()}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleRenameClick}>
+          <ListItemIcon>
+            <Pencil size={16} />
+          </ListItemIcon>
+          <ListItemText>Rename</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <Trash2 size={16} color="currentColor" />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Rename Dialog */}
+      <Dialog 
+        open={renameDialog.open} 
+        onClose={() => setRenameDialog({ open: false, workspaceId: "", name: "" })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Rename Workspace</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Workspace Name"
+            value={renameDialog.name}
+            onChange={(e) => setRenameDialog({ ...renameDialog, name: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRenameSubmit();
+              if (e.key === 'Escape') setRenameDialog({ open: false, workspaceId: "", name: "" });
+            }}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameDialog({ open: false, workspaceId: "", name: "" })}>
+            Cancel
+          </Button>
+          <Button onClick={handleRenameSubmit} variant="contained">
+            Rename
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -269,7 +269,7 @@ const DEFAULT_SPRINTS: Sprint[] = [
 const INITIAL_WORKSPACES: Workspace[] = [
   {
     id: 'ws-1',
-    title: 'ForgeAI',
+    title: 'Orbit AI Workspace',
     key: 'FORGE',
     name: 'My Team',
     color: '#0052CC',

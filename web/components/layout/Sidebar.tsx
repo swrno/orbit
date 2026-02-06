@@ -336,7 +336,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                     <LayoutGrid size={18} color="white" />
                                 </Box>
                                 <Typography variant="h6" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                    ForgeAI
+                                    Orbit AI Workspace
                                 </Typography>
                             </Box>
                         </Link>
@@ -727,7 +727,7 @@ export default function Sidebar({ className }: { className?: string }) {
                     {/* Footer */}
                     <Box sx={{ p: 2, borderTop: '1px solid #DFE1E6' }}>
                         <Typography variant="caption" sx={{ color: '#6B778C', display: 'block', textAlign: 'center' }}>
-                            ForgeAI v1.0
+                            Orbit AI Workspace v1.0
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#6B778C', display: 'block', textAlign: 'center', mt: 0.5 }}>
                             {workspace.name || workspace.title}
