@@ -19,7 +19,7 @@ interface MarkdownEditorProps {
 
 export function MarkdownEditor({ initialContent = "", title }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialContent);
-  const [mode, setMode] = useState<'edit' | 'preview'>('preview'); // Default to preview for AI generation
+  const [mode, setMode] = useState<'edit' | 'preview'>(initialContent ? 'preview' : 'edit'); // Edit if empty, Preview if content exists
   const [isCopied, setIsCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
