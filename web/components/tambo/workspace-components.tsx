@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store";
 import { 
   LayoutGrid, Users, Briefcase, ChevronRight, CheckCircle2,
-  Calendar, Layers, CheckSquare
+  Calendar, Layers, CheckSquare, Trash2, Pencil, Save, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -12,9 +12,10 @@ import { useState } from "react";
 // --- Workspace List ---
 
 export function WorkspaceList() {
-  const { workspaces, currentWorkspaceId, selectWorkspace } = useAppStore();
+  const { workspaces, currentWorkspaceId, selectWorkspace, deleteWorkspace } = useAppStore();
   const router = useRouter();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleSwitch = async (id: string) => {
     setSwitchingId(id);
@@ -22,6 +23,16 @@ export function WorkspaceList() {
     selectWorkspace(id);
     router.push(`/${id}/backlog`);
     setSwitchingId(null);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent switching when deleting
+    if (confirm("Are you sure you want to delete this workspace? This cannot be undone.")) {
+      setDeletingId(id);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      deleteWorkspace(id);
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -38,7 +49,7 @@ export function WorkspaceList() {
              key={ws.id}
              onClick={() => handleSwitch(ws.id)}
              className={cn(
-               "p-3 rounded-md border flex items-center justify-between cursor-pointer transition-all",
+               "p-3 rounded-md border flex items-center justify-between cursor-pointer transition-all group",
                ws.id === currentWorkspaceId
                  ? "bg-primary/5 border-primary shadow-sm"
                  : "bg-background border-border hover:border-primary/50 hover:bg-muted/50"
@@ -49,7 +60,7 @@ export function WorkspaceList() {
                 className="h-10 w-10 rounded-md flex items-center justify-center text-white font-bold shadow-sm"
                 style={{ backgroundColor: ws.color || '#0052CC' }}
               >
-                {ws.name.charAt(0).toUpperCase()}
+                {(ws.name || ws.title || "W").charAt(0).toUpperCase()}
               </div>
               <div>
                  <div className="font-medium text-sm flex items-center gap-2">
@@ -65,12 +76,28 @@ export function WorkspaceList() {
               </div>
             </div>
             
-            <div className="text-muted-foreground">
-               {switchingId === ws.id ? (
-                 <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-               ) : (
-                 <ChevronRight className="h-5 w-5" />
+            <div className="flex items-center gap-2">
+               {ws.id !== currentWorkspaceId && (
+                 <button
+                    onClick={(e) => handleDelete(e, ws.id)}
+                    className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100"
+                    title="Delete Workspace"
+                 >
+                    {deletingId === ws.id ? (
+                        <div className="h-4 w-4 border-2 border-destructive border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <Trash2 className="h-4 w-4" />
+                    )}
+                 </button>
                )}
+
+               <div className="text-muted-foreground w-6 flex justify-center">
+                  {switchingId === ws.id ? (
+                    <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5" />
+                  )}
+               </div>
             </div>
           </div>
         ))}
@@ -86,9 +113,48 @@ interface WorkspaceCardProps {
 }
 
 export function WorkspaceCard({ workspaceId }: WorkspaceCardProps) {
-  const { workspaces, selectWorkspace } = useAppStore();
+  const { workspaces, selectWorkspace, updateWorkspace, deleteWorkspace } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
   const router = useRouter();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleEdit = () => {
+    if (workspace) {
+        setEditName(workspace.name || workspace.title);
+        setIsEditing(true);
+    }
+  };
+
+  const handleSave = () => {
+    if (workspace && editName.trim()) {
+        updateWorkspace(workspace.id, { name: editName, title: editName });
+        setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+     if (!workspace) return;
+     if (workspaces.length <= 1) {
+         alert("You cannot delete the only workspace.");
+         return;
+     }
+     if (confirm(`Are you sure you want to delete workspace "${workspace.name}"?`)) {
+         setDeleting(true);
+         const nextWs = workspaces.find(w => w.id !== workspace.id);
+         await new Promise(resolve => setTimeout(resolve, 800));
+         deleteWorkspace(workspace.id);
+         if (nextWs) {
+             selectWorkspace(nextWs.id);
+             // Let the store update handle the redirect implicitly or we force it:
+             // router.push is imperative, store logic is reactive. 
+             // Ideally store updates currentWorkspaceId, and components react.
+         }
+         // router.refresh() or similar might be needed if strictly routed.
+     }
+  };
 
   if (!workspace) {
     return (
@@ -112,14 +178,47 @@ export function WorkspaceCard({ workspaceId }: WorkspaceCardProps) {
                 className="h-16 w-16 rounded-lg flex items-center justify-center text-white text-2xl font-bold shadow-sm border-4 border-card"
                 style={{ backgroundColor: workspace.color || '#0052CC' }}
               >
-                {workspace.name.charAt(0).toUpperCase()}
+                {(workspace.name || workspace.title || "W").charAt(0).toUpperCase()}
               </div>
-              <div className="px-2 py-1 bg-muted rounded-md text-xs font-medium border border-border">
-                {workspace.plan} Plan
+              <div className="flex items-center gap-2">
+                 {!isEditing && (
+                    <>
+                        <button onClick={handleEdit} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Rename Workspace">
+                            <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={handleDelete} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete Workspace">
+                            {deleting ? <div className="h-4 w-4 border-2 border-destructive border-t-transparent rounded-full animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </button>
+                    </>
+                 )}
+                 <div className="px-2 py-1 bg-muted rounded-md text-xs font-medium border border-border">
+                    {workspace.plan} Plan
+                 </div>
               </div>
          </div>
          
-         <h2 className="text-xl font-bold">{workspace.name}</h2>
+         {isEditing ? (
+            <div className="flex items-center gap-2 mb-2">
+                <input 
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="flex-1 px-2 py-1 text-lg font-bold border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    autoFocus
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSave();
+                        if (e.key === 'Escape') setIsEditing(false);
+                    }}
+                />
+                <button onClick={handleSave} className="p-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                    <Save className="h-4 w-4" />
+                </button>
+                <button onClick={() => setIsEditing(false)} className="p-2 bg-muted text-muted-foreground rounded-md hover:bg-muted/80">
+                    <X className="h-4 w-4" />
+                </button>
+            </div>
+         ) : (
+            <h2 className="text-xl font-bold">{workspace.name}</h2>
+         )}
          <p className="text-sm text-muted-foreground mt-1">Key: <span className="font-mono bg-muted px-1 rounded">{workspace.key}</span></p>
          
          <div className="grid grid-cols-2 gap-3 mt-5">

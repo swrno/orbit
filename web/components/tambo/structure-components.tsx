@@ -13,7 +13,8 @@ import {
   Calendar,
   GanttChartIcon,
   Map,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSelector } from "@/components/tambo/workspace-selector";
@@ -107,6 +108,31 @@ export function PageCreator({ defaultTitle = "" }: PageCreatorProps) {
           }} 
         />
 
+        {groups.length === 0 ? (
+          <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+            <div className="flex items-start gap-2 text-sm">
+              <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium mb-1">No groups available</p>
+                <p className="text-xs text-muted-foreground">You need to create a group first to organize your pages.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                // This would ideally trigger the GroupCreator component
+                // For now, show a message
+                alert("Please use the 'Create Group' option from the sidebar or ask the AI to create a group.");
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors"
+            >
+              <FolderPlus className="h-4 w-4" />
+              Create Group First
+            </button>
+          </div>
+        ) : (
+          <>
+
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Page Title</label>
           <input
@@ -162,6 +188,8 @@ export function PageCreator({ defaultTitle = "" }: PageCreatorProps) {
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Page"}
         </button>
+        </>
+        )}
       </form>
     </div>
   );

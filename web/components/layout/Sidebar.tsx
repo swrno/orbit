@@ -38,6 +38,7 @@ export default function Sidebar({ className }: { className?: string }) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [newViewName, setNewViewName] = useState('');
     const [newViewType, setNewViewType] = useState<PageType>('table');
+    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
 
     // View Management State (Context Menu, Rename, Delete)
     const [contextMenuAnchor, setContextMenuAnchor] = useState<null | HTMLElement>(null);
@@ -75,26 +76,25 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleCreateView = () => {
         handleCloseMenu();
+        // Set default group selection
+        if (targetGroupId) {
+            setSelectedGroupId(targetGroupId);
+        } else if (workspace && workspace.groups.length > 0) {
+            setSelectedGroupId(workspace.groups[0].id);
+        }
         setCreateDialogOpen(true);
     };
 
     const handleCreateConfirm = () => {
-        if (newViewName.trim() && workspaceId) {
-            // If targetGroupId is set, use it. Otherwise, default to the first group.
-            let groupId = targetGroupId;
-            if (!groupId && workspace && workspace.groups.length > 0) {
-                groupId = workspace.groups[0].id;
-            }
+        if (newViewName.trim() && workspaceId && selectedGroupId) {
+            addPage(workspaceId, selectedGroupId, newViewName.trim(), newViewType);
+            setNewViewName('');
+            setCreateDialogOpen(false);
+            setTargetGroupId(null);
+            setSelectedGroupId('');
             
-            if (groupId) {
-                addPage(workspaceId, groupId, newViewName.trim(), newViewType);
-                setNewViewName('');
-                setCreateDialogOpen(false);
-                setTargetGroupId(null);
-                
-                // Navigate to the new page (optimistic)
-                // Note: In a real app we'd wait for ID or use a deterministic ID
-            }
+            // Navigate to the new page (optimistic)
+            // Note: In a real app we'd wait for ID or use a deterministic ID
         }
     };
 
@@ -809,23 +809,6 @@ export default function Sidebar({ className }: { className?: string }) {
                     </Typography>
                 </Box>
 
-                <MenuItem
-                    onClick={() => {
-                        handleCloseMenu();
-                        setCreateGroupOpen(true);
-                    }}
-                    sx={{ py: 1 }}
-                >
-                    <ListItemIcon><Layers size={18} /></ListItemIcon>
-                    <ListItemText
-                        primary="Create Group"
-                        secondary="Organize views into a new group"
-                        primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                        secondaryTypographyProps={{ variant: 'caption' }}
-                    />
-                </MenuItem>
-                <Divider />
-
                 {viewTypes.map((type) => (
                     <MenuItem
                         key={type.value}
@@ -867,6 +850,26 @@ export default function Sidebar({ className }: { className?: string }) {
                             autoFocus
                         />
 
+                        <FormControl fullWidth sx={{ mb: 3 }}>
+                            <InputLabel>Group</InputLabel>
+                            <Select
+                                value={selectedGroupId}
+                                label="Group"
+                                onChange={(e) => setSelectedGroupId(e.target.value)}
+                            >
+                                {workspace && workspace.groups.map((group) => (
+                                    <MenuItem key={group.id} value={group.id}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Layers size={16} />
+                                            <Typography variant="body2">
+                                                {group.title}
+                                            </Typography>
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
                         <FormControl fullWidth>
                             <InputLabel>View Type</InputLabel>
                             <Select
@@ -900,7 +903,7 @@ export default function Sidebar({ className }: { className?: string }) {
                     <Button
                         onClick={handleCreateConfirm}
                         variant="contained"
-                        disabled={!newViewName.trim()}
+                        disabled={!newViewName.trim() || !selectedGroupId}
                         sx={{
                             bgcolor: '#0052CC',
                             color: 'white',
