@@ -182,29 +182,10 @@ export const components: TamboComponent[] = [
  */
 export const tools: TamboTool[] = [
   {
-    name: "get_workspaces",
-    description: "Get a list of all workspaces. Use this to see available workspaces.",
-    tool: async () => {
-      const workspaces = useAppStore.getState().workspaces;
-      return workspaces.map(w => ({
-        id: w.id,
-        title: w.title,
-        key: w.key,
-        plan: w.plan
-      }));
-    },
-    inputSchema: z.object({}),
-    outputSchema: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      key: z.string(),
-      plan: z.string()
-    })),
-  },
-  {
     name: "get_team_members",
     description: "Get a list of all team members in the current workspace.",
     tool: async () => {
+      // Lazy access to store to avoid module-level initialization issues
       const state = useAppStore.getState();
       const workspace = state.workspaces.find(w => w.id === state.currentWorkspaceId);
       return workspace?.teamMembers.map(m => ({
@@ -226,6 +207,7 @@ export const tools: TamboTool[] = [
     name: "get_workspaces",
     description: "Get a list of all workspaces.",
     tool: async () => {
+      // Lazy access to store to avoid module-level initialization issues
       const state = useAppStore.getState();
       return state.workspaces.map(w => ({
         id: w.id,

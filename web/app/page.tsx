@@ -195,9 +195,9 @@ export default function HomePage() {
             </Typography>
           </Box>
 
-          <Grid container spacing={3}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
             {features.map((feature, idx) => (
-              <Grid size={{ xs: 12, md: 4 }} key={idx}>
+              <Box key={idx}>
                 <Paper
                   sx={{
                     p: 4,
@@ -235,9 +235,9 @@ export default function HomePage() {
                     {feature.description}
                   </Typography>
                 </Paper>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
         </Container>
       </Box>
 

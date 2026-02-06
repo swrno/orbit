@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { type Suggestion } from "@tambo-ai/react";
 import { type VariantProps } from "class-variance-authority";
 import { XIcon } from "lucide-react";
-import { Collapsible } from "radix-ui";
+import * as Collapsible from "@radix-ui/react-collapsible";
 import * as React from "react";
 
 /**
