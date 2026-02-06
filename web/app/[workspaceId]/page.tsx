@@ -65,7 +65,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
             <Container maxWidth="xl" sx={{ py: 4 }}>
                 {/* Stats */}
                 <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Paper sx={{ p: 3, bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none' }}>
                             <Typography variant="h3" fontWeight={600} sx={{ color: '#0052CC', mb: 1 }}>
                                 {workspace.tasks?.length || 0}
@@ -75,7 +75,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
                             </Typography>
                         </Paper>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Paper sx={{ p: 3, bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none' }}>
                             <Typography variant="h3" fontWeight={600} sx={{ color: '#00875A', mb: 1 }}>
                                 {completedTasks.length}
@@ -85,7 +85,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
                             </Typography>
                         </Paper>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Paper sx={{ p: 3, bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none' }}>
                             <Typography variant="h3" fontWeight={600} sx={{ color: '#FF8B00', mb: 1 }}>
                                 {inProgressTasks.length}
@@ -103,7 +103,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
                 </Typography>
                 <Grid container spacing={3}>
                     {quickLinks.map((link, idx) => (
-                        <Grid item xs={12} md={4} key={idx}>
+                        <Grid size={{ xs: 12, md: 4 }} key={idx}>
                             <Link href={link.path} style={{ textDecoration: 'none' }}>
                                 <Paper
                                     sx={{

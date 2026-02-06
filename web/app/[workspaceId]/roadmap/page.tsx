@@ -47,7 +47,7 @@ export default function RoadmapPage({ params }: { params: Promise<{ workspaceId:
 
     // Epic progress calculation
     const getEpicProgress = (epicId: string) => {
-        const stories = workspace.tasks.filter(t => t.epic === epicId);
+        const stories = workspace.tasks.filter(t => t.epicId === epicId);
         const completed = stories.filter(t => t.status === 'Done').length;
         return stories.length > 0 ? (completed / stories.length) * 100 : 0;
     };
@@ -152,7 +152,7 @@ export default function RoadmapPage({ params }: { params: Promise<{ workspaceId:
                             {workspace.epics && workspace.epics.length > 0 ? (
                                 workspace.epics.map((epic, epicIdx) => {
                                     const progress = getEpicProgress(epic.id);
-                                    const storyCount = workspace.tasks.filter(t => t.epic === epic.id).length;
+                                    const storyCount = workspace.tasks.filter(t => t.epicId === epic.id).length;
 
                                     return (
                                         <Box
@@ -278,10 +278,10 @@ export default function RoadmapPage({ params }: { params: Promise<{ workspaceId:
                             {workspace.epics && workspace.epics.length > 0 ? (
                                 workspace.epics.map((epic) => {
                                     const progress = getEpicProgress(epic.id);
-                                    const stories = workspace.tasks.filter(t => t.epic === epic.id);
+                                    const stories = workspace.tasks.filter(t => t.epicId === epic.id);
 
                                     return (
-                                        <Grid item xs={12} md={6} lg={4} key={epic.id}>
+                                        <Grid size={{ xs: 12, md: 6, lg: 4 }} key={epic.id}>
                                             <Card sx={{ border: '1px solid #DFE1E6', boxShadow: 'none', height: '100%' }}>
                                                 <CardContent>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -363,7 +363,7 @@ export default function RoadmapPage({ params }: { params: Promise<{ workspaceId:
                                     );
                                 })
                             ) : (
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Paper sx={{ p: 8, textAlign: 'center', bgcolor: 'white', border: '1px solid #DFE1E6' }}>
                                         <Target size={48} color="#DFE1E6" style={{ marginBottom: 16 }} />
                                         <Typography variant="h6" gutterBottom sx={{ color: '#42526E' }}>

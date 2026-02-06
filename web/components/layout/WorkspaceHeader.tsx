@@ -28,7 +28,6 @@ export default function WorkspaceHeader() {
                 description: taskDescription || undefined,
                 status: 'Todo',
                 priority: 'Medium',
-                type: 'Task'
             });
             setTaskTitle('');
             setTaskDescription('');

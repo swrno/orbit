@@ -374,7 +374,7 @@ export default function GetStartedPage() {
                                     </Typography>
                                     <Grid container spacing={2}>
                                         {concept.keyReports.map((report, idx) => (
-                                            <Grid item xs={12} md={6} key={idx}>
+                                            <Grid size={{ xs: 12, md: 6 }} key={idx}>
                                                 <Card sx={{ border: '1px solid #DFE1E6', boxShadow: 'none' }}>
                                                     <CardContent>
                                                         <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>

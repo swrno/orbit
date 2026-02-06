@@ -67,7 +67,16 @@ export default function GanttChartPage({ params }: { params: Promise<{ workspace
         const groups: { [key: string]: any[] } = {};
 
         workspace.tasks.forEach(task => {
-            const groupKey = task.epic || task.sprint || 'Unassigned';
+            let groupKey = 'Unassigned';
+            
+            if (task.epicId) {
+                const epic = workspace.epics.find(e => e.id === task.epicId);
+                if (epic) groupKey = epic.name;
+            } else if (task.sprintId && task.sprintId !== 'backlog') {
+                const sprint = workspace.sprints.find(s => s.id === task.sprintId);
+                if (sprint) groupKey = sprint.name;
+            }
+
             if (!groups[groupKey]) {
                 groups[groupKey] = [];
             }

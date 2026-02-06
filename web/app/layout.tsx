@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google"; 
 import "./globals.css";
-import { TamboWrapper } from "@/components/ai/TamboWrapper";
+
 import ThemeRegistry from "@/components/layout/ThemeRegistry";
 
 const inter = Inter({
@@ -30,9 +30,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
       <body className="bg-background text-foreground">
         <ThemeRegistry>
-          <TamboWrapper>
             {children}
-          </TamboWrapper>
         </ThemeRegistry>
       </body>
     </html>

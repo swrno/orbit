@@ -197,7 +197,7 @@ export default function HomePage() {
 
           <Grid container spacing={3}>
             {features.map((feature, idx) => (
-              <Grid item xs={12} md={4} key={idx}>
+              <Grid size={{ xs: 12, md: 4 }} key={idx}>
                 <Paper
                   sx={{
                     p: 4,
