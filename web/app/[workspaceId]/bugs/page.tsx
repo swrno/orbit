@@ -46,6 +46,7 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
     const [newBugDesc, setNewBugDesc] = useState('');
     const [newBugPriority, setNewBugPriority] = useState<TaskPriority>('Medium');
     const [newBugReporter, setNewBugReporter] = useState('');
+    const [newBugAssignee, setNewBugAssignee] = useState('');
 
     if (!workspace) return null;
 
@@ -99,6 +100,7 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
             status: 'Todo',
             labels: ['l-1'], // Bug label
             reporter: newBugReporter || 'System',
+            owner: newBugAssignee || undefined,
         });
 
         setCreateDialogOpen(false);
@@ -106,6 +108,7 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
         setNewBugDesc('');
         setNewBugPriority('Medium');
         setNewBugReporter('');
+        setNewBugAssignee('');
     };
 
     const getDaysUntilResolution = (dueDate?: string) => {
@@ -416,20 +419,20 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
                             onChange={(e) => setNewBugDesc(e.target.value)}
                             placeholder="Steps to reproduce, expected behavior, actual behavior..."
                         />
+                        <FormControl fullWidth>
+                            <InputLabel>Priority</InputLabel>
+                            <Select
+                                value={newBugPriority}
+                                onChange={(e) => setNewBugPriority(e.target.value as TaskPriority)}
+                                label="Priority"
+                            >
+                                <MenuItem value="Low">Low</MenuItem>
+                                <MenuItem value="Medium">Medium</MenuItem>
+                                <MenuItem value="High">High</MenuItem>
+                                <MenuItem value="Critical">Critical</MenuItem>
+                            </Select>
+                        </FormControl>
                         <Box sx={{ display: 'flex', gap: 2 }}>
-                            <FormControl fullWidth>
-                                <InputLabel>Priority</InputLabel>
-                                <Select
-                                    value={newBugPriority}
-                                    onChange={(e) => setNewBugPriority(e.target.value as TaskPriority)}
-                                    label="Priority"
-                                >
-                                    <MenuItem value="Low">Low</MenuItem>
-                                    <MenuItem value="Medium">Medium</MenuItem>
-                                    <MenuItem value="High">High</MenuItem>
-                                    <MenuItem value="Critical">Critical</MenuItem>
-                                </Select>
-                            </FormControl>
                             <TextField
                                 label="Reporter"
                                 fullWidth
@@ -437,6 +440,19 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
                                 onChange={(e) => setNewBugReporter(e.target.value)}
                                 placeholder="Your name"
                             />
+                            <FormControl fullWidth>
+                                <InputLabel>Assignee</InputLabel>
+                                <Select
+                                    value={newBugAssignee}
+                                    onChange={(e) => setNewBugAssignee(e.target.value)}
+                                    label="Assignee"
+                                >
+                                    <MenuItem value="">Unassigned</MenuItem>
+                                    {workspace?.teamMembers.map((member) => (
+                                        <MenuItem key={member.id} value={member.name}>{member.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Box>
                     </Box>
                 </DialogContent>

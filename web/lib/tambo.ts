@@ -14,13 +14,14 @@
  */
 
 import { WorkspaceCreator } from "@/components/tambo/workspace-creator";
-import { TaskCreator, TaskCard, TaskEditor } from "@/components/tambo/task-components";
+import { TaskCreator, TaskCard, TaskEditor, BugReporter } from "@/components/tambo/task-components";
 import { SprintCreator, SprintCard, EpicCreator, EpicCard } from "@/components/tambo/planning-components";
 import { PageCreator, GroupCreator, DocEditor } from "@/components/tambo/structure-components";
 import { Navigator } from "@/components/tambo/navigator";
 import { TeamList, TeamMemberCreator, TeamMemberCard } from "@/components/tambo/team-components";
 import { WorkspaceList, WorkspaceCard } from "@/components/tambo/workspace-components";
 import { MarkdownEditor } from "@/components/tambo/markdown-editor";
+import { Clock, Stopwatch, CountdownTimer } from "@/components/tambo/clock-components";
 
 import type { TamboComponent, TamboTool } from "@tambo-ai/react";
 import { z } from "zod";
@@ -48,6 +49,15 @@ export const components: TamboComponent[] = [
     propsSchema: z.object({
       defaultTitle: z.string().optional().describe("Default title for the task"),
       defaultDescription: z.string().optional().describe("Default description for the task"),
+    }),
+  },
+  {
+    name: "BugReporter",
+    description: "A form to report a bug. Use this when user wants to report a bug or an issue. This component includes fields for reporter and assignee.",
+    component: BugReporter,
+    propsSchema: z.object({
+      defaultTitle: z.string().optional().describe("Default title for the bug"),
+      defaultDescription: z.string().optional().describe("Default description for the bug"),
     }),
   },
   {
@@ -171,6 +181,34 @@ export const components: TamboComponent[] = [
     propsSchema: z.object({
       initialContent: z.string().optional().describe("The content of the document. If the user asks you to write, draft, or generate text, you MUST generate the markdown content yourself and pass it here. Do not return an empty string if the user asked for content."),
       title: z.string().optional().describe("Title of the document/draft."),
+    }),
+  },
+  {
+    name: "Clock",
+    description: "Display a digital clock showing the current time. Use this when the user wants to see the current time, check what time it is, or display a clock.",
+    component: Clock,
+    propsSchema: z.object({
+      timezone: z.string().optional().describe("The timezone to display (default: 'Asia/Kolkata'). Common values: 'America/New_York', 'Europe/London', 'Asia/Tokyo', etc."),
+      format24h: z.boolean().optional().describe("Whether to use 24-hour format (default: true)"),
+      showSeconds: z.boolean().optional().describe("Whether to show seconds (default: true)"),
+      showDate: z.boolean().optional().describe("Whether to show the date (default: true)"),
+    }),
+  },
+  {
+    name: "Stopwatch",
+    description: "A stopwatch component for timing activities. Use this when the user wants to time something, measure duration, or track elapsed time. Supports lap times.",
+    component: Stopwatch,
+    propsSchema: z.object({
+      autoStart: z.boolean().optional().describe("Whether to automatically start the stopwatch (default: false)"),
+    }),
+  },
+  {
+    name: "CountdownTimer",
+    description: "A countdown timer component. Use this when the user wants to set a timer, countdown from a specific duration, or track remaining time.",
+    component: CountdownTimer,
+    propsSchema: z.object({
+      initialMinutes: z.number().optional().describe("Initial minutes for the countdown (default: 5)"),
+      initialSeconds: z.number().optional().describe("Initial seconds for the countdown (default: 0)"),
     }),
   },
 ];

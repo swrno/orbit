@@ -11,7 +11,8 @@ import {
   Calendar,
   Loader2,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Bug
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSelector } from "@/components/tambo/workspace-selector";
@@ -78,7 +79,7 @@ export function TaskCreator({ defaultTitle = "", defaultDescription = "" }: Task
       <div className="p-3 bg-muted/30 border-b border-border">
         <h3 className="font-medium text-sm flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-primary" />
-          New Task
+          New Bug
         </h3>
       </div>
       
@@ -152,6 +153,161 @@ export function TaskCreator({ defaultTitle = "", defaultDescription = "" }: Task
             </>
           ) : (
             "Create Task"
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// --- Bug Reporter ---
+
+interface BugReporterProps {
+  defaultTitle?: string;
+  defaultDescription?: string;
+}
+
+export function BugReporter({ defaultTitle = "", defaultDescription = "" }: BugReporterProps) {
+  const { currentWorkspaceId, addTask, workspaces } = useAppStore();
+  const [title, setTitle] = useState(defaultTitle);
+  const [description, setDescription] = useState(defaultDescription);
+  const [priority, setPriority] = useState<TaskPriority>("Medium");
+  const [reporter, setReporter] = useState<string>("");
+  const [assignee, setAssignee] = useState<string>("");
+  const [targetWorkspaceId, setTargetWorkspaceId] = useState(currentWorkspaceId || (workspaces[0]?.id ?? ""));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const workspace = workspaces.find(w => w.id === targetWorkspaceId);
+  const teamMembers = workspace?.teamMembers || [];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetWorkspaceId || !title.trim()) return;
+
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 600)); // UX delay
+
+    addTask(targetWorkspaceId, {
+      title,
+      description,
+      status: "Todo",
+      priority,
+      reporter: reporter || "System",
+      owner: assignee || undefined,
+      labels: ['l-1'], // Bug label
+    });
+
+    setIsSubmitting(false);
+    setIsSuccess(true);
+  };
+
+  if (isSuccess) {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col items-center text-green-700 animate-in fade-in zoom-in duration-300">
+        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+          <CheckCircle2 className="h-6 w-6" />
+        </div>
+        <p className="font-medium">Bug Reported Successfully!</p>
+        <button 
+          onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setReporter(""); setAssignee(""); }}
+          className="text-xs underline mt-2 hover:text-green-800"
+        >
+          Report another
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm overflow-hidden">
+      <div className="p-3 bg-muted/30 border-b border-border">
+        <h3 className="font-medium text-sm flex items-center gap-2">
+          <Bug className="h-4 w-4 text-red-500" />
+          Report Bug
+        </h3>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="p-4 space-y-3">
+        <WorkspaceSelector 
+          value={targetWorkspaceId} 
+          onChange={setTargetWorkspaceId} 
+        />
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Bug Title</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Describe the issue..."
+            className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            autoFocus
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Steps to reproduce, expected behavior, actual behavior..."
+            rows={3}
+            className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Priority</label>
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as TaskPriority)}
+            className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
+          >
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Reporter</label>
+            <input
+              value={reporter}
+              onChange={(e) => setReporter(e.target.value)}
+              placeholder="Your name"
+              className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Assignee</label>
+            <select
+              value={assignee}
+              onChange={(e) => setAssignee(e.target.value)}
+              className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
+            >
+              <option value="">Unassigned</option>
+              {teamMembers.map((member) => (
+                <option key={member.id} value={member.name}>{member.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={!title.trim() || isSubmitting}
+          className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Reporting...
+            </>
+          ) : (
+            "Report Bug"
           )}
         </button>
       </form>
