@@ -279,7 +279,7 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
                 <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Status</Typography>
                 {['Planned', 'Active', 'Completed'].map(status => {
                   const count = sprints.filter(s => s.activeSprintStatus === status).length;
-                  const colors = { Planned: '#fdab3d', Active: '#00c875', Completed: '#c4c4c4' };
+                  const colors: Record<string, string> = { Planned: '#fdab3d', Active: '#00c875', Completed: '#c4c4c4' };
                   return (
                     <Box key={status} sx={{ mb: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>

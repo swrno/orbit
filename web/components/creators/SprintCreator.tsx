@@ -64,7 +64,7 @@ export function SprintCreator({ open, onClose, onSubmit, initialData }: SprintCr
       email: user?.email || 'user@example.com'
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       owner: initialData && initialData.owner ? initialData.owner : ownerData
     };

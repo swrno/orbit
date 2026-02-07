@@ -70,7 +70,7 @@ export function RetrospectiveCreator({ open, onClose, onSubmit, initialData }: R
       avatar: user?.photoURL || ''
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       // If editing, keep original owner unless it was empty/invalid
       owner: initialData ? formData.owner : (formData.owner.id ? formData.owner : userData),

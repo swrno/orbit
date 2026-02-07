@@ -62,7 +62,7 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       // If editing, keep original reporter unless it was empty/invalid
       reporter: initialData ? formData.reporter : {

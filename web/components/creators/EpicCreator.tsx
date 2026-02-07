@@ -68,7 +68,7 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
       email: user?.email || 'user@example.com'
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       owner: initialData ? formData.owner : (formData.owner.id ? formData.owner : ownerData)
     };

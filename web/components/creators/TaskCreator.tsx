@@ -136,7 +136,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
       email: user?.email || 'user@example.com'
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       owner: initialData ? formData.owner : (formData.owner.id ? formData.owner : ownerData)
     };
