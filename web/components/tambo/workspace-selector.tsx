@@ -5,19 +5,15 @@ import { Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceSelectorProps {
-  value: string;
-  onChange: (value: string) => void;
   label?: string;
   className?: string;
 }
 
-export function WorkspaceSelector({ 
-  value, 
-  onChange, 
+export function WorkspaceSelector({
   label = "Workspace",
-  className 
+  className
 }: WorkspaceSelectorProps) {
-  const { workspaces } = useAppStore();
+  const { workspaces, currentWorkspaceId, selectWorkspace } = useAppStore();
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -27,17 +23,17 @@ export function WorkspaceSelector({
       </label>
       <div className="relative">
         <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={currentWorkspaceId || ""}
+          onChange={(e) => selectWorkspace(e.target.value)}
           className="w-full px-2 py-1.5 pl-8 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
         >
           {workspaces.map((w) => (
             <option key={w.id} value={w.id}>{w.name}</option>
           ))}
         </select>
-        <div 
+        <div
           className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 rounded-full"
-          style={{ backgroundColor: workspaces.find(w => w.id === value)?.color || '#0052CC' }}
+          style={{ backgroundColor: workspaces.find(w => w.id === currentWorkspaceId)?.color || '#0052CC' }}
         />
       </div>
     </div>

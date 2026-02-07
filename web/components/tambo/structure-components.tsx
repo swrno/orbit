@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useAppStore, PageType, Group } from "@/lib/store";
-import { 
-  FilePlus, 
-  FolderPlus, 
-  Loader2, 
-  Layout, 
-  List, 
-  FileText, 
-  BarChart, 
+import {
+  FilePlus,
+  FolderPlus,
+  Loader2,
+  Layout,
+  List,
+  FileText,
+  BarChart,
   Calendar,
   GanttChartIcon,
   Map,
@@ -53,14 +53,14 @@ export function PageCreator({ defaultTitle = "" }: PageCreatorProps) {
 
     // If no group exists or selected, create a default "General" group first
     if (!targetGroupId) {
-       // Fallback logic handled by UI validation or store if needed
+      // Fallback logic handled by UI validation or store if needed
     }
 
     if (targetGroupId) {
-        addPage(targetWorkspaceId, targetGroupId, title, type);
-        setIsSuccess(true);
+      addPage(targetWorkspaceId, targetGroupId, title, type);
+      setIsSuccess(true);
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -80,7 +80,7 @@ export function PageCreator({ defaultTitle = "" }: PageCreatorProps) {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col items-center text-green-700 animate-in fade-in zoom-in duration-300">
         <FilePlus className="h-8 w-8 text-green-600 mb-2" />
         <p className="font-medium">Page Created!</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setTitle(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -93,20 +93,14 @@ export function PageCreator({ defaultTitle = "" }: PageCreatorProps) {
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm overflow-hidden">
       <div className="p-3 bg-muted/30 border-b border-border">
-         <h3 className="font-medium text-sm flex items-center gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-2">
           <FilePlus className="h-4 w-4 text-primary" />
           Create New Page
         </h3>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={(newId) => {
-            setTargetWorkspaceId(newId);
-            setGroupId(""); // Reset group on workspace change
-          }} 
-        />
+        <WorkspaceSelector />
 
         {groups.length === 0 ? (
           <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
@@ -133,62 +127,62 @@ export function PageCreator({ defaultTitle = "" }: PageCreatorProps) {
         ) : (
           <>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Page Title</label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Q3 Roadmap"
-            className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-            autoFocus
-          />
-        </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Page Title</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Q3 Roadmap"
+                className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                autoFocus
+              />
+            </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Type</label>
-          <div className="grid grid-cols-4 gap-2">
-            {(Object.keys(typeIcons) as PageType[]).map((t) => (
-               <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 p-2 rounded-md border transition-all text-[10px] capitalize",
-                  type === t 
-                    ? "bg-primary/10 border-primary text-primary font-medium" 
-                    : "bg-background border-border hover:bg-muted text-muted-foreground"
-                )}
-                title={t}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Type</label>
+              <div className="grid grid-cols-4 gap-2">
+                {(Object.keys(typeIcons) as PageType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setType(t)}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1 p-2 rounded-md border transition-all text-[10px] capitalize",
+                      type === t
+                        ? "bg-primary/10 border-primary text-primary font-medium"
+                        : "bg-background border-border hover:bg-muted text-muted-foreground"
+                    )}
+                    title={t}
+                  >
+                    {typeIcons[t]}
+                    <span className="truncate w-full text-center">{t}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Folder / Group</label>
+              <select
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
               >
-                {typeIcons[t]}
-                <span className="truncate w-full text-center">{t}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+                {groups.length === 0 && <option value="">No groups found. Create one first.</option>}
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.title}</option>
+                ))}
+              </select>
+            </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Folder / Group</label>
-           <select
-              value={groupId}
-              onChange={(e) => setGroupId(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
+            <button
+              type="submit"
+              disabled={!title.trim() || isSubmitting || !groupId}
+              className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
             >
-               {groups.length === 0 && <option value="">No groups found. Create one first.</option>}
-               {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.title}</option>
-              ))}
-            </select>
-        </div>
-
-        <button
-          type="submit"
-          disabled={!title.trim() || isSubmitting || !groupId}
-           className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
-        >
-          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Page"}
-        </button>
-        </>
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Page"}
+            </button>
+          </>
         )}
       </form>
     </div>
@@ -219,10 +213,10 @@ export function GroupCreator() {
 
   if (isSuccess) {
     return (
-       <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col items-center text-green-700 animate-in fade-in zoom-in duration-300">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col items-center text-green-700 animate-in fade-in zoom-in duration-300">
         <FolderPlus className="h-8 w-8 text-green-600 mb-2" />
         <p className="font-medium">Group Created!</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setTitle(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -235,16 +229,13 @@ export function GroupCreator() {
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm overflow-hidden">
       <div className="p-3 bg-muted/30 border-b border-border">
-         <h3 className="font-medium text-sm flex items-center gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-2">
           <FolderPlus className="h-4 w-4 text-primary" />
           New Group/Folder
         </h3>
       </div>
-       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={setTargetWorkspaceId} 
-        />
+      <form onSubmit={handleSubmit} className="p-4 space-y-3">
+        <WorkspaceSelector />
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Group Name</label>
           <input
@@ -258,7 +249,7 @@ export function GroupCreator() {
         <button
           type="submit"
           disabled={!title.trim() || isSubmitting}
-           className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
+          className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Group"}
         </button>
@@ -275,13 +266,13 @@ interface DocEditorProps {
 
 export function DocEditor({ pageId }: DocEditorProps) {
   const { currentWorkspaceId, workspaces, updatePage } = useAppStore();
-  
+
   // Helper to find page and its group
   const findPageData = () => {
     if (!pageId) return null;
     const ws = workspaces.find(w => w.id === currentWorkspaceId);
     if (!ws) return null;
-    
+
     for (const group of ws.groups) {
       const page = group.pages.find(p => p.id === pageId);
       if (page) return { page, group };
@@ -290,7 +281,7 @@ export function DocEditor({ pageId }: DocEditorProps) {
   };
 
   const data = findPageData();
-  
+
   const [content, setContent] = useState(data?.page.content || "");
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -308,13 +299,13 @@ export function DocEditor({ pageId }: DocEditorProps) {
   // but since we need a page to save to, we might just show a placeholder or let them select.
   // For now, simpler: if no pageId, we can't edit.
   if (!pageId) {
-      return (
-        <div className="p-4 rounded-md bg-muted text-sm text-center">
-            <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-medium">No document selected</p>
-            <p className="text-xs text-muted-foreground mt-1">Please specify which document you want to edit.</p>
-        </div>
-      );
+    return (
+      <div className="p-4 rounded-md bg-muted text-sm text-center">
+        <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+        <p className="font-medium">No document selected</p>
+        <p className="text-xs text-muted-foreground mt-1">Please specify which document you want to edit.</p>
+      </div>
+    );
   }
 
   // Ensure data exists before destructuring (TypeScript safety)
@@ -324,12 +315,12 @@ export function DocEditor({ pageId }: DocEditorProps) {
 
   const handleSave = async () => {
     if (!currentWorkspaceId) return;
-    
+
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     updatePage(currentWorkspaceId, group.id, page.id, { content });
-    
+
     setIsSaving(false);
     setLastSaved(new Date());
   };
@@ -351,7 +342,7 @@ export function DocEditor({ pageId }: DocEditorProps) {
           </span>
         )}
       </div>
-      
+
       <div className="p-4 space-y-3">
         <textarea
           value={content}
@@ -362,7 +353,7 @@ export function DocEditor({ pageId }: DocEditorProps) {
           placeholder="Start writing..."
           className="w-full h-48 p-3 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none font-mono leading-relaxed"
         />
-        
+
         <div className="flex items-center justify-between">
           <p className="text-[10px] text-muted-foreground">Markdown supported</p>
           <button

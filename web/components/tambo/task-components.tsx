@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useAppStore, TaskStatus, TaskPriority, Task, TeamMember } from "@/lib/store";
-import { 
-  CheckCircle2, 
-  Circle, 
-  Clock, 
-  AlertCircle, 
-  User, 
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  AlertCircle,
+  User,
   Calendar,
   Loader2,
   ChevronRight,
@@ -64,7 +64,7 @@ export function TaskCreator({ defaultTitle = "", defaultDescription = "" }: Task
           <CheckCircle2 className="h-6 w-6" />
         </div>
         <p className="font-medium">Task Created Successfully!</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -82,12 +82,9 @@ export function TaskCreator({ defaultTitle = "", defaultDescription = "" }: Task
           New Bug
         </h3>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={setTargetWorkspaceId} 
-        />
+        <WorkspaceSelector />
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Title</label>
@@ -125,7 +122,7 @@ export function TaskCreator({ defaultTitle = "", defaultDescription = "" }: Task
               <option value="Critical">Critical</option>
             </select>
           </div>
-          
+
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Assignee</label>
             <select
@@ -209,7 +206,7 @@ export function BugReporter({ defaultTitle = "", defaultDescription = "" }: BugR
           <CheckCircle2 className="h-6 w-6" />
         </div>
         <p className="font-medium">Bug Reported Successfully!</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setReporter(""); setAssignee(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -227,12 +224,9 @@ export function BugReporter({ defaultTitle = "", defaultDescription = "" }: BugR
           Report Bug
         </h3>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={setTargetWorkspaceId} 
-        />
+        <WorkspaceSelector />
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Bug Title</label>
@@ -280,7 +274,7 @@ export function BugReporter({ defaultTitle = "", defaultDescription = "" }: BugR
               className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
             />
           </div>
-          
+
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Assignee</label>
             <select
@@ -394,7 +388,7 @@ interface TaskEditorProps {
 
 export function TaskEditor({ taskId }: TaskEditorProps) {
   const { currentWorkspaceId, workspaces, updateTask } = useAppStore();
-  
+
   const workspace = workspaces.find(w => w.id === currentWorkspaceId);
   const task = workspace?.tasks.find(t => t.id === taskId || t.key === taskId);
   const teamMembers = workspace?.teamMembers || [];
@@ -429,7 +423,7 @@ export function TaskEditor({ taskId }: TaskEditorProps) {
 
   return (
     <div className="bg-card border border-border rounded-lg w-full max-w-sm overflow-hidden">
-      <div 
+      <div
         className="p-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -445,7 +439,7 @@ export function TaskEditor({ taskId }: TaskEditorProps) {
 
       {isExpanded && (
         <div className="p-4 border-t border-border space-y-3 bg-muted/10 animate-in slide-in-from-top-2">
-             <div className="space-y-1">
+          <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Title</label>
             <input
               value={updates.title ?? task.title}
@@ -455,7 +449,7 @@ export function TaskEditor({ taskId }: TaskEditorProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-             <div className="space-y-1">
+            <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Status</label>
               <select
                 value={updates.status ?? task.status}
@@ -467,10 +461,10 @@ export function TaskEditor({ taskId }: TaskEditorProps) {
                 ))}
               </select>
             </div>
-            
+
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Priority</label>
-               <select
+              <select
                 value={updates.priority ?? task.priority ?? "Medium"}
                 onChange={(e) => handleUpdate('priority', e.target.value)}
                 className="w-full px-2 py-1.5 text-sm rounded-md border border-input bg-background"
@@ -482,7 +476,7 @@ export function TaskEditor({ taskId }: TaskEditorProps) {
             </div>
           </div>
 
-           <div className="space-y-1">
+          <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Assignee</label>
             <select
               value={updates.owner ?? task.owner ?? ""}

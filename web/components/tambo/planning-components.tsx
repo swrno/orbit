@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAppStore, Sprint, Epic} from "@/lib/store";
-import { 
-  CalendarDays, 
-  Flag, 
-  Rocket, 
+import { useAppStore, Sprint, Epic } from "@/lib/store";
+import {
+  CalendarDays,
+  Flag,
+  Rocket,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,11 +48,11 @@ export function SprintCreator({ defaultName = "" }: SprintCreatorProps) {
   };
 
   if (isSuccess) {
-     return (
+    return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col items-center text-green-700 animate-in fade-in zoom-in duration-300">
         <Rocket className="h-8 w-8 text-green-600 mb-2" />
         <p className="font-medium">Sprint Created!</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setName(""); setGoal(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -65,17 +65,14 @@ export function SprintCreator({ defaultName = "" }: SprintCreatorProps) {
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm overflow-hidden">
       <div className="p-3 bg-muted/30 border-b border-border">
-         <h3 className="font-medium text-sm flex items-center gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-2">
           <Rocket className="h-4 w-4 text-primary" />
           Plan New Sprint
         </h3>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={setTargetWorkspaceId} 
-        />
+        <WorkspaceSelector />
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Sprint Name</label>
@@ -109,7 +106,7 @@ export function SprintCreator({ defaultName = "" }: SprintCreatorProps) {
             />
           </div>
           <div className="space-y-1">
-             <label className="text-xs font-medium text-muted-foreground">End Date</label>
+            <label className="text-xs font-medium text-muted-foreground">End Date</label>
             <input
               type="date"
               value={endDate}
@@ -122,7 +119,7 @@ export function SprintCreator({ defaultName = "" }: SprintCreatorProps) {
         <button
           type="submit"
           disabled={!name.trim() || isSubmitting}
-           className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
+          className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Sprint"}
         </button>
@@ -146,10 +143,10 @@ export function SprintCard({ sprint }: SprintCardProps) {
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm p-4 relative overflow-hidden group">
-      <div className={cn("absolute top-0 left-0 w-1 h-full transition-colors", 
+      <div className={cn("absolute top-0 left-0 w-1 h-full transition-colors",
         sprint.status === 'active' ? 'bg-blue-500' : 'bg-slate-200'
       )} />
-      
+
       <div className="pl-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold text-sm">{sprint.name}</h4>
@@ -204,12 +201,12 @@ export function EpicCreator() {
     setIsSuccess(true);
   };
 
-   if (isSuccess) {
+  if (isSuccess) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col items-center text-green-700 animate-in fade-in zoom-in duration-300">
         <Flag className="h-8 w-8 text-green-600 mb-2" />
         <p className="font-medium">Epic Created!</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setName(""); setDescription(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -222,18 +219,15 @@ export function EpicCreator() {
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm overflow-hidden">
       <div className="p-3 bg-muted/30 border-b border-border">
-         <h3 className="font-medium text-sm flex items-center gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-2">
           <Flag className="h-4 w-4 text-primary" />
           New Epic
         </h3>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={setTargetWorkspaceId} 
-        />
-        
+        <WorkspaceSelector />
+
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Epic Name</label>
           <input
@@ -244,7 +238,7 @@ export function EpicCreator() {
           />
         </div>
 
-         <div className="space-y-1">
+        <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Description</label>
           <textarea
             value={description}
@@ -276,7 +270,7 @@ export function EpicCreator() {
         <button
           type="submit"
           disabled={!name.trim() || isSubmitting}
-           className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
+          className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Epic"}
         </button>
@@ -294,11 +288,11 @@ interface EpicCardProps {
 export function EpicCard({ epic }: EpicCardProps) {
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm p-4 relative overflow-hidden">
-        <div 
+      <div
         className="absolute top-0 left-0 w-full h-1"
         style={{ backgroundColor: epic.color }}
       />
-      
+
       <div className="flex items-start justify-between gap-2 mt-1">
         <div>
           <span className="text-[10px] font-mono text-muted-foreground block mb-0.5">{epic.key}</span>

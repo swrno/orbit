@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore, TeamMember } from "@/lib/store";
-import { 
+import {
   Users, UserPlus, Trash2, Mail, Shield, ShieldAlert, User,
   Loader2, CheckCircle2
 } from "lucide-react";
@@ -62,15 +62,15 @@ export function TeamList() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                   <div className={cn(
-                     "text-[10px] px-1.5 py-0.5 rounded-full font-medium border",
-                     member.role === 'admin' 
-                      ? "bg-amber-50 text-amber-700 border-amber-200" 
+                  <div className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-medium border",
+                    member.role === 'admin'
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
                       : "bg-slate-50 text-slate-700 border-slate-200"
-                   )}>
-                     {member.role === 'admin' ? 'Admin' : 'Member'}
-                   </div>
-                   <button
+                  )}>
+                    {member.role === 'admin' ? 'Admin' : 'Member'}
+                  </div>
+                  <button
                     onClick={() => handleDelete(member.id)}
                     disabled={deletingId === member.id}
                     className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
@@ -100,7 +100,7 @@ interface TeamMemberCreatorProps {
 
 export function TeamMemberCreator({ defaultName = "", defaultEmail = "" }: TeamMemberCreatorProps) {
   const { currentWorkspaceId, workspaces, addTeamMember } = useAppStore();
-  
+
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
   const [role, setRole] = useState("member");
@@ -132,7 +132,7 @@ export function TeamMemberCreator({ defaultName = "", defaultEmail = "" }: TeamM
         <UserPlus className="h-8 w-8 text-green-600 mb-2" />
         <p className="font-medium">Member Added!</p>
         <p className="text-xs text-muted-foreground mt-1">To {workspaces.find(w => w.id === targetWorkspaceId)?.name}</p>
-        <button 
+        <button
           onClick={() => { setIsSuccess(false); setName(""); setEmail(""); }}
           className="text-xs underline mt-2 hover:text-green-800"
         >
@@ -145,17 +145,14 @@ export function TeamMemberCreator({ defaultName = "", defaultEmail = "" }: TeamM
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm w-full max-w-sm overflow-hidden">
       <div className="p-3 bg-muted/30 border-b border-border">
-         <h3 className="font-medium text-sm flex items-center gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-primary" />
           Add Team Member
         </h3>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
-        <WorkspaceSelector 
-          value={targetWorkspaceId} 
-          onChange={setTargetWorkspaceId} 
-        />
+        <WorkspaceSelector />
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Name</label>
@@ -188,8 +185,8 @@ export function TeamMemberCreator({ defaultName = "", defaultEmail = "" }: TeamM
               onClick={() => setRole("member")}
               className={cn(
                 "flex-1 px-3 py-2 text-xs rounded-md border transition-colors flex items-center justify-center gap-1.5",
-                role === "member" 
-                  ? "bg-primary/10 border-primary text-primary font-medium" 
+                role === "member"
+                  ? "bg-primary/10 border-primary text-primary font-medium"
                   : "bg-background border-border hover:bg-muted text-muted-foreground"
               )}
             >
@@ -200,8 +197,8 @@ export function TeamMemberCreator({ defaultName = "", defaultEmail = "" }: TeamM
               onClick={() => setRole("admin")}
               className={cn(
                 "flex-1 px-3 py-2 text-xs rounded-md border transition-colors flex items-center justify-center gap-1.5",
-                role === "admin" 
-                  ? "bg-amber-50 border-amber-500 text-amber-700 font-medium" 
+                role === "admin"
+                  ? "bg-amber-50 border-amber-500 text-amber-700 font-medium"
                   : "bg-background border-border hover:bg-muted text-muted-foreground"
               )}
             >
@@ -213,7 +210,7 @@ export function TeamMemberCreator({ defaultName = "", defaultEmail = "" }: TeamM
         <button
           type="submit"
           disabled={!name.trim() || !email.trim() || isSubmitting}
-           className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
+          className="w-full mt-2 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add Member"}
         </button>
@@ -235,7 +232,7 @@ export function TeamMemberCard({ memberId }: TeamMemberCardProps) {
 
   if (!member) {
     return (
-       <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+      <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
         Member not found.
       </div>
     );
@@ -251,32 +248,32 @@ export function TeamMemberCard({ memberId }: TeamMemberCardProps) {
           member.name.charAt(0).toUpperCase()
         )}
       </div>
-      
+
       <h3 className="font-medium text-lg">{member.name}</h3>
       <div className="text-muted-foreground text-xs mb-3 flex items-center gap-1">
         <Mail className="h-3 w-3" /> {member.email}
       </div>
-      
-       <div className={cn(
-         "text-xs px-2 py-0.5 rounded-full font-medium border mb-4 inline-flex items-center gap-1",
-         member.role === 'admin' 
-          ? "bg-amber-50 text-amber-700 border-amber-200" 
-          : "bg-slate-50 text-slate-700 border-slate-200"
-       )}>
-         <Shield className="h-3 w-3" />
-         {member.role === 'admin' ? 'Admin' : 'Team Member'}
-       </div>
 
-       <div className="w-full pt-3 border-t border-border grid grid-cols-2 gap-2 text-center">
-          <div>
-             <div className="text-xl font-semibold">12</div>
-             <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Tasks</div>
-          </div>
-          <div>
-             <div className="text-xl font-semibold text-green-600">5</div>
-             <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Completed</div>
-          </div>
-       </div>
+      <div className={cn(
+        "text-xs px-2 py-0.5 rounded-full font-medium border mb-4 inline-flex items-center gap-1",
+        member.role === 'admin'
+          ? "bg-amber-50 text-amber-700 border-amber-200"
+          : "bg-slate-50 text-slate-700 border-slate-200"
+      )}>
+        <Shield className="h-3 w-3" />
+        {member.role === 'admin' ? 'Admin' : 'Team Member'}
+      </div>
+
+      <div className="w-full pt-3 border-t border-border grid grid-cols-2 gap-2 text-center">
+        <div>
+          <div className="text-xl font-semibold">12</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Tasks</div>
+        </div>
+        <div>
+          <div className="text-xl font-semibold text-green-600">5</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Completed</div>
+        </div>
+      </div>
     </div>
   );
 }

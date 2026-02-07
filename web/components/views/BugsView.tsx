@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import {
   Box,
@@ -45,11 +45,11 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  
+
   // Find the page and group
   let page: any = null;
   let groupId: string | null = null;
-  
+
   if (workspace) {
     for (const group of workspace.groups) {
       const p = group.pages.find(pg => pg.id === pageId);
@@ -74,12 +74,12 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const [editingBug, setEditingBug] = useState<any>(null);
 
   // Initialize view state from page or defaults
-  const views = (page?.views || ['table']).map((v: string) => ({ 
-    id: v, 
-    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1), 
-    type: v 
+  const views = (page?.views || ['table']).map((v: string) => ({
+    id: v,
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
+    type: v
   }));
-  
+
   const activeView = page?.type || 'table';
 
   const handleSetActiveView = (viewId: string) => {
@@ -92,8 +92,8 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
     if (workspaceId && groupId && page) {
       const newViews = page.views?.filter((v: string) => v !== viewId) || [];
       const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
-      
-      updatePage(workspaceId, groupId, page.id, { 
+
+      updatePage(workspaceId, groupId, page.id, {
         views: newViews,
         type: newActive as any
       });
@@ -123,7 +123,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
       setLoading(true);
       const response = await fetch(`/api/bugs?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setBugs(data.data);
         groupBugsByStatus(data.data);
@@ -144,11 +144,11 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
         console.error('No team/group selected');
         return;
       }
-      
+
       const isUpdate = !!bugData._id;
       const url = '/api/bugs';
       const method = isUpdate ? 'PUT' : 'POST';
-      
+
       const payload = {
         ...bugData,
         workspaceId,
@@ -188,7 +188,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
       "Development Work": [],
       "Resolved": []
     };
-    
+
     bugList.forEach(bug => {
       const group = bug.group || "Incoming Bugs";
       if (grouped[group]) {
@@ -221,9 +221,9 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
           <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
             {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
               <Box key={groupName} sx={{ minWidth: 320, maxWidth: 320 }}>
-                <Box sx={{ 
-                  bgcolor: 'white', 
-                  borderRadius: 1, 
+                <Box sx={{
+                  bgcolor: 'white',
+                  borderRadius: 1,
                   border: '1px solid #e6e9ef',
                   p: 2,
                   mb: 1,
@@ -238,11 +238,11 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {groupBugs.map((bug, idx) => (
-                    <Paper 
+                    <Paper
                       key={bug._id || idx}
                       onClick={() => handleEditBug(bug)}
-                      sx={{ 
-                        p: 2, 
+                      sx={{
+                        p: 2,
                         cursor: 'pointer',
                         '&:hover': { boxShadow: 2 }
                       }}
@@ -251,8 +251,8 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                         {bug.bug}
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Chip label={bug.priority} size="small" sx={{ 
-                          bgcolor: PRIORITY_COLORS[bug.priority]?.bg, 
+                        <Chip label={bug.priority} size="small" sx={{
+                          bgcolor: PRIORITY_COLORS[bug.priority]?.bg,
                           color: PRIORITY_COLORS[bug.priority]?.text,
                           fontSize: '11px'
                         }} />
@@ -268,7 +268,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
             ))}
           </Box>
         );
-      
+
       case 'calendar':
         return (
           <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
@@ -280,9 +280,9 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                 </Box>
               ))}
               {Array.from({ length: 35 }, (_, i) => (
-                <Box key={i} sx={{ 
-                  aspectRatio: '1', 
-                  border: '1px solid #e6e9ef', 
+                <Box key={i} sx={{
+                  aspectRatio: '1',
+                  border: '1px solid #e6e9ef',
                   borderRadius: 1,
                   p: 1,
                   fontSize: '12px'
@@ -293,7 +293,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
             </Box>
           </Box>
         );
-      
+
       case 'gantt':
         return (
           <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
@@ -302,8 +302,8 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
               <Box key={bug._id || idx} sx={{ mb: 2 }}>
                 <Typography sx={{ fontSize: '13px', mb: 0.5 }}>{bug.bug}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ 
-                    height: 24, 
+                  <Box sx={{
+                    height: 24,
                     bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#e6e9ef',
                     borderRadius: 1,
                     width: `${Math.random() * 60 + 20}%`,
@@ -320,7 +320,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
             ))}
           </Box>
         );
-      
+
       case 'chart':
         return (
           <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
@@ -337,10 +337,10 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                         <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
                       </Box>
                       <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ 
-                          height: '100%', 
+                        <Box sx={{
+                          height: '100%',
                           width: `${(count / bugs.length) * 100}%`,
-                          bgcolor: PRIORITY_COLORS[priority].bg 
+                          bgcolor: PRIORITY_COLORS[priority].bg
                         }} />
                       </Box>
                     </Box>
@@ -358,10 +358,10 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                         <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
                       </Box>
                       <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ 
-                          height: '100%', 
+                        <Box sx={{
+                          height: '100%',
                           width: `${(count / bugs.length) * 100}%`,
-                          bgcolor: GROUP_COLORS[group] 
+                          bgcolor: GROUP_COLORS[group]
                         }} />
                       </Box>
                     </Box>
@@ -371,7 +371,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
             </Box>
           </Box>
         );
-      
+
       default:
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
@@ -390,9 +390,8 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
               </TableHead>
               <TableBody>
                 {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
-                  <>
+                  <React.Fragment key={`group-${groupName}`}>
                     <TableRow
-                      key={`group-${groupName}`}
                       sx={{
                         cursor: 'pointer',
                         '&:hover': { bgcolor: '#f0f0f0' }
@@ -487,7 +486,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
@@ -505,10 +504,10 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
         onAddView={handleAddView}
         onRemoveView={handleRemoveView}
       />
-      
+
       <ViewToolbar
-        onSearch={() => {}}
-        onFilter={() => {}}
+        onSearch={() => { }}
+        onFilter={() => { }}
         onCreate={() => {
           setEditingBug(null);
           setIsCreatorOpen(true);
@@ -517,11 +516,11 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
         createButtonColor="#e2445c"
       />
 
-      <BugCreator 
-        open={isCreatorOpen} 
-        onClose={handleCloseCreator} 
+      <BugCreator
+        open={isCreatorOpen}
+        onClose={handleCloseCreator}
         onSubmit={handleCreateOrUpdateBug}
-        initialData={editingBug} 
+        initialData={editingBug}
       />
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>

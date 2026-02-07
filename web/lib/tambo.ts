@@ -163,11 +163,9 @@ export const components: TamboComponent[] = [
   },
   {
     name: "WorkspaceSelector",
-    description: "A dropdown selector to choose between different workspaces. Use this when the user wants to select or switch between workspaces.",
+    description: "A dropdown selector to choose between different workspaces. Use this when the user wants to select or switch between workspaces. The component handles workspace switching internally.",
     component: WorkspaceSelector,
     propsSchema: z.object({
-      value: z.string().describe("The currently selected workspace ID"),
-      onChange: z.custom<(value: string) => void>().describe("Callback function when workspace selection changes"),
       label: z.string().optional().describe("Label for the selector (default: 'Workspace')"),
     }),
   },
