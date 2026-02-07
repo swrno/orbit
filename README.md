@@ -2,7 +2,7 @@
 
 **Orbit** is an intelligent team collaboration platform that reimagines project management by embedding AI at its core. Built for modern development teams, Orbit combines the structure of traditional project management tools with the power of conversational AI, enabling you to manage tasks, sprints, and documentation through natural language interactions.
 
-## What is Orbit?
+## What is Orbit? 
 
 Orbit is a workspace management system designed to streamline how teams plan, track, and deliver software projects. Unlike conventional tools that require navigating through multiple screens and forms, Orbit lets you interact with your workspace conversationally while maintaining the full power of structured project management.
 
