@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Workspace from '@/lib/models/Workspace';
+import User from '@/lib/models/User';
 import crypto from 'crypto';
+import { getAuthUser } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,12 +12,25 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
 
-        let query: any = {};
-        if (userId) {
-            query["teamMembers.id"] = userId;
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const currentUserId = authUser?.uid || userId;
+
+        if (!currentUserId) {
+            return NextResponse.json(
+                { success: false, error: 'User ID is required' },
+                { status: 400 }
+            );
         }
 
-        const workspaces = await Workspace.find(query).sort({ createdAt: -1 });
+        // Find workspaces where user is owner or member
+        const workspaces = await Workspace.find({
+            $or: [
+                { ownerId: currentUserId },
+                { "members.id": currentUserId },
+                { "teamMembers.id": currentUserId } // Backward compatibility
+            ]
+        }).sort({ createdAt: -1 });
 
         return NextResponse.json({
             success: true,
@@ -37,6 +52,19 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
 
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const creatorId = authUser?.uid || body.creatorId;
+        const creatorEmail = authUser?.email || body.creatorEmail;
+        const creatorName = body.creatorName || creatorEmail?.split('@')[0] || 'Unknown';
+
+        if (!creatorId) {
+            return NextResponse.json(
+                { success: false, error: 'User authentication required' },
+                { status: 401 }
+            );
+        }
+
         if (!body.title) {
             return NextResponse.json(
                 { success: false, error: 'Workspace title is required' },
@@ -52,6 +80,26 @@ export async function POST(request: NextRequest) {
         // Ensure key exists
         if (!body.key) {
             body.key = body.title.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4) || 'PROJ';
+        }
+
+        // Set creator as owner
+        body.ownerId = creatorId;
+
+        // Initialize members array with owner
+        if (!body.members) {
+            body.members = [];
+        }
+
+        // Add owner to members if not already there
+        const ownerInMembers = body.members.find((m: any) => m.id === creatorId);
+        if (!ownerInMembers) {
+            body.members.push({
+                id: creatorId,
+                name: creatorName,
+                email: creatorEmail,
+                role: 'OWNER',
+                addedAt: new Date()
+            });
         }
 
         // Ensure default structure if missing
@@ -84,7 +132,25 @@ export async function POST(request: NextRequest) {
             }];
         }
 
+        // Ensure backward compatibility with teamMembers
+        if (!body.teamMembers) {
+            body.teamMembers = [];
+        }
+
         const workspace = await Workspace.create(body);
+
+        // Create or update user profile
+        if (creatorEmail) {
+            await User.findOneAndUpdate(
+                { id: creatorId },
+                {
+                    id: creatorId,
+                    email: creatorEmail,
+                    name: creatorName
+                },
+                { upsert: true, new: true }
+            );
+        }
 
         return NextResponse.json({
             success: true,
@@ -111,7 +177,7 @@ export async function PUT(request: NextRequest) {
         await connectDB();
 
         const body = await request.json();
-        const { id, ...updates } = body; // Expect custom 'id' not '_id' based on schema, but let's see
+        const { id, ...updates } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -120,11 +186,19 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const workspace = await Workspace.findOneAndUpdate(
-            { id: id }, // use custom id field
-            { $set: updates },
-            { new: true }
-        );
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const userId = authUser?.uid || body.userId;
+
+        if (!userId) {
+            return NextResponse.json(
+                { success: false, error: 'User authentication required' },
+                { status: 401 }
+            );
+        }
+
+        // Find the workspace
+        const workspace = await Workspace.findOne({ id });
 
         if (!workspace) {
             return NextResponse.json(
@@ -133,9 +207,35 @@ export async function PUT(request: NextRequest) {
             );
         }
 
+        // Check permissions - only owner or editor can update
+        const isOwner = workspace.ownerId === userId;
+        const member = workspace.members?.find((m: any) => m.id === userId);
+        const canEdit = isOwner || member?.role === 'EDITOR';
+
+        if (!canEdit) {
+            return NextResponse.json(
+                { success: false, error: 'Permission denied. Only owners and editors can update workspace.' },
+                { status: 403 }
+            );
+        }
+
+        // Prevent changing owner through update
+        if (updates.ownerId && updates.ownerId !== workspace.ownerId && !isOwner) {
+            return NextResponse.json(
+                { success: false, error: 'Only workspace owner can change ownership' },
+                { status: 403 }
+            );
+        }
+
+        const updatedWorkspace = await Workspace.findOneAndUpdate(
+            { id: id },
+            { $set: updates },
+            { new: true }
+        );
+
         return NextResponse.json({
             success: true,
-            data: workspace
+            data: updatedWorkspace
         });
     } catch (error: any) {
         console.error('PUT /api/workspaces error:', error);

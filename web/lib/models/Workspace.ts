@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from 'mongoose';
-import { Workspace, Team, Page, TeamMember, ColumnDefinition } from '../types';
+import { Workspace, Team, Page, TeamMember, WorkspaceMember, ColumnDefinition } from '../types';
 
 // Column Schema
 const ColumnSchema = new Schema({
@@ -32,7 +32,18 @@ const TeamMemberSchema = new Schema({
     name: { type: String, required: true },
     email: String,
     avatar: String,
-    role: String
+    role: String,
+    teamRole: { type: String, enum: ['LEADER', 'MEMBER', 'VIEWER'] }
+});
+
+// Workspace Member Schema (with access control)
+const WorkspaceMemberSchema = new Schema({
+    id: { type: String, required: true }, // Firebase UID
+    name: { type: String, required: true },
+    email: String,
+    avatar: String,
+    role: { type: String, required: true, enum: ['OWNER', 'EDITOR', 'VIEWER'], default: 'VIEWER' },
+    addedAt: { type: Date, default: Date.now }
 });
 
 // Team Schema
@@ -42,6 +53,7 @@ const TeamSchema = new Schema({
     icon: String,
     pages: [PageSchema],
     members: [TeamMemberSchema], // Members specific to this team
+    leaderId: String, // User ID of team leader
 
     // Embedded Data Arrays (using loose schema for flexibility during refactor)
     bugs: [new Schema({}, { strict: false })],
@@ -63,7 +75,9 @@ const WorkspaceSchema = new Schema({
     key: { type: String, required: true },
     plan: { type: String, default: 'Free' },
     teams: [TeamSchema],
-    teamMembers: [TeamMemberSchema], // Workspace level members
+    ownerId: { type: String, required: true }, // Firebase UID of owner
+    members: [WorkspaceMemberSchema], // Workspace members with roles
+    teamMembers: [TeamMemberSchema], // Keeping for backward compatibility
     taskCounter: { type: Number, default: 0 },
     epicCounter: { type: Number, default: 0 }
 }, {
@@ -72,7 +86,9 @@ const WorkspaceSchema = new Schema({
 
 // Indexes
 WorkspaceSchema.index({ id: 1 });
-WorkspaceSchema.index({ "teamMembers.id": 1 }); // To find workspaces by user
+WorkspaceSchema.index({ ownerId: 1 });
+WorkspaceSchema.index({ "members.id": 1 }); // To find workspaces by user
+WorkspaceSchema.index({ "teamMembers.id": 1 }); // Backward compatibility
 
 let WorkspaceModel: Model<Workspace>;
 

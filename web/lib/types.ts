@@ -2,6 +2,20 @@
 
 export type PageType = 'table' | 'board' | 'gantt' | 'chart' | 'calendar' | 'roadmap' | 'list' | 'document';
 
+// Access Control Types
+export type WorkspaceRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export type TeamRole = 'LEADER' | 'MEMBER' | 'VIEWER';
+
+// Workspace Member (with access control)
+export type WorkspaceMember = {
+  id: string; // Firebase UID or user ID
+  name: string;
+  avatar?: string;
+  email?: string;
+  role: WorkspaceRole;
+  addedAt?: Date | string;
+};
+
 // Team Member
 export type TeamMember = {
   id: string;
@@ -9,6 +23,7 @@ export type TeamMember = {
   avatar?: string;
   email?: string;
   role?: string;
+  teamRole?: TeamRole; // Team-specific role
 };
 
 // Bug Item
@@ -135,6 +150,7 @@ export type Team = {
   teams?: Team[]; // Nested sub-teams
   pages: Page[];
   members: TeamMember[]; // Members specific to this team
+  leaderId?: string; // User ID of team leader who can manage team members
 
   // Data associated with this team
   bugs: BugItem[];
@@ -153,6 +169,8 @@ export type Workspace = {
   key: string; // Project key for task IDs, e.g., "PROJ"
   plan: string;
   teams: Team[];
+  ownerId: string; // Firebase UID of the workspace owner (creator by default)
+  members: WorkspaceMember[]; // Workspace members with access control
 
   // Page-specific data stores
   bugs: Record<string, BugItem[]>; // pageId -> BugItem[]
@@ -161,6 +179,6 @@ export type Workspace = {
   epics: Record<string, EpicItem[]>;
   retrospectives: Record<string, RetrospectiveItem[]>;
 
-  // Shared resources
+  // Shared resources (keeping for backward compatibility)
   teamMembers: TeamMember[];
 };
