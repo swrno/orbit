@@ -20,6 +20,7 @@ import { PageCreator, GroupCreator, DocEditor } from "@/components/tambo/structu
 import { Navigator } from "@/components/tambo/navigator";
 import { TeamList, TeamMemberCreator, TeamMemberCard } from "@/components/tambo/team-components";
 import { WorkspaceList, WorkspaceCard } from "@/components/tambo/workspace-components";
+import { WorkspaceSelector } from "@/components/tambo/workspace-selector";
 import { MarkdownEditor } from "@/components/tambo/markdown-editor";
 import { Clock, Stopwatch, CountdownTimer } from "@/components/tambo/clock-components";
 
@@ -80,16 +81,16 @@ export const components: TamboComponent[] = [
     name: "SprintCreator",
     description: "A form to create a new sprint.",
     component: SprintCreator,
-    propsSchema: z.object({ 
-      defaultName: z.string().optional() 
+    propsSchema: z.object({
+      defaultName: z.string().optional()
     }),
   },
   {
     name: "SprintCard",
     description: "Displays sprint details.",
     component: SprintCard,
-    propsSchema: z.object({ 
-      sprint: z.any() 
+    propsSchema: z.object({
+      sprint: z.any()
     }),
   },
   {
@@ -102,16 +103,16 @@ export const components: TamboComponent[] = [
     name: "EpicCard",
     description: "Displays epic details.",
     component: EpicCard,
-    propsSchema: z.object({ 
-      epic: z.any() 
+    propsSchema: z.object({
+      epic: z.any()
     }),
   },
   {
     name: "PageCreator",
     description: "A form to create a new page in the workspace.",
     component: PageCreator,
-    propsSchema: z.object({ 
-      defaultTitle: z.string().optional() 
+    propsSchema: z.object({
+      defaultTitle: z.string().optional()
     }),
   },
   {
@@ -158,6 +159,16 @@ export const components: TamboComponent[] = [
     component: TeamMemberCard,
     propsSchema: z.object({
       memberId: z.string().describe("The ID of the team member to show."),
+    }),
+  },
+  {
+    name: "WorkspaceSelector",
+    description: "A dropdown selector to choose between different workspaces. Use this when the user wants to select or switch between workspaces.",
+    component: WorkspaceSelector,
+    propsSchema: z.object({
+      value: z.string().describe("The currently selected workspace ID"),
+      onChange: z.custom<(value: string) => void>().describe("Callback function when workspace selection changes"),
+      label: z.string().optional().describe("Label for the selector (default: 'Workspace')"),
     }),
   },
   {
@@ -281,7 +292,7 @@ export const tools: TamboTool[] = [
       const updates: any = {};
       if (title) updates.title = title;
       if (plan) updates.plan = plan;
-      
+
       useAppStore.getState().updateWorkspace(id, updates);
       return `Workspace ${id} updated successfully.`;
     },
@@ -311,7 +322,7 @@ export const tools: TamboTool[] = [
       const state = useAppStore.getState();
       const workspace = state.workspaces.find(w => w.id === state.currentWorkspaceId);
       if (!workspace) return [];
-      
+
       const pages: any[] = [];
       workspace.groups.forEach(group => {
         group.pages.forEach(page => {
@@ -342,11 +353,11 @@ export const tools: TamboTool[] = [
       const state = useAppStore.getState();
       const workspace = state.workspaces.find(w => w.id === state.currentWorkspaceId);
       if (!workspace) return [];
-      
+
       let tasks = workspace.tasks;
       if (status) tasks = tasks.filter(t => t.status === status);
       if (assignee) tasks = tasks.filter(t => t.owner === assignee);
-      
+
       return tasks.map(t => ({
         id: t.id,
         key: t.key,
@@ -412,4 +423,3 @@ export const tools: TamboTool[] = [
     })),
   }
 ];
-

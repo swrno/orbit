@@ -32,11 +32,11 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  
+
   // Find the page and group
   let page: any = null;
   let groupId: string | null = null;
-  
+
   if (workspace) {
     for (const group of workspace.groups) {
       const p = group.pages.find(pg => pg.id === pageId);
@@ -57,12 +57,12 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
   const [editingSprint, setEditingSprint] = useState<any>(null);
 
   // Initialize view state from page or defaults
-  const views = (page?.views || ['table']).map((v: string) => ({ 
-    id: v, 
-    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1), 
-    type: v 
+  const views = (page?.views || ['table']).map((v: string) => ({
+    id: v,
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
+    type: v
   }));
-  
+
   const activeView = page?.type || 'table';
 
   const handleSetActiveView = (viewId: string) => {
@@ -75,8 +75,8 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
     if (workspaceId && groupId && page) {
       const newViews = page.views?.filter((v: string) => v !== viewId) || [];
       const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
-      
-      updatePage(workspaceId, groupId, page.id, { 
+
+      updatePage(workspaceId, groupId, page.id, {
         views: newViews,
         type: newActive as any
       });
@@ -107,7 +107,7 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
       setLoading(true);
       const response = await fetch(`/api/sprints?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setSprints(data.data);
       } else {
@@ -194,17 +194,17 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
   const calculateProgress = (sprint: any) => {
     // Dynamic timeline-based progress
     if (!sprint.sprintTimeline && !sprint.sprintStartDate) return 0;
-    
+
     const now = new Date();
     const start = new Date(sprint.sprintTimeline?.start || sprint.sprintStartDate);
     const end = new Date(sprint.sprintTimeline?.end || sprint.sprintEndDate);
-    
+
     // Before sprint starts: 0%
     if (now < start) return 0;
-    
+
     // After sprint ends: 100%
     if (now > end) return 100;
-    
+
     // During sprint: calculate based on elapsed time
     const total = end.getTime() - start.getTime();
     const elapsed = now.getTime() - start.getTime();
@@ -279,7 +279,7 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
                 <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Status</Typography>
                 {['Planned', 'Active', 'Completed'].map(status => {
                   const count = sprints.filter(s => s.activeSprintStatus === status).length;
-                  const colors = { Planned: '#fdab3d', Active: '#00c875', Completed: '#c4c4c4' };
+                  const colors: Record<string, string> = { Planned: '#fdab3d', Active: '#00c875', Completed: '#c4c4c4' };
                   return (
                     <Box key={status} sx={{ mb: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -315,7 +315,7 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
         );
       default:
         return (
-           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
+          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
             <Table>
               {/* ... Table content ... */}
               <TableHead>
@@ -334,11 +334,11 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
                 {sprints.map((sprint, index) => {
                   const progress = calculateProgress(sprint);
                   return (
-                    <TableRow 
-                      key={sprint.id || index} 
-                      sx={{ 
+                    <TableRow
+                      key={sprint.id || index}
+                      sx={{
                         cursor: 'pointer',
-                        '&:hover': { bgcolor: '#f6f7fb' } 
+                        '&:hover': { bgcolor: '#f6f7fb' }
                       }}
                       onClick={() => handleEditSprint(sprint)}
                     >
@@ -354,7 +354,7 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
                           size="small"
                           sx={{
                             bgcolor: sprint.activeSprintStatus === 'Active' ? '#00c875' :
-                                     sprint.activeSprintStatus === 'Planned' ? '#fdab3d' : '#c4c4c4',
+                              sprint.activeSprintStatus === 'Planned' ? '#fdab3d' : '#c4c4c4',
                             color: '#ffffff',
                             fontSize: '12px',
                             fontWeight: 500,
@@ -432,10 +432,10 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
         onAddView={handleAddView}
         onRemoveView={handleRemoveView}
       />
-      
+
       <ViewToolbar
-        onSearch={() => {}}
-        onFilter={() => {}}
+        onSearch={() => { }}
+        onFilter={() => { }}
         onCreate={() => {
           setEditingSprint(null);
           setIsCreatorOpen(true);
@@ -443,9 +443,9 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
         createButtonLabel="New sprint"
       />
 
-      <SprintCreator 
-        open={isCreatorOpen} 
-        onClose={handleCloseCreator} 
+      <SprintCreator
+        open={isCreatorOpen}
+        onClose={handleCloseCreator}
         onSubmit={handleCreateOrUpdateSprint}
         initialData={editingSprint}
       />

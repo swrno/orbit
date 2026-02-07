@@ -110,7 +110,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
         console.warn('Invalid sprints data format:', sprintsData);
         setSprints([]);
       }
-      
+
       if (epicsData.success && Array.isArray(epicsData.data)) {
         setEpics(epicsData.data);
       } else {
@@ -128,7 +128,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Ensure owner is set correctly
     const ownerData = {
       id: user?.uid || '1',
@@ -136,7 +136,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
       email: user?.email || 'user@example.com'
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       owner: initialData ? formData.owner : (formData.owner.id ? formData.owner : ownerData)
     };
@@ -146,7 +146,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
     }
 
     onSubmit(submissionData);
-    
+
     setFormData({
       task: '',
       owner: {
@@ -213,7 +213,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
                 onChange={(e) => setFormData({ ...formData, estimatedSP: parseInt(e.target.value) })}
                 fullWidth
               />
-              
+
               <FormControl fullWidth>
                 <InputLabel>Sprint</InputLabel>
                 <Select

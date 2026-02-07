@@ -23,7 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorProps) {
   const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     bug: '',
     reporter: {
@@ -61,8 +61,8 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const submissionData = {
+
+    const submissionData: any = {
       ...formData,
       // If editing, keep original reporter unless it was empty/invalid
       reporter: initialData ? formData.reporter : {
@@ -71,14 +71,14 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
         email: user?.email || ''
       }
     };
-    
+
     // Pass back existing ID if editing
     if (initialData?._id) {
       submissionData._id = initialData._id;
     }
 
     onSubmit(submissionData);
-    
+
     // Reset form
     setFormData({
       bug: '',

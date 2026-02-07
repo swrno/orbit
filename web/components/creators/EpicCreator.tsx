@@ -60,7 +60,7 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Ensure owner is set correctly
     const ownerData = {
       id: user?.uid || '1',
@@ -68,7 +68,7 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
       email: user?.email || 'user@example.com'
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       owner: initialData ? formData.owner : (formData.owner.id ? formData.owner : ownerData)
     };

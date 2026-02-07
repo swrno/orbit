@@ -55,7 +55,7 @@ export function SprintCreator({ open, onClose, onSubmit, initialData }: SprintCr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Only set owner if creating new sprint, or if specifically needed for updates (logic depends on requirements)
     // For now, consistent with other creators, we supply owner context but don't force overwrite if it exists on backend
     const ownerData = {
@@ -64,7 +64,7 @@ export function SprintCreator({ open, onClose, onSubmit, initialData }: SprintCr
       email: user?.email || 'user@example.com'
     };
 
-    const submissionData = {
+    const submissionData: any = {
       ...formData,
       owner: initialData && initialData.owner ? initialData.owner : ownerData
     };
@@ -99,7 +99,7 @@ export function SprintCreator({ open, onClose, onSubmit, initialData }: SprintCr
               fullWidth
               placeholder="e.g., Sprint 1"
             />
-            
+
             <TextField
               label="Sprint Goals"
               value={formData.sprintGoals}
@@ -131,7 +131,7 @@ export function SprintCreator({ open, onClose, onSubmit, initialData }: SprintCr
                 fullWidth
                 InputLabelProps={{ shrink: true }}
               />
-              
+
               <TextField
                 label="End Date"
                 type="date"
