@@ -1,0 +1,573 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAppStore, Task, TaskStatus, TaskPriority } from "@/lib/store";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Avatar,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Collapse
+} from "@mui/material";
+import {
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  User,
+  MoreHorizontal
+} from "lucide-react";
+import { TaskCreator } from "@/components/creators/TaskCreator";
+
+interface TasksViewProps {
+  workspaceId: string;
+  pageId: string;
+}
+
+// Monday.com-style colors
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  "Ready to start": { bg: "#c4c4c4", text: "#ffffff" },
+  "In Progress": { bg: "#fdab3d", text: "#ffffff" },
+  "Done": { bg: "#00c875", text: "#ffffff" }
+};
+
+const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  "Bug": { bg: "#e2445c", text: "#ffffff" },
+  "Feature": { bg: "#579bfc", text: "#ffffff" },
+  "Other": { bg: "#a25ddc", text: "#ffffff" }
+};
+
+import { ViewTabs } from "@/components/ui/ViewTabs";
+import { ViewToolbar } from "@/components/ui/ViewToolbar";
+
+export function TasksView({ workspaceId, pageId }: TasksViewProps) {
+  const { workspaces, updatePage } = useAppStore();
+  const workspace = workspaces.find(w => w.id === workspaceId);
+  
+  // Find the page and group
+  let page: any = null;
+  let groupId: string | null = null;
+  
+  if (workspace) {
+    for (const group of workspace.groups) {
+      const p = group.pages.find(pg => pg.id === pageId);
+      if (p) {
+        page = p;
+        groupId = group.id;
+        break;
+      }
+    }
+  }
+
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [groupedTasks, setGroupedTasks] = useState<Record<string, any[]>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+
+  const [editingTask, setEditingTask] = useState<any>(null);
+
+  // Initialize view state from page or defaults
+  const views = (page?.views || ['table']).map((v: string) => ({ 
+    id: v, 
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1), 
+    type: v 
+  }));
+  
+  const activeView = page?.type || 'table';
+
+  const handleSetActiveView = (viewId: string) => {
+    if (workspaceId && groupId && page) {
+      updatePage(workspaceId, groupId, page.id, { type: viewId as any });
+    }
+  };
+
+  const handleRemoveView = (viewId: string) => {
+    if (workspaceId && groupId && page) {
+      const newViews = page.views?.filter((v: string) => v !== viewId) || [];
+      const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
+      
+      updatePage(workspaceId, groupId, page.id, { 
+        views: newViews,
+        type: newActive as any
+      });
+    }
+  };
+
+  const handleAddView = (viewType: string) => {
+    const current = page?.views || [];
+    
+    // Only add if not already present, otherwise just switch to it
+    if (!current.includes(viewType)) {
+      if (workspaceId && groupId && page) {
+        updatePage(workspaceId, groupId, page.id, {
+          views: [...current, viewType],
+          type: viewType as any
+        });
+      }
+    } else {
+      handleSetActiveView(viewType);
+    }
+  };
+
+  // Fetch tasks from API
+  useEffect(() => {
+    fetchTasks();
+  }, [workspaceId, pageId]);
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.data)) {
+        setTasks(data.data);
+        groupTasksBySprint(data.data);
+      } else {
+        console.error('Invalid tasks data format:', data);
+        setTasks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateOrUpdateTask = async (taskData: any) => {
+    try {
+      if (!groupId) {
+        console.error('No team/group selected');
+        return;
+      }
+
+      if (taskData._id) {
+        // Handle update
+        await handleUpdateTask(taskData._id, taskData);
+        setEditingTask(null);
+      } else {
+        // Handle create
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...taskData,
+            workspaceId,
+            pageId,
+            teamId: groupId
+          })
+        });
+
+        if (response.ok) {
+          fetchTasks();
+        }
+      }
+    } catch (error) {
+      console.error('Error creating/updating task:', error);
+    }
+  };
+
+  const handleEditTask = (task: any) => {
+    setEditingTask(task);
+    setIsCreatorOpen(true);
+  };
+
+  const handleCloseCreator = () => {
+    setIsCreatorOpen(false);
+    setEditingTask(null);
+  };
+
+  const groupTasksBySprint = (taskList: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    
+    taskList.forEach(task => {
+      const sprint = task.group || task.sprint || 'Backlog';
+      if (!grouped[sprint]) {
+        grouped[sprint] = [];
+      }
+      grouped[sprint].push(task);
+    });
+
+    setGroupedTasks(grouped);
+  };
+
+  const toggleGroup = (groupName: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
+  const handleUpdateTask = async (taskId: string, updates: any) => {
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId, updates })
+      });
+
+      if (response.ok) {
+        fetchTasks(); // Refresh tasks
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography>Loading tasks...</Typography>
+      </Box>
+    );
+  }
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'gantt':
+      case 'kanban':
+      case 'calendar':
+        return (
+          <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography color="text.secondary">
+              {activeView.charAt(0).toUpperCase() + activeView.slice(1)} view is coming soon
+            </Typography>
+          </Box>
+        );
+      default:
+        return (
+          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#f6f7fb' }}>
+                  <TableCell width={40}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Type</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task ID</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Estimated SP</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Epic</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>GitHub link</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
+                  <>
+                    {/* Group Header */}
+                    <TableRow
+                      key={`group-${groupName}`}
+                      sx={{
+                        bgcolor: groupName === 'Sprint 1' ? '#ffe5f0' : '#e6f7ff',
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: groupName === 'Sprint 1' ? '#ffd6e7' : '#d6f0ff' }
+                      }}
+                      onClick={() => toggleGroup(groupName)}
+                    >
+                      <TableCell colSpan={9} sx={{ py: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                          <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
+                            {groupName}
+                          </Typography>
+                          <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
+                            {groupTasks.length} {groupTasks.length === 1 ? 'task' : 'tasks'}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+    
+                    {/* Group Tasks */}
+                    {!collapsedGroups[groupName] && groupTasks.map((task, index) => (
+                      <TableRow
+                        key={task.id || index}
+                        sx={{
+                          '&:hover': { bgcolor: '#f6f7fb' },
+                          borderLeft: groupName === 'Sprint 1' ? '4px solid #e2445c' : '4px solid #579bfc',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => handleEditTask(task)}
+                      >
+                        <TableCell></TableCell>
+                        <TableCell>
+                          <TextField
+                            variant="standard"
+                            defaultValue={task.task}
+                            onBlur={(e) => handleUpdateTask(task.id, { task: e.target.value })}
+                            sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
+                            fullWidth
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                              {task.owner?.name?.[0] || 'U'}
+                            </Avatar>
+                            <Typography sx={{ fontSize: '13px' }}>{task.owner?.name || 'Unassigned'}</Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={task.status}
+                            size="small"
+                            sx={{
+                              bgcolor: STATUS_COLORS[task.status]?.bg || '#c4c4c4',
+                              color: STATUS_COLORS[task.status]?.text || '#ffffff',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              height: '24px'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={task.type}
+                            size="small"
+                            sx={{
+                              bgcolor: TYPE_COLORS[task.type]?.bg || '#a25ddc',
+                              color: TYPE_COLORS[task.type]?.text || '#ffffff',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              height: '24px'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879' }}>
+                            {task.taskId}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: '13px' }}>{task.estimatedSP || 0} SP</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={task.epic || 'No epic'}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: '11px', height: '22px' }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {task.githubLink ? (
+                            <a href={task.githubLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#0073ea' }}>
+                              View
+                            </a>
+                          ) : (
+                            <Typography sx={{ fontSize: '13px', color: '#c4c4c4' }}>-</Typography>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+    
+                    {/* Add Task Row */}
+                    {!collapsedGroups[groupName] && (
+                      <TableRow sx={{ bgcolor: '#fafbfc' }}>
+                        <TableCell colSpan={9}>
+                          <Button
+                            startIcon={<Plus size={14} />}
+                            sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
+                            onClick={() => setIsCreatorOpen(true)}
+                          >
+                            Add task
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        );
+    }
+  };
+
+  return (
+    <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
+      <ViewTabs
+        views={views}
+        activeViewId={activeView}
+        onViewChange={handleSetActiveView}
+        onAddView={handleAddView}
+        onRemoveView={handleRemoveView}
+      />
+      
+      <ViewToolbar
+        onSearch={() => {}}
+        onFilter={() => {}}
+        onCreate={() => {
+          setEditingTask(null);
+          setIsCreatorOpen(true);
+        }}
+        createButtonLabel="New task"
+        createButtonColor="#579bfc"
+      />
+
+      <TaskCreator 
+        open={isCreatorOpen} 
+        onClose={handleCloseCreator} 
+        onSubmit={handleCreateOrUpdateTask}
+        workspaceId={workspaceId}
+        pageId={pageId}
+        teamId={groupId}
+        initialData={editingTask}
+      />
+
+      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: '#f6f7fb' }}>
+              <TableCell width={40}></TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Type</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task ID</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Estimated SP</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Epic</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>GitHub link</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
+              <>
+                {/* Group Header */}
+                <TableRow
+                  key={`group-${groupName}`}
+                  sx={{
+                    bgcolor: groupName === 'Sprint 1' ? '#ffe5f0' : '#e6f7ff',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: groupName === 'Sprint 1' ? '#ffd6e7' : '#d6f0ff' }
+                  }}
+                  onClick={() => toggleGroup(groupName)}
+                >
+                  <TableCell colSpan={9} sx={{ py: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                      <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
+                        {groupName}
+                      </Typography>
+                      <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
+                        {groupTasks.length} {groupTasks.length === 1 ? 'task' : 'tasks'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+
+                {/* Group Tasks */}
+                {!collapsedGroups[groupName] && groupTasks.map((task, index) => (
+                  <TableRow
+                    key={task.id || index}
+                    sx={{
+                      '&:hover': { bgcolor: '#f6f7fb' },
+                      borderLeft: groupName === 'Sprint 1' ? '4px solid #e2445c' : '4px solid #579bfc',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleEditTask(task)}
+                  >
+                    <TableCell></TableCell>
+                    <TableCell>
+                      <TextField
+                        variant="standard"
+                        defaultValue={task.task}
+                        onBlur={(e) => handleUpdateTask(task.id, { task: e.target.value })}
+                        sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
+                        fullWidth
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                          {task.owner?.name?.[0] || 'U'}
+                        </Avatar>
+                        <Typography sx={{ fontSize: '13px' }}>{task.owner?.name || 'Unassigned'}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={task.status}
+                        size="small"
+                        sx={{
+                          bgcolor: STATUS_COLORS[task.status]?.bg || '#c4c4c4',
+                          color: STATUS_COLORS[task.status]?.text || '#ffffff',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          height: '24px'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={task.type}
+                        size="small"
+                        sx={{
+                          bgcolor: TYPE_COLORS[task.type]?.bg || '#a25ddc',
+                          color: TYPE_COLORS[task.type]?.text || '#ffffff',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          height: '24px'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879' }}>
+                        {task.taskId}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: '13px' }}>{task.estimatedSP || 0} SP</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={task.epic || 'No epic'}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '11px', height: '22px' }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {task.githubLink ? (
+                        <a href={task.githubLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#0073ea' }}>
+                          View
+                        </a>
+                      ) : (
+                        <Typography sx={{ fontSize: '13px', color: '#c4c4c4' }}>-</Typography>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {/* Add Task Row */}
+                {!collapsedGroups[groupName] && (
+                  <TableRow sx={{ bgcolor: '#fafbfc' }}>
+                    <TableCell colSpan={9}>
+                      <Button
+                        startIcon={<Plus size={14} />}
+                        sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
+                      >
+                        Add task
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+}

@@ -125,8 +125,11 @@ export type Page = {
   id: string;
   title: string;
   type: PageType;
+  icon?: string;
   columns?: Column[];
   content?: string; // HTML or JSON content for the page
+  views?: PageType[]; // Active views for this page (for multi-view tabs)
+  activeViewIndex?: number; // Which view is currently active
 };
 
 export type Group = {
@@ -248,15 +251,35 @@ export const useAppStore = create<AppState>()(
       createWorkspace: (title, id) => set((state) => {
         // Generate a key from the title (uppercase, first 4 letters, no spaces)
         const key = title.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4) || 'PROJ';
+        const timestamp = Date.now();
+        
         return {
           workspaces: [...state.workspaces, {
-            id: id || `ws-${Date.now()}`,
+            id: id || `ws-${timestamp}`,
             title,
             name: title,
             color: ['#0052CC', '#6554C0', '#00875A', '#FF8B00'][Math.floor(Math.random() * 4)],
             key,
             plan: 'Free',
-            groups: [],
+            groups: [{
+              id: `g-${timestamp}`,
+              title: 'Team',
+              icon: 'Users',
+              pages: [
+                { id: `p-${timestamp}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
+                { id: `p-${timestamp}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
+                { id: `p-${timestamp}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
+                { id: `p-${timestamp}-4`, title: 'Sprints', type: 'calendar', icon: 'Zap', views: ['calendar'], activeViewIndex: 0 },
+                { id: `p-${timestamp}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
+                { 
+                  id: `p-${timestamp}-6`, 
+                  title: 'Getting Started', 
+                  type: 'document', 
+                  icon: 'FileText',
+                  content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Create More Teams</h3><p>Click the <strong>+</strong> button next to "TEAMS" in the sidebar to create additional teams with the same structure.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Need Help?</h2><p>Start by adding your first task or epic, then explore the different views to find what works best for your team!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
+                },
+              ]
+            }],
             tasks: [],
             sprints: [],
             epics: [],
@@ -287,7 +310,28 @@ export const useAppStore = create<AppState>()(
       addGroup: (workspaceId, title, icon) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
-            ? { ...ws, groups: [...ws.groups, { id: `g-${Date.now()}`, title, icon, pages: [] }] }
+            ? {
+                ...ws,
+                groups: [...ws.groups, {
+                  id: `g-${Date.now()}`,
+                  title,
+                  icon,
+                  pages: [
+                    { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
+                    { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
+                    { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
+                    { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table'], activeViewIndex: 0 },
+                    { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
+                    { 
+                      id: `p-${Date.now()}-6`, 
+                      title: 'Getting Started', 
+                      type: 'document', 
+                      icon: 'FileText',
+                      content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Customize Your Workspace</h3><p>Edit this document to add team-specific guidelines, links, or documentation.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Get Started</h2><p>Add your first task or epic, then explore the different views!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
+                    },
+                  ]
+                }]
+              }
             : ws
         )
       })),

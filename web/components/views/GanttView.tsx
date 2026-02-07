@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import {
-    Box, Container, Typography, Paper, Button, Chip, Select, MenuItem,
-    FormControl, InputLabel, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Tooltip, Menu, Divider
+    Box, Typography, Button, IconButton, Menu, MenuItem,
+    FormControl, InputLabel, Select, Divider, Chip
 } from "@mui/material";
 import {
-    Calendar, Download, Filter, ZoomIn, ZoomOut, Target
+    ChevronDown, Download, Filter, ZoomIn, ZoomOut, MoreHorizontal, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
@@ -19,11 +18,8 @@ export function GanttView({ workspaceId }: GanttViewProps) {
     const { workspaces } = useAppStore();
     const workspace = workspaces.find(w => w.id === workspaceId);
 
+    const [zoom, setZoom] = useState<'week' | 'month'>('week');
     const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
-    const [statusFilter, setStatusFilter] = useState<string[]>([]);
-    const [assigneeFilter, setAssigneeFilter] = useState<string[]>([]);
-    const [zoom, setZoom] = useState<'day' | 'week' | 'month'>('week');
-    const [timeRange, setTimeRange] = useState<3 | 6 | 12>(3);
 
     if (!workspace) {
         return (
@@ -33,495 +29,296 @@ export function GanttView({ workspaceId }: GanttViewProps) {
         );
     }
 
-    // Generate time periods based on zoom
-    const getTimePeriods = () => {
-        const periods = [];
-        const now = new Date();
-        const totalDays = timeRange * 30;
-        const periodCount = zoom === 'day' ? totalDays :
-            zoom === 'week' ? Math.floor(totalDays / 7) :
-                timeRange;
+    // Generate week headers for February 2026
+    const weeks = [
+        { label: 'W4 12 - 18', range: 'Jan 30 - Feb 12' },
+        { label: 'W5 19 - 25', range: 'Feb 27 - Mar 12' },
+        { label: 'W6 2 - 8', range: 'W6 2 - 8' },
+        { label: 'W7 9 - 15', range: 'W7 9 - 15' },
+        { label: 'W8 16 - 22', range: 'W8 16 - 22' },
+    ];
 
-        for (let i = 0; i < periodCount; i++) {
-            if (zoom === 'day') {
-                const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-                periods.push({
-                    label: date.getDate().toString(),
-                    fullDate: date.toLocaleDateString()
-                });
-            } else if (zoom === 'week') {
-                const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (i * 7));
-                periods.push({
-                    label: `W${i + 1}`,
-                    fullDate: weekStart.toLocaleDateString()
-                });
-            } else {
-                const month = new Date(now.getFullYear(), now.getMonth() + i, 1);
-                periods.push({
-                    label: month.toLocaleDateString('en-US', { month: 'short' }),
-                    fullDate: month.toLocaleDateString()
-                });
-            }
+    // Group tasks by epic or project
+    const groups = [
+        {
+            id: 'q1-2026',
+            name: 'Q1 2026',
+            tasks: [
+                { id: '1', name: 'Infrastructure', dateRange: 'Jan 30 - Feb 12', progress: 65 },
+                { id: '2', name: 'Database Maintenance', dateRange: 'Feb 27 - Mar 12', progress: 40 },
+            ]
+        },
+        {
+            id: 'epics-backlog',
+            name: 'Epics Backlog',
+            tasks: [
+                { id: '3', name: 'Automation - Website Services', dateRange: '', progress: 0 },
+                { id: '4', name: 'Operations', dateRange: '', progress: 0 },
+            ]
         }
-        return periods;
-    };
-
-    const timePeriods = getTimePeriods();
-
-    // Get tasks grouped by epic or sprint
-    const getGroupedTasks = () => {
-        const groups: { [key: string]: any[] } = {};
-
-        workspace.tasks.forEach(task => {
-            // Apply Filters
-            if (statusFilter.length > 0 && !statusFilter.includes(task.status)) return;
-            if (assigneeFilter.length > 0) {
-                 if (!task.owner && !assigneeFilter.includes('Unassigned')) return;
-                 if (task.owner && !assigneeFilter.includes(task.owner)) return;
-            }
-
-            let groupKey = 'Unassigned';
-            
-            if (task.epicId) {
-                const epic = workspace.epics.find(e => e.id === task.epicId);
-                if (epic) groupKey = epic.name;
-            } else if (task.sprintId && task.sprintId !== 'backlog') {
-                const sprint = workspace.sprints.find(s => s.id === task.sprintId);
-                if (sprint) groupKey = sprint.name;
-            }
-
-            if (!groups[groupKey]) {
-                groups[groupKey] = [];
-            }
-            groups[groupKey].push(task);
-        });
-
-        return groups;
-    };
-
-    const groupedTasks = getGroupedTasks();
-
-    // Calculate task bar position and width
-    const getTaskBarStyle = (taskIdx: number, groupIdx: number) => {
-        const totalPeriods = timePeriods.length;
-        const startPercent = ((taskIdx * 5 + groupIdx * 2) % 70);
-        const widthPercent = 15 + (taskIdx % 3) * 10;
-
-        return {
-            left: `${startPercent}%`,
-            width: `${Math.min(widthPercent, 100 - startPercent)}%`
-        };
-    };
-    
-    const handlePrint = () => {
-        window.print();
-    };
+    ];
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#f4f5f7' }}>
-            <style type="text/css" media="print">
-                {`
-                @page { size: landscape; }
-                body * { visibility: hidden; }
-                #gantt-container, #gantt-container * { visibility: visible; }
-                #gantt-container { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
-                `}
-            </style>
-            {/* Header */}
-            <Box sx={{ bgcolor: 'white', borderBottom: '1px solid #DFE1E6', p: 3 }}>
-                <Container maxWidth="xl">
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Box>
-                            <Typography variant="h5" fontWeight={600} sx={{ color: '#172B4D', mb: 0.5 }}>
-                                Gantt Chart
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                                Visual project timeline and dependency tracking
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Button
-                                variant="outlined"
-                                startIcon={<Download size={16} />}
-                                onClick={handlePrint}
-                                sx={{
-                                    borderColor: '#DFE1E6',
-                                    color: '#42526E',
-                                    textTransform: 'none',
-                                    '&:hover': { borderColor: '#B3BAC5', bgcolor: '#F4F5F7' }
-                                }}
-                            >
-                                Export to PDF
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                startIcon={<Filter size={16} />}
-                                onClick={(e) => setFilterAnchor(e.currentTarget)}
-                                sx={{
-                                    borderColor: filterAnchor ? '#0052CC' : '#DFE1E6',
-                                    bgcolor: filterAnchor ? '#E6F0FF' : 'transparent',
-                                    color: filterAnchor ? '#0052CC' : '#42526E',
-                                    textTransform: 'none',
-                                    '&:hover': { borderColor: '#B3BAC5', bgcolor: '#F4F5F7' }
-                                }}
-                            >
-                                Filters
-                            </Button>
-                        </Box>
-                    </Box>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'white' }}>
+            {/* Controls Bar */}
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2, 
+                px: 3, 
+                py: 1.5, 
+                borderBottom: '1px solid #e6e9ef',
+                bgcolor: 'white'
+            }}>
+                {/* Gantt Title with Dropdown */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#323338', fontSize: '14px' }}>
+                        Gantt
+                    </Typography>
+                    <IconButton size="small" sx={{ p: 0 }}>
+                        <ChevronDown size={16} color="#676879" />
+                    </IconButton>
+                </Box>
 
-                    {/* Controls */}
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                            <InputLabel>Zoom</InputLabel>
-                            <Select
-                                value={zoom}
-                                label="Zoom"
-                                onChange={(e) => setZoom(e.target.value as 'day' | 'week' | 'month')}
-                            >
-                                <MenuItem value="day">Day</MenuItem>
-                                <MenuItem value="week">Week</MenuItem>
-                                <MenuItem value="month">Month</MenuItem>
-                            </Select>
-                        </FormControl>
+                <Divider orientation="vertical" flexItem />
 
-                        <FormControl size="small" sx={{ minWidth: 150 }}>
-                            <InputLabel>Time Range</InputLabel>
-                            <Select
-                                value={timeRange}
-                                label="Time Range"
-                                onChange={(e) => setTimeRange(e.target.value as 3 | 6 | 12)}
-                            >
-                                <MenuItem value={3}>3 Months</MenuItem>
-                                <MenuItem value={6}>6 Months</MenuItem>
-                                <MenuItem value={12}>12 Months</MenuItem>
-                            </Select>
-                        </FormControl>
+                {/* Controls */}
+                <Button
+                    size="small"
+                    sx={{
+                        textTransform: 'none',
+                        color: '#676879',
+                        fontSize: '13px',
+                        fontWeight: 400,
+                        minWidth: 'auto',
+                        px: 1.5,
+                        '&:hover': { bgcolor: '#f6f7fb' }
+                    }}
+                >
+                    Baseline
+                </Button>
 
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <Button
-                                size="small"
-                                onClick={() => {
-                                    if (zoom === 'month') setZoom('week');
-                                    else if (zoom === 'week') setZoom('day');
-                                }}
-                                disabled={zoom === 'day'}
-                                sx={{ minWidth: 40 }}
-                            >
-                                <ZoomIn size={16} />
-                            </Button>
-                            <Button
-                                size="small"
-                                onClick={() => {
-                                    if (zoom === 'day') setZoom('week');
-                                    else if (zoom === 'week') setZoom('month');
-                                }}
-                                disabled={zoom === 'month'}
-                                sx={{ minWidth: 40 }}
-                            >
-                                <ZoomOut size={16} />
-                            </Button>
-                        </Box>
-                    </Box>
-                </Container>
+                <Button
+                    size="small"
+                    sx={{
+                        textTransform: 'none',
+                        color: '#676879',
+                        fontSize: '13px',
+                        fontWeight: 400,
+                        minWidth: 'auto',
+                        px: 1.5,
+                        '&:hover': { bgcolor: '#f6f7fb' }
+                    }}
+                >
+                    Auto fit
+                </Button>
+
+                <FormControl size="small" sx={{ minWidth: 100 }}>
+                    <Select
+                        value={zoom}
+                        onChange={(e) => setZoom(e.target.value as 'week' | 'month')}
+                        sx={{ fontSize: '13px', height: 32 }}
+                    >
+                        <MenuItem value="week" sx={{ fontSize: '13px' }}>Week</MenuItem>
+                        <MenuItem value="month" sx={{ fontSize: '13px' }}>Month</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+                    <IconButton size="small" sx={{ color: '#676879' }}>
+                        <ChevronLeft size={18} />
+                    </IconButton>
+                    <IconButton size="small" sx={{ color: '#676879' }}>
+                        <ChevronRight size={18} />
+                    </IconButton>
+                    <IconButton size="small" sx={{ color: '#676879' }}>
+                        <MoreHorizontal size={18} />
+                    </IconButton>
+                </Box>
             </Box>
 
-            {/* Filter Popover */}
-            <Menu
-                anchorEl={filterAnchor}
-                open={Boolean(filterAnchor)}
-                onClose={() => setFilterAnchor(null)}
-                MenuListProps={{ sx: { width: 300, p: 2 } }}
-            >
-                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Filter by Status</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                    {['Todo', 'In Progress', 'In Review', 'Done', 'Blocked'].map(status => (
-                        <Chip
-                            key={status}
-                            label={status}
-                            size="small"
-                            onClick={() => {
-                                setStatusFilter(prev => 
-                                    prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-                                );
-                            }}
-                            sx={{
-                                bgcolor: statusFilter.includes(status) ? '#0052CC' : '#F4F5F7',
-                                color: statusFilter.includes(status) ? 'white' : '#42526E',
-                            }}
-                        />
-                    ))}
-                </Box>
-                
-                <Divider sx={{ my: 2 }} />
-
-                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Filter by Assignee</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                     <Chip
-                        label="Unassigned"
-                        size="small"
-                        onClick={() => {
-                            setAssigneeFilter(prev => 
-                                prev.includes('Unassigned') ? prev.filter(a => a !== 'Unassigned') : [...prev, 'Unassigned']
-                            );
-                        }}
-                        sx={{
-                            bgcolor: assigneeFilter.includes('Unassigned') ? '#0052CC' : '#F4F5F7',
-                            color: assigneeFilter.includes('Unassigned') ? 'white' : '#42526E',
-                        }}
-                    />
-                    {workspace.teamMembers.map(member => (
-                        <Chip
-                            key={member.id}
-                            label={member.name}
-                            size="small"
-                            onClick={() => {
-                                setAssigneeFilter(prev => 
-                                    prev.includes(member.name) ? prev.filter(a => a !== member.name) : [...prev, member.name]
-                                );
-                            }}
-                            sx={{
-                                bgcolor: assigneeFilter.includes(member.name) ? '#0052CC' : '#F4F5F7',
-                                color: assigneeFilter.includes(member.name) ? 'white' : '#42526E',
-                            }}
-                        />
-                    ))}
-                </Box>
-            </Menu>
-
-            {/* Gantt Chart Content */}
-            <Box id="gantt-container" sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-                <Container maxWidth="xl">
-                    <TableContainer component={Paper} sx={{ border: '1px solid #DFE1E6', boxShadow: 'none' }}>
-                        <Table stickyHeader>
-                            {/* Header */}
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell
-                                        sx={{
-                                            bgcolor: '#FAFBFC',
-                                            borderRight: '2px solid #DFE1E6',
-                                            width: 250,
-                                            fontWeight: 600,
-                                            color: '#42526E'
-                                        }}
-                                    >
-                                        Task Name
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{
-                                            bgcolor: '#FAFBFC',
-                                            borderRight: '1px solid #DFE1E6',
-                                            width: 100,
-                                            fontWeight: 600,
-                                            color: '#42526E',
-                                            textAlign: 'center'
-                                        }}
-                                    >
-                                        Status
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{
-                                            bgcolor: '#FAFBFC',
-                                            borderRight: '2px solid #DFE1E6',
-                                            width: 120,
-                                            fontWeight: 600,
-                                            color: '#42526E',
-                                            textAlign: 'center'
-                                        }}
-                                    >
-                                        Assignee
-                                    </TableCell>
-                                    <TableCell sx={{ bgcolor: '#FAFBFC', position: 'relative', p: 0 }}>
-                                        <Box sx={{ display: 'flex' }}>
-                                            {timePeriods.map((period, idx) => (
-                                                <Box
-                                                    key={idx}
-                                                    sx={{
-                                                        flex: 1,
-                                                        p: 1,
-                                                        borderRight: idx < timePeriods.length - 1 ? '1px solid #DFE1E6' : 'none',
-                                                        textAlign: 'center',
-                                                        minWidth: zoom === 'day' ? 40 : zoom === 'week' ? 80 : 100
-                                                    }}
-                                                >
-                                                    <Tooltip title={period.fullDate}>
-                                                        <Typography variant="caption" fontWeight={600} sx={{ color: '#42526E' }}>
-                                                            {period.label}
-                                                        </Typography>
-                                                    </Tooltip>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-
-                            {/* Body */}
-                            <TableBody>
-                                {Object.entries(groupedTasks).map(([groupName, tasks], groupIdx) => (
-                                    <>
-                                        {/* Group Header */}
-                                        <TableRow key={`group-${groupName}`}>
-                                            <TableCell
-                                                colSpan={4}
-                                                sx={{
-                                                    bgcolor: '#F4F5F7',
-                                                    fontWeight: 600,
-                                                    color: '#172B4D',
-                                                    borderBottom: '2px solid #DFE1E6'
-                                                }}
-                                            >
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Target size={16} color="#6554C0" />
-                                                    {groupName}
-                                                    <Chip
-                                                        label={`${tasks.length} tasks`}
-                                                        size="small"
-                                                        sx={{
-                                                            bgcolor: 'white',
-                                                            color: '#6B778C',
-                                                            fontSize: '0.7rem',
-                                                            height: 20,
-                                                            ml: 1
-                                                        }}
-                                                    />
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-
-                                        {/* Tasks */}
-                                        {tasks.map((task, taskIdx) => {
-                                            const barStyle = getTaskBarStyle(taskIdx, groupIdx);
-
-                                            return (
-                                                <TableRow key={task.id} sx={{ '&:hover': { bgcolor: '#F4F5F7' } }}>
-                                                    <TableCell sx={{ borderRight: '2px solid #DFE1E6' }}>
-                                                        <Typography variant="body2" fontWeight={500} sx={{ color: '#172B4D' }}>
-                                                            {task.title}
-                                                        </Typography>
-                                                        <Typography variant="caption" sx={{ color: '#6B778C' }}>
-                                                            {task.key}
-                                                        </Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ borderRight: '1px solid #DFE1E6', textAlign: 'center' }}>
-                                                        <Chip
-                                                            label={task.status}
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: task.status === 'Done' ? '#E3FCEF' :
-                                                                    task.status === 'In Progress' ? '#DEEBFF' :
-                                                                        task.status === 'In Review' ? '#EAE6FF' : '#DFE1E6',
-                                                                color: task.status === 'Done' ? '#006644' :
-                                                                    task.status === 'In Progress' ? '#0052CC' :
-                                                                        task.status === 'In Review' ? '#5243AA' : '#42526E',
-                                                                fontSize: '0.7rem',
-                                                                height: 20
-                                                            }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell sx={{ borderRight: '2px solid #DFE1E6', textAlign: 'center' }}>
-                                                        {task.owner && (
-                                                            <Tooltip title={task.owner}>
-                                                                <Box
-                                                                    sx={{
-                                                                        width: 28,
-                                                                        height: 28,
-                                                                        borderRadius: '50%',
-                                                                        bgcolor: '#0052CC',
-                                                                        color: 'white',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        fontSize: '0.75rem',
-                                                                        fontWeight: 600,
-                                                                        mx: 'auto'
-                                                                    }}
-                                                                >
-                                                                    {task.owner.charAt(0)}
-                                                                </Box>
-                                                            </Tooltip>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell sx={{ position: 'relative', p: 0 }}>
-                                                        <Box
-                                                            sx={{
-                                                                display: 'flex',
-                                                                height: 56,
-                                                                position: 'relative'
-                                                            }}
-                                                        >
-                                                            {/* Grid lines */}
-                                                            {timePeriods.map((_, idx) => (
-                                                                <Box
-                                                                    key={idx}
-                                                                    sx={{
-                                                                        flex: 1,
-                                                                        borderRight: idx < timePeriods.length - 1 ? '1px solid #F4F5F7' : 'none',
-                                                                        minWidth: zoom === 'day' ? 40 : zoom === 'week' ? 80 : 100
-                                                                    }}
-                                                                />
-                                                            ))}
-
-                                                            {/* Task bar */}
-                                                            <Tooltip title={`${task.title} • ${task.status}`}>
-                                                                <Box
-                                                                    sx={{
-                                                                        position: 'absolute',
-                                                                        top: '50%',
-                                                                        transform: 'translateY(-50%)',
-                                                                        height: 24,
-                                                                        borderRadius: '4px',
-                                                                        bgcolor: task.status === 'Done' ? '#00875A' :
-                                                                            task.status === 'In Progress' ? '#0052CC' :
-                                                                                task.status === 'In Review' ? '#6554C0' : '#6B778C',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        px: 1,
-                                                                        cursor: 'pointer',
-                                                                        '&:hover': {
-                                                                            opacity: 0.8
-                                                                        },
-                                                                        ...barStyle
-                                                                    }}
-                                                                >
-                                                                    <Typography
-                                                                        variant="caption"
-                                                                        sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 600,
-                                                                            whiteSpace: 'nowrap',
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis'
-                                                                        }}
-                                                                    >
-                                                                        {task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title}
-                                                                    </Typography>
-                                                                </Box>
-                                                            </Tooltip>
-                                                        </Box>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-
-                    {Object.keys(groupedTasks).length === 0 && (
-                        <Box sx={{ p: 8, textAlign: 'center', border: '1px solid #DFE1E6', borderTop: 'none', bgcolor: 'white' }}>
-                            <Calendar size={48} color="#DFE1E6" style={{ marginBottom: 16 }} />
-                            <Typography variant="h6" gutterBottom sx={{ color: '#42526E' }}>
-                                No Tasks to Display
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                                Try changing your filters or add tasks to the backlog
+            {/* Gantt Chart */}
+            <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#fafbfc' }}>
+                {/* Timeline Header */}
+                <Box sx={{ 
+                    position: 'sticky', 
+                    top: 0, 
+                    zIndex: 2, 
+                    bgcolor: 'white',
+                    borderBottom: '1px solid #e6e9ef'
+                }}>
+                    <Box sx={{ display: 'flex' }}>
+                        {/* Left column header */}
+                        <Box sx={{ 
+                            width: 250, 
+                            px: 2, 
+                            py: 1.5, 
+                            borderRight: '1px solid #e6e9ef',
+                            bgcolor: '#fafbfc'
+                        }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#676879', fontSize: '12px' }}>
+                                February 2026
                             </Typography>
                         </Box>
-                    )}
-                </Container>
+
+                        {/* Week headers */}
+                        <Box sx={{ display: 'flex', flex: 1 }}>
+                            {weeks.map((week, idx) => (
+                                <Box
+                                    key={idx}
+                                    sx={{
+                                        flex: 1,
+                                        px: 2,
+                                        py: 1.5,
+                                        borderRight: idx < weeks.length - 1 ? '1px solid #e6e9ef' : 'none',
+                                        textAlign: 'center',
+                                        bgcolor: '#fafbfc'
+                                    }}
+                                >
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#323338', fontSize: '11px' }}>
+                                        {week.label}
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                </Box>
+
+                {/* Gantt Rows */}
+                {groups.map((group) => (
+                    <Box key={group.id}>
+                        {/* Group Header */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            bgcolor: 'white',
+                            borderBottom: '1px solid #e6e9ef',
+                            '&:hover': { bgcolor: '#f6f7fb' }
+                        }}>
+                            <Box sx={{ 
+                                width: 250, 
+                                px: 2, 
+                                py: 2, 
+                                borderRight: '1px solid #e6e9ef',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                            }}>
+                                <IconButton size="small" sx={{ p: 0 }}>
+                                    <ChevronDown size={14} color="#676879" />
+                                </IconButton>
+                                <Typography sx={{ fontWeight: 600, color: group.id === 'epics-backlog' ? '#e2445c' : '#323338', fontSize: '14px' }}>
+                                    {group.name}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ flex: 1 }} />
+                        </Box>
+
+                        {/* Tasks */}
+                        {group.tasks.map((task, taskIdx) => (
+                            <Box 
+                                key={task.id}
+                                sx={{ 
+                                    display: 'flex', 
+                                    bgcolor: 'white',
+                                    borderBottom: '1px solid #e6e9ef',
+                                    '&:hover': { bgcolor: '#f6f7fb' }
+                                }}
+                            >
+                                {/* Task Name */}
+                                <Box sx={{ 
+                                    width: 250, 
+                                    px: 2, 
+                                    py: 2, 
+                                    borderRight: '1px solid #e6e9ef',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    pl: 5
+                                }}>
+                                    <Typography sx={{ color: '#323338', fontSize: '14px' }}>
+                                        {task.name}
+                                    </Typography>
+                                </Box>
+
+                                {/* Timeline */}
+                                <Box sx={{ 
+                                    flex: 1, 
+                                    display: 'flex',
+                                    position: 'relative',
+                                    minHeight: 48
+                                }}>
+                                    {/* Grid lines */}
+                                    {weeks.map((_, idx) => (
+                                        <Box
+                                            key={idx}
+                                            sx={{
+                                                flex: 1,
+                                                borderRight: idx < weeks.length - 1 ? '1px solid #f4f5f7' : 'none',
+                                            }}
+                                        />
+                                    ))}
+
+                                    {/* Task Bar */}
+                                    {task.dateRange && (
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                left: taskIdx === 0 ? '10%' : '30%',
+                                                width: taskIdx === 0 ? '45%' : '55%',
+                                                height: 28,
+                                                bgcolor: '#0073ea',
+                                                borderRadius: '4px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                px: 1.5,
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                    bgcolor: '#0060b9',
+                                                }
+                                            }}
+                                        >
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    color: 'white', 
+                                                    fontWeight: 600,
+                                                    fontSize: '12px',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {task.dateRange}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Box>
+                        ))}
+                    </Box>
+                ))}
+
+                {/* Add Group Button */}
+                <Box sx={{ 
+                    p: 2, 
+                    pl: 5,
+                    bgcolor: 'white',
+                    borderBottom: '1px solid #e6e9ef',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: '#f6f7fb' }
+                }}>
+                    <Button
+                        size="small"
+                        sx={{
+                            textTransform: 'none',
+                            color: '#676879',
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            '&:hover': { bgcolor: 'transparent' }
+                        }}
+                    >
+                        + Add new group
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );

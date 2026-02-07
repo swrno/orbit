@@ -1,154 +1,151 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Sprints API - handles sprint operations
+import connectDB from '@/lib/mongodb';
+import Sprint from '@/lib/models/Sprint';
 
 export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const workspaceId = searchParams.get('workspaceId');
-        const status = searchParams.get('status'); // 'planning' | 'active' | 'completed'
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get('workspaceId');
+    const pageId = searchParams.get('pageId');
+    const teamId = searchParams.get('teamId');
 
-        return NextResponse.json({
-            success: true,
-            filters: { workspaceId, status },
-            message: 'Sprints API is operational',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        return NextResponse.json(
-            { success: false, error: 'Failed to fetch sprints' },
-            { status: 500 }
-        );
-    }
+    // Build query object
+    const query: any = {};
+    if (workspaceId) query.workspaceId = workspaceId;
+    if (pageId) query.pageId = pageId;
+    if (teamId) query.teamId = teamId;
+
+    // Fetch filtered sprints
+    const sprints = await Sprint.find(query).sort({ sprintStartDate: -1 });
+
+    return NextResponse.json({
+      success: true,
+      data: sprints
+    });
+  } catch (error: any) {
+    console.error('GET /api/sprints error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch sprints' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
+  try {
+    await connectDB();
+    const body = await request.json();
 
-        // Validate required fields
-        if (!body.name) {
-            return NextResponse.json(
-                { success: false, error: 'Sprint name is required' },
-                { status: 400 }
-            );
-        }
-
-        if (!body.workspaceId) {
-            return NextResponse.json(
-                { success: false, error: 'Workspace ID is required' },
-                { status: 400 }
-            );
-        }
-
-        if (!body.startDate || !body.endDate) {
-            return NextResponse.json(
-                { success: false, error: 'Start date and end date are required' },
-                { status: 400 }
-            );
-        }
-
-        // Create sprint (simulated)
-        const sprint = {
-            id: `sprint-${Date.now()}`,
-            name: body.name,
-            goal: body.goal || null,
-            startDate: body.startDate,
-            endDate: body.endDate,
-            status: 'planning',
-            velocity: 0,
-            createdAt: new Date().toISOString()
-        };
-
-        return NextResponse.json({
-            success: true,
-            data: sprint,
-            message: 'Sprint created successfully'
-        }, { status: 201 });
-    } catch (error) {
-        return NextResponse.json(
-            { success: false, error: 'Failed to create sprint' },
-            { status: 500 }
-        );
+    // Validate required fields
+    if (!body.sprint) {
+      return NextResponse.json(
+        { success: false, error: 'Sprint name is required' },
+        { status: 400 }
+      );
     }
+
+    if (!body.sprintStartDate || !body.sprintEndDate) {
+      return NextResponse.json(
+        { success: false, error: 'Start and end dates are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.workspaceId || !body.pageId) {
+      return NextResponse.json(
+        { success: false, error: 'Workspace ID and Page ID are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Team ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Create sprint object matching the Mongoose schema
+    const sprintData = {
+      sprint: body.sprint,
+      sprintGoals: body.sprintGoals || '',
+      activeSprintStatus: body.activeSprintStatus || 'Planned',
+      sprintStartDate: new Date(body.sprintStartDate),
+      sprintEndDate: new Date(body.sprintEndDate),
+      // Populate sprintTimeline redundantly as per schema requirement
+      sprintTimeline: {
+        start: new Date(body.sprintStartDate),
+        end: new Date(body.sprintEndDate)
+      },
+      connectedTasks: [],
+      completed: body.activeSprintStatus === 'Completed',
+      workspaceId: body.workspaceId,
+      teamId: body.teamId,
+      pageId: body.pageId,
+      owner: body.owner || {
+        id: '1',
+        name: 'System',
+        email: 'system@orbit.com'
+      }
+    };
+
+    const newSprint = await Sprint.create(sprintData);
+
+    return NextResponse.json({
+      success: true,
+      data: newSprint,
+      message: 'Sprint created successfully'
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('POST /api/sprints error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to create sprint' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(request: NextRequest) {
-    try {
-        const body = await request.json();
+  try {
+    await connectDB();
+    const body = await request.json();
 
-        if (!body.sprintId) {
-            return NextResponse.json(
-                { success: false, error: 'Sprint ID is required' },
-                { status: 400 }
-            );
-        }
-
-        // Handle special actions
-        if (body.action === 'start') {
-            return NextResponse.json({
-                success: true,
-                data: {
-                    id: body.sprintId,
-                    status: 'active',
-                    startedAt: new Date().toISOString()
-                },
-                message: 'Sprint started successfully'
-            });
-        }
-
-        if (body.action === 'complete') {
-            return NextResponse.json({
-                success: true,
-                data: {
-                    id: body.sprintId,
-                    status: 'completed',
-                    velocity: body.velocity || 0,
-                    completedAt: new Date().toISOString()
-                },
-                message: 'Sprint completed successfully'
-            });
-        }
-
-        // Regular update
-        return NextResponse.json({
-            success: true,
-            data: {
-                id: body.sprintId,
-                ...body.updates,
-                updatedAt: new Date().toISOString()
-            },
-            message: 'Sprint updated successfully'
-        });
-    } catch (error) {
+    if (!body._id && !body.id) {
         return NextResponse.json(
-            { success: false, error: 'Failed to update sprint' },
-            { status: 500 }
+            { success: false, error: 'Sprint ID is required for update' },
+            { status: 400 }
         );
     }
-}
 
-export async function DELETE(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const sprintId = searchParams.get('sprintId');
+    const sprintId = body._id || body.id;
+    
+    // Update logic...
+    const updatedSprint = await Sprint.findByIdAndUpdate(
+        sprintId,
+        { $set: body },
+        { new: true } // Return updated document
+    );
 
-        if (!sprintId) {
-            return NextResponse.json(
-                { success: false, error: 'Sprint ID is required' },
-                { status: 400 }
-            );
-        }
-
-        return NextResponse.json({
-            success: true,
-            data: { id: sprintId, deleted: true },
-            message: 'Sprint deleted successfully'
-        });
-    } catch (error) {
+    if (!updatedSprint) {
         return NextResponse.json(
-            { success: false, error: 'Failed to delete sprint' },
-            { status: 500 }
+            { success: false, error: 'Sprint not found' },
+            { status: 404 }
         );
     }
+
+    return NextResponse.json({
+        success: true,
+        data: updatedSprint,
+        message: 'Sprint updated successfully'
+    });
+
+  } catch (error: any) {
+    console.error('PUT /api/sprints error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update sprint' },
+      { status: 500 }
+    );
+  }
 }

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
     BarChart3, ListTodo, ChevronDown, FileText, Plus, Kanban,
     LayoutGrid, Search, Layers, Calendar, Users, Bug, TrendingUp, Table, List as ListIcon,
-    MoreHorizontal, Trash2, Edit
+    MoreHorizontal, Trash2, Edit, RotateCcw, CheckSquare, Zap, Target
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
@@ -73,6 +73,14 @@ export default function Sidebar({ className }: { className?: string }) {
     ];
 
     const [targetGroupId, setTargetGroupId] = useState<string | null>(null);
+    const [collapsedTeams, setCollapsedTeams] = useState<Record<string, boolean>>({});
+
+    const toggleTeamCollapse = (groupId: string) => {
+        setCollapsedTeams(prev => ({
+            ...prev,
+            [groupId]: !prev[groupId]
+        }));
+    };
 
     const handleAddClick = (event: React.MouseEvent<HTMLElement>) => {
         setTargetGroupId(null); // Reset target group (global add)
@@ -160,7 +168,7 @@ export default function Sidebar({ className }: { className?: string }) {
         }
     };
 
-    // Group Management State
+    // Team Management State
     const [createGroupOpen, setCreateGroupOpen] = useState(false);
     const [newGroupName, setNewGroupName] = useState('');
     const [groupContextMenuAnchor, setGroupContextMenuAnchor] = useState<null | HTMLElement>(null);
@@ -243,61 +251,14 @@ export default function Sidebar({ className }: { className?: string }) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    // Standard navigation items for every workspace (like JIRA/Monday.com)
-    const navItems = [
-        {
-            id: 'backlog',
-            label: 'Backlog',
-            icon: <ListTodo size={16} />,
-            path: `/${selectedWorkspace}/backlog`
-        },
-        {
-            id: 'sprints',
-            label: 'Sprints',
-            icon: <Calendar size={16} />,
-            path: `/${selectedWorkspace}/sprints`
-        },
-        {
-            id: 'epics',
-            label: 'Epics',
-            icon: <Layers size={16} />,
-            path: `/${selectedWorkspace}/epics`
-        },
-        {
-            id: 'bugs',
-            label: 'Bugs Queue',
-            icon: <Bug size={16} />,
-            path: `/${selectedWorkspace}/bugs`
-        },
-        {
-            id: 'roadmap',
-            label: 'Roadmap',
-            icon: <TrendingUp size={16} />,
-            path: `/${selectedWorkspace}/roadmap`
-        },
-        {
-            id: 'reports',
-            label: 'Reports',
-            icon: <BarChart3 size={16} />,
-            path: `/${selectedWorkspace}/reports`
-        },
-        {
-            id: 'team',
-            label: 'Team',
-            icon: <Users size={16} />,
-            path: `/${selectedWorkspace}/team`
-        },
-        {
-            id: 'getting-started',
-            label: 'Getting Started',
-            icon: <FileText size={16} />,
-            path: `/${selectedWorkspace}/get-started`
-        }
-    ];
+
 
     const handleWorkspaceChange = (newWorkspaceId: string) => {
         setSelectedWorkspace(newWorkspaceId);
-        router.push(`/${newWorkspaceId}/backlog`);
+        const targetWorkspace = workspaces.find(w => w.id === newWorkspaceId);
+        if (targetWorkspace && targetWorkspace.groups.length > 0 && targetWorkspace.groups[0].pages.length > 0) {
+            router.push(`/${newWorkspaceId}/${targetWorkspace.groups[0].pages[0].id}`);
+        }
     };
 
     const handleCreateWorkspace = () => {
@@ -306,9 +267,12 @@ export default function Sidebar({ className }: { className?: string }) {
             createWorkspace(newWorkspaceName.trim(), newId);
             setNewWorkspaceName('');
             setCreateWorkspaceOpen(false);
-            // Navigate to new workspace
+            // Navigate to first page of new workspace
             setTimeout(() => {
-                router.push(`/${newId}/backlog`);
+                const newWorkspace = workspaces.find(w => w.id === newId);
+                if (newWorkspace && newWorkspace.groups.length > 0 && newWorkspace.groups[0].pages.length > 0) {
+                    router.push(`/${newId}/${newWorkspace.groups[0].pages[0].id}`);
+                }
             }, 100);
         }
     };
@@ -469,7 +433,7 @@ export default function Sidebar({ className }: { className?: string }) {
                     {/* Add Group Action */}
                     <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 600, color: '#6B778C' }}>
-                            GROUPS
+                            TEAMS
                         </Typography>
                         <Box
                             onClick={() => setCreateGroupOpen(true)}
@@ -487,7 +451,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                     color: '#0052CC'
                                 }
                             }}
-                            title="Add Group"
+                            title="Add Team"
                         >
                             <Plus size={16} />
                         </Box>
@@ -495,59 +459,10 @@ export default function Sidebar({ className }: { className?: string }) {
 
                     <Divider sx={{ borderColor: '#DFE1E6' }} />
 
-                    {/* Navigation Items */}
+                    {/* Dynamic Groups & Pages */}
                     <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
-                        <List sx={{ px: 2 }}>
-                            {navItems.map((item) => {
-                                const isActive = pathname === item.path ||
-                                    (item.id !== 'getting-started' && pathname?.includes(`/${selectedWorkspace}/${item.id}`));
-
-                                return (
-                                    <ListItemButton
-                                        key={item.id}
-                                        component={Link}
-                                        href={item.path}
-                                        selected={isActive}
-                                        sx={{
-                                            borderRadius: '3px',
-                                            mb: 0.5,
-                                            py: 1,
-                                            px: 1.5,
-                                            '&.Mui-selected': {
-                                                bgcolor: '#DEEBFF',
-                                                color: '#0052CC',
-                                                '& .MuiListItemIcon-root': {
-                                                    color: '#0052CC'
-                                                },
-                                                '&:hover': {
-                                                    bgcolor: '#DEEBFF'
-                                                }
-                                            },
-                                            '&:hover': {
-                                                bgcolor: 'white'
-                                            }
-                                        }}
-                                    >
-                                        <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#0052CC' : '#42526E' }}>
-                                            {item.icon}
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={item.label}
-                                            primaryTypographyProps={{
-                                                variant: 'body2',
-                                                fontWeight: isActive ? 600 : 400,
-                                                color: isActive ? '#0052CC' : '#172B4D'
-                                            }}
-                                        />
-                                    </ListItemButton>
-                                );
-                            })}
-                        </List>
-
-                        {/* Dynamic Groups & Pages */}
                         {workspace.groups && workspace.groups.length > 0 && (
                             <DragDropContext onDragEnd={handleDragEnd}>
-                                <Divider sx={{ my: 1, mx: 2, borderColor: '#DFE1E6' }} />
                                 <Box sx={{ px: 2, py: 1 }}>
                                     {workspace.groups.map(group => (
                                         <Box key={group.id} sx={{ mb: 2 }}>
@@ -561,17 +476,36 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     '&:hover .group-actions': { opacity: 1 }
                                                 }}
                                             >
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        color: '#6B778C',
-                                                        fontWeight: 600,
-                                                        textTransform: 'uppercase',
-                                                        fontSize: '0.75rem'
+                                                <Box 
+                                                    sx={{ 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: 0.5,
+                                                        cursor: 'pointer',
+                                                        flex: 1
                                                     }}
+                                                    onClick={() => toggleTeamCollapse(group.id)}
                                                 >
-                                                    {group.title}
-                                                </Typography>
+                                                    <ChevronDown 
+                                                        size={14} 
+                                                        style={{ 
+                                                            transform: collapsedTeams[group.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                                            transition: 'transform 0.2s',
+                                                            color: '#6B778C'
+                                                        }} 
+                                                    />
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{
+                                                            color: '#6B778C',
+                                                            fontWeight: 600,
+                                                            textTransform: 'uppercase',
+                                                            fontSize: '0.75rem'
+                                                        }}
+                                                    >
+                                                        {group.title}
+                                                    </Typography>
+                                                </Box>
                                                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                                                     <Box
                                                         className="group-actions"
@@ -616,6 +550,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     </Box>
                                                 </Box>
                                             </Box>
+                                            {!collapsedTeams[group.id] && (
                                             <Droppable droppableId={`group-${group.id}`}>
                                                 {(provided) => (
                                                     <List disablePadding ref={provided.innerRef} {...provided.droppableProps}>
@@ -625,12 +560,22 @@ export default function Sidebar({ className }: { className?: string }) {
 
                                                             // Determine icon based on page type
                                                             let PageIcon = FileText;
-                                                            if (page.type === 'board') PageIcon = Kanban;
-                                                            if (page.type === 'table') PageIcon = ListTodo;
-                                                            if (page.type === 'gantt' || page.type === 'calendar') PageIcon = Calendar;
-                                                            if (page.type === 'roadmap') PageIcon = TrendingUp;
-                                                            if (page.type === 'chart') PageIcon = BarChart3;
-                                                            if (page.type === 'list') PageIcon = ListIcon;
+                                                            if (page.icon) {
+                                                                if (page.icon === 'Bug') PageIcon = Bug;
+                                                                else if (page.icon === 'RotateCcw') PageIcon = RotateCcw;
+                                                                else if (page.icon === 'CheckSquare') PageIcon = CheckSquare;
+                                                                else if (page.icon === 'Rabbit' || page.icon === 'Zap') PageIcon = Zap;
+                                                                else if (page.icon === 'Layers') PageIcon = Layers;
+                                                                else if (page.icon === 'FileText') PageIcon = FileText;
+                                                                else if (page.icon === 'Target') PageIcon = Target;
+                                                            } else {
+                                                                if (page.type === 'board') PageIcon = Kanban;
+                                                                if (page.type === 'table') PageIcon = ListTodo;
+                                                                if (page.type === 'gantt' || page.type === 'calendar') PageIcon = Calendar;
+                                                                if (page.type === 'roadmap') PageIcon = TrendingUp;
+                                                                if (page.type === 'chart') PageIcon = BarChart3;
+                                                                if (page.type === 'list') PageIcon = ListIcon;
+                                                            }
 
                                                             return (
                                                                 <Draggable key={page.id} draggableId={page.id} index={index}>
@@ -710,6 +655,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     </List>
                                                 )}
                                             </Droppable>
+                                            )}
                                         </Box>
                                     ))}
                                 </Box>
@@ -1002,11 +948,11 @@ export default function Sidebar({ className }: { className?: string }) {
             >
                 <MenuItem onClick={handleRenameGroupClick} sx={{ gap: 1.5, py: 1 }}>
                     <Edit size={16} color="#42526E" />
-                    <Typography variant="body2" color="#172B4D">Rename Group</Typography>
+                    <Typography variant="body2" color="#172B4D">Rename Team</Typography>
                 </MenuItem>
                 <MenuItem onClick={handleDeleteGroupClick} sx={{ gap: 1.5, py: 1 }}>
                     <Trash2 size={16} color="#DE350B" />
-                    <Typography variant="body2" color="#DE350B">Delete Group</Typography>
+                    <Typography variant="body2" color="#DE350B">Delete Team</Typography>
                 </MenuItem>
             </Menu>
 
@@ -1017,12 +963,12 @@ export default function Sidebar({ className }: { className?: string }) {
                 maxWidth="xs"
                 fullWidth
             >
-                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Create New Group</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Create New Team</DialogTitle>
                 <DialogContent>
                     <Box sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
-                            label="Group Name"
+                            label="Team Name"
                             value={newGroupName}
                             onChange={(e) => setNewGroupName(e.target.value)}
                             placeholder="e.g., Marketing, QA"
@@ -1043,14 +989,14 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogActions>
             </Dialog>
 
-            {/* Rename Group Dialog */}
+            {/* Rename Team Dialog */}
             <Dialog
                 open={renameGroupOpen}
                 onClose={() => setRenameGroupOpen(false)}
                 maxWidth="xs"
                 fullWidth
             >
-                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Rename Group</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Rename Team</DialogTitle>
                 <DialogContent>
                     <Box sx={{ pt: 1 }}>
                         <TextField
@@ -1077,7 +1023,7 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogActions>
             </Dialog>
 
-            {/* Delete Group Dialog */}
+            {/* Delete Team Dialog */}
             <Dialog
                 open={deleteGroupOpen}
                 onClose={() => setDeleteGroupOpen(false)}
@@ -1086,11 +1032,11 @@ export default function Sidebar({ className }: { className?: string }) {
             >
                 <DialogTitle sx={{ fontWeight: 600, color: '#DE350B', display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Trash2 size={20} />
-                    Delete Group?
+                    Delete Team?
                 </DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" color="#172B4D">
-                        Are you sure you want to delete <strong>{selectedGroupForAction?.title}</strong>? All pages within this group will be deleted.
+                        Are you sure you want to delete <strong>{selectedGroupForAction?.title}</strong>? All pages within this team will be deleted.
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>

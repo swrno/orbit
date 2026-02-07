@@ -1,126 +1,167 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Tasks API - handles task operations
+import connectDB from '@/lib/mongodb';
+import Task from '@/lib/models/Task';
 
 export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const workspaceId = searchParams.get('workspaceId');
-        const sprintId = searchParams.get('sprintId');
-        const status = searchParams.get('status');
-        const priority = searchParams.get('priority');
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get('workspaceId');
+    const pageId = searchParams.get('pageId');
+    const teamId = searchParams.get('teamId');
 
-        // Return success - actual filtering happens client-side
-        return NextResponse.json({
-            success: true,
-            filters: { workspaceId, sprintId, status, priority },
-            message: 'Tasks API is operational',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        return NextResponse.json(
-            { success: false, error: 'Failed to fetch tasks' },
-            { status: 500 }
-        );
-    }
+    // Build query object
+    const query: any = {};
+    if (workspaceId) query.workspaceId = workspaceId;
+    if (pageId) query.pageId = pageId;
+    if (teamId) query.teamId = teamId;
+
+    // Fetch filtered tasks
+    const tasks = await Task.find(query).sort({ createdAt: -1 });
+
+    return NextResponse.json({
+      success: true,
+      data: tasks
+    });
+  } catch (error: any) {
+    console.error('GET /api/tasks error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch tasks' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
+  try {
+    await connectDB();
+    const body = await request.json();
 
-        // Validate required fields
-        if (!body.title) {
-            return NextResponse.json(
-                { success: false, error: 'Title is required' },
-                { status: 400 }
-            );
-        }
-
-        if (!body.workspaceId) {
-            return NextResponse.json(
-                { success: false, error: 'Workspace ID is required' },
-                { status: 400 }
-            );
-        }
-
-        // Create task (simulated - actual creation happens client-side)
-        const task = {
-            id: `t-${Date.now()}`,
-            title: body.title,
-            description: body.description || '',
-            status: body.status || 'Todo',
-            priority: body.priority || 'Medium',
-            owner: body.owner || null,
-            sprintId: body.sprintId || 'backlog',
-            estimatedPoints: body.estimatedPoints || 0,
-            epic: body.epic || null,
-            dueDate: body.dueDate || null,
-            labels: body.labels || [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        return NextResponse.json({
-            success: true,
-            data: task,
-            message: 'Task created successfully'
-        }, { status: 201 });
-    } catch (error) {
-        return NextResponse.json(
-            { success: false, error: 'Failed to create task' },
-            { status: 500 }
-        );
+    if (!body.task) {
+      return NextResponse.json(
+        { success: false, error: 'Task name is required' },
+        { status: 400 }
+      );
     }
+
+    if (!body.workspaceId || !body.pageId) {
+      return NextResponse.json(
+        { success: false, error: 'Workspace ID and Page ID are required' },
+        { status: 400 }
+      );
+    }
+
+    // Generate a simple unique taskId
+    const count = await Task.countDocuments({ workspaceId: body.workspaceId });
+    const taskId = `${body.key || 'TASK'}-${count + 1}`;
+
+    if (!body.teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Team ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const newTask = await Task.create({
+      ...body,
+      taskId,
+      group: body.sprint || 'Backlog' // Use sprint as group by default
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: newTask,
+      message: 'Task created successfully'
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('POST /api/tasks error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to create task' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(request: NextRequest) {
-    try {
-        const body = await request.json();
+  try {
+    await connectDB();
+    const body = await request.json();
 
-        if (!body.taskId) {
-            return NextResponse.json(
-                { success: false, error: 'Task ID is required' },
-                { status: 400 }
-            );
-        }
+    const { taskId, updates } = body;
 
-        // Update task (simulated)
-        return NextResponse.json({
-            success: true,
-            data: {
-                id: body.taskId,
-                ...body.updates,
-                updatedAt: new Date().toISOString()
-            },
-            message: 'Task updated successfully'
-        });
-    } catch (error) {
+    if (!taskId) {
         return NextResponse.json(
-            { success: false, error: 'Failed to update task' },
-            { status: 500 }
+            { success: false, error: 'Task ID (MongoDB _id or taskId) is required' },
+            { status: 400 }
         );
     }
+
+    // Try to find by MongoDB _id first, then by custom taskId
+    let updatedTask = await Task.findByIdAndUpdate(
+        taskId,
+        { $set: updates },
+        { new: true }
+    );
+
+    if (!updatedTask) {
+        // Try finding by custom taskId if _id failed
+        updatedTask = await Task.findOneAndUpdate(
+            { taskId: taskId },
+            { $set: updates },
+            { new: true }
+        );
+    }
+
+    if (!updatedTask) {
+        return NextResponse.json(
+            { success: false, error: 'Task not found' },
+            { status: 404 }
+        );
+    }
+
+    return NextResponse.json({
+        success: true,
+        data: updatedTask,
+        message: 'Task updated successfully'
+    });
+
+  } catch (error: any) {
+    console.error('PUT /api/tasks error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update task' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(request: NextRequest) {
     try {
+        await connectDB();
         const { searchParams } = new URL(request.url);
-        const taskId = searchParams.get('taskId');
+        const id = searchParams.get('id');
 
-        if (!taskId) {
+        if (!id) {
             return NextResponse.json(
-                { success: false, error: 'Task ID is required' },
+                { success: false, error: 'ID is required' },
                 { status: 400 }
             );
         }
 
+        const deletedTask = await Task.findByIdAndDelete(id);
+
+        if (!deletedTask) {
+             // Try deleting by custom taskId
+             await Task.findOneAndDelete({ taskId: id });
+        }
+
         return NextResponse.json({
             success: true,
-            data: { id: taskId, deleted: true },
             message: 'Task deleted successfully'
         });
-    } catch (error) {
+
+    } catch (error: any) {
+        console.error('DELETE /api/tasks error:', error);
         return NextResponse.json(
             { success: false, error: 'Failed to delete task' },
             { status: 500 }

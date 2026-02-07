@@ -5,6 +5,7 @@ import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star, Pencil, Trash2 } from
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { Navbar } from "@/components/layout/Navbar";
 import {
   Box,
   Container,
@@ -14,8 +15,6 @@ import {
   TextField,
   IconButton,
   Chip,
-  AppBar,
-  Toolbar,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -92,30 +91,8 @@ export default function Dashboard() {
   };
 
   return (
-    <Box sx={{ bgcolor: 'background.default' }}>
-      {/* Top Navigation */}
-      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Toolbar sx={{ minHeight: '64px!important' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <LayoutGrid size={24} color="white" />
-            </Box>
-            <Typography variant="h6" fontWeight={600}>
-              Orbit AI Workspace
-            </Typography>
-          </Box>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Navbar />
 
       {/* Main Content */}
       <Container maxWidth="lg" sx={{ py: 6 }}>
