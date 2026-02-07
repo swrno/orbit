@@ -4,7 +4,7 @@ import { useAppStore, Workspace } from "@/lib/store";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Navbar } from "@/components/layout/Navbar";
 import {
@@ -39,18 +39,32 @@ export default function Dashboard() {
     name: ""
   });
 
+  // Log workspaces when they change
+  useEffect(() => {
+    console.log('Current workspaces in dashboard:', workspaces);
+  }, [workspaces]);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newWorkspaceName.trim() && user) {
-      await createWorkspace(
+      console.log('Creating workspace with name:', newWorkspaceName);
+      const result = await createWorkspace(
         newWorkspaceName,
         undefined,
         user.uid,
         user.email || '',
         user.displayName || user.email?.split('@')[0] || 'User'
       );
-      setNewWorkspaceName("");
-      setIsCreating(false);
+      
+      if (result) {
+        console.log('Workspace created successfully:', result);
+        setNewWorkspaceName("");
+        setIsCreating(false);
+        // Optionally navigate to the new workspace
+        // router.push(`/${result.id}`);
+      } else {
+        console.error('Failed to create workspace');
+      }
     }
   };
 

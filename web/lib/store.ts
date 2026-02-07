@@ -179,7 +179,7 @@ interface AppState {
   fetchWorkspaces: (userId?: string) => Promise<void>;
   setWorkspaces: (workspaces: Workspace[]) => void;
   addWorkspace: (workspace: Workspace) => void;
-  createWorkspace: (title: string, id?: string, creatorId?: string, creatorEmail?: string, creatorName?: string) => Promise<void>;
+  createWorkspace: (title: string, id?: string, creatorId?: string, creatorEmail?: string, creatorName?: string) => Promise<Workspace | null>;
   updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
   deleteWorkspace: (id: string) => void;
   selectWorkspace: (id: string) => void;
@@ -285,6 +285,8 @@ export const useAppStore = create<AppState>()(
       createWorkspace: async (title, id, creatorId, creatorEmail, creatorName) => {
         try {
           const workspaceId = id || `ws-${Date.now()}`;
+          console.log('Creating workspace:', { title, workspaceId, creatorId, creatorEmail, creatorName });
+          
           const response = await fetch('/api/workspaces', {
             method: 'POST',
             headers: { 
@@ -302,18 +304,24 @@ export const useAppStore = create<AppState>()(
           });
 
           const data = await response.json();
+          console.log('Workspace creation response:', data);
 
           if (response.ok && data.success) {
+            // Add the workspace to the store
             set((state) => ({
               workspaces: [...state.workspaces, data.data]
             }));
+            console.log('Workspace added to store:', data.data);
+            return data.data; // Return the created workspace
           } else {
             console.error('Failed to create workspace:', data.error || 'Unknown error');
             alert('Failed to create workspace: ' + (data.error || 'Unknown error'));
+            return null;
           }
         } catch (error) {
           console.error('Error creating workspace:', error);
           alert('Error creating workspace. Please try again.');
+          return null;
         }
       },
 
