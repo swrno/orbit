@@ -20,6 +20,7 @@ import { PageCreator, GroupCreator, DocEditor } from "@/components/tambo/structu
 import { Navigator } from "@/components/tambo/navigator";
 import { TeamList, TeamMemberCreator, TeamMemberCard } from "@/components/tambo/team-components";
 import { WorkspaceList, WorkspaceCard } from "@/components/tambo/workspace-components";
+import { WorkspaceSelector } from "@/components/tambo/workspace-selector";
 import { MarkdownEditor } from "@/components/tambo/markdown-editor";
 import { Clock, Stopwatch, CountdownTimer } from "@/components/tambo/clock-components";
 
@@ -158,6 +159,16 @@ export const components: TamboComponent[] = [
     component: TeamMemberCard,
     propsSchema: z.object({
       memberId: z.string().describe("The ID of the team member to show."),
+    }),
+  },
+  {
+    name: "WorkspaceSelector",
+    description: "A dropdown selector to choose between different workspaces. Use this when the user wants to select or switch between workspaces.",
+    component: WorkspaceSelector,
+    propsSchema: z.object({
+      value: z.string().describe("The currently selected workspace ID"),
+      onChange: z.any().describe("Callback function when workspace selection changes"),
+      label: z.string().optional().describe("Label for the selector (default: 'Workspace')"),
     }),
   },
   {
