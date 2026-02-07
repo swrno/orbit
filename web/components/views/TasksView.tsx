@@ -54,18 +54,20 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function TasksView({ workspaceId, pageId }: TasksViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  
+
   // Find the page and group
   let page: any = null;
   let groupId: string | null = null;
-  
+
   if (workspace) {
-    for (const group of workspace.groups) {
-      const p = group.pages.find(pg => pg.id === pageId);
-      if (p) {
-        page = p;
-        groupId = group.id;
-        break;
+    if (workspace && workspace.teams) {
+      for (const team of workspace.teams) {
+        const p = team.pages.find(pg => pg.id === pageId);
+        if (p) {
+          page = p;
+          groupId = team.id;
+          break;
+        }
       }
     }
   }
@@ -79,12 +81,12 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
   const [editingTask, setEditingTask] = useState<any>(null);
 
   // Initialize view state from page or defaults
-  const views = (page?.views || ['table']).map((v: string) => ({ 
-    id: v, 
-    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1), 
-    type: v 
+  const views = (page?.views || ['table']).map((v: string) => ({
+    id: v,
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
+    type: v
   }));
-  
+
   const activeView = page?.type || 'table';
 
   const handleSetActiveView = (viewId: string) => {
@@ -97,8 +99,8 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
     if (workspaceId && groupId && page) {
       const newViews = page.views?.filter((v: string) => v !== viewId) || [];
       const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
-      
-      updatePage(workspaceId, groupId, page.id, { 
+
+      updatePage(workspaceId, groupId, page.id, {
         views: newViews,
         type: newActive as any
       });
@@ -107,7 +109,7 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
 
   const handleAddView = (viewType: string) => {
     const current = page?.views || [];
-    
+
     // Only add if not already present, otherwise just switch to it
     if (!current.includes(viewType)) {
       if (workspaceId && groupId && page) {
@@ -131,7 +133,7 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
       setLoading(true);
       const response = await fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setTasks(data.data);
         groupTasksBySprint(data.data);
@@ -191,7 +193,7 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
 
   const groupTasksBySprint = (taskList: any[]) => {
     const grouped: Record<string, any[]> = {};
-    
+
     taskList.forEach(task => {
       const sprint = task.group || task.sprint || 'Backlog';
       if (!grouped[sprint]) {
@@ -374,7 +376,7 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
                         </Box>
                       </TableCell>
                     </TableRow>
-    
+
                     {/* Group Tasks */}
                     {!collapsedGroups[groupName] && groupTasks.map((task, index) => (
                       <TableRow
@@ -457,7 +459,7 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
                         </TableCell>
                       </TableRow>
                     ))}
-    
+
                     {/* Add Task Row */}
                     {!collapsedGroups[groupName] && (
                       <TableRow sx={{ bgcolor: '#fafbfc' }}>
@@ -490,10 +492,10 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
         onAddView={handleAddView}
         onRemoveView={handleRemoveView}
       />
-      
+
       <ViewToolbar
-        onSearch={() => {}}
-        onFilter={() => {}}
+        onSearch={() => { }}
+        onFilter={() => { }}
         onCreate={() => {
           setEditingTask(null);
           setIsCreatorOpen(true);
@@ -502,9 +504,9 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
         createButtonColor="#579bfc"
       />
 
-      <TaskCreator 
-        open={isCreatorOpen} 
-        onClose={handleCloseCreator} 
+      <TaskCreator
+        open={isCreatorOpen}
+        onClose={handleCloseCreator}
         onSubmit={handleCreateOrUpdateTask}
         workspaceId={workspaceId}
         pageId={pageId}

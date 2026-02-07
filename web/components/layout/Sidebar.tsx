@@ -31,7 +31,7 @@ export default function Sidebar({ className }: { className?: string }) {
         setIsMounted(true);
     }, []);
 
-    const { workspaces, createWorkspace, addPage, renamePage, deletePage, reorderPage, addGroup, renameGroup, deleteGroup } = useAppStore();
+    const { workspaces, createWorkspace, addPage, renamePage, deletePage, reorderPage, addTeam, renameTeam, deleteTeam } = useAppStore();
 
     // Fallback to first workspace if ID is invalid, preventing sidebar crash
     const workspace = workspaces.find(w => w.id === paramId) || workspaces[0];
@@ -53,11 +53,11 @@ export default function Sidebar({ className }: { className?: string }) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [newViewName, setNewViewName] = useState('');
     const [newViewType, setNewViewType] = useState<PageType>('table');
-    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+    const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
     // View Management State (Context Menu, Rename, Delete)
     const [contextMenuAnchor, setContextMenuAnchor] = useState<null | HTMLElement>(null);
-    const [selectedPageForAction, setSelectedPageForAction] = useState<{ groupId: string, pageId: string, title: string } | null>(null);
+    const [selectedPageForAction, setSelectedPageForAction] = useState<{ teamId: string, pageId: string, title: string } | null>(null);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [renameValue, setRenameValue] = useState('');
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -67,24 +67,24 @@ export default function Sidebar({ className }: { className?: string }) {
         { value: 'document', label: 'Document', icon: <FileText size={18} />, description: 'Rich text document' }
     ];
 
-    const [targetGroupId, setTargetGroupId] = useState<string | null>(null);
+    const [targetTeamId, setTargetTeamId] = useState<string | null>(null);
     const [collapsedTeams, setCollapsedTeams] = useState<Record<string, boolean>>({});
 
-    const toggleTeamCollapse = (groupId: string) => {
+    const toggleTeamCollapse = (teamId: string) => {
         setCollapsedTeams(prev => ({
             ...prev,
-            [groupId]: !prev[groupId]
+            [teamId]: !prev[teamId]
         }));
     };
 
     const handleAddClick = (event: React.MouseEvent<HTMLElement>) => {
-        setTargetGroupId(null); // Reset target group (global add)
+        setTargetTeamId(null); // Reset target team (global add)
         setAddMenuAnchor(event.currentTarget);
     };
 
-    const handleGroupAddClick = (event: React.MouseEvent<HTMLElement>, groupId: string) => {
+    const handleTeamAddClick = (event: React.MouseEvent<HTMLElement>, teamId: string) => {
         event.stopPropagation();
-        setTargetGroupId(groupId);
+        setTargetTeamId(teamId);
         setAddMenuAnchor(event.currentTarget);
     };
 
@@ -94,22 +94,22 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleCreateView = () => {
         handleCloseMenu();
-        // Set default group selection
-        if (targetGroupId) {
-            setSelectedGroupId(targetGroupId);
-        } else if (workspace && workspace.groups.length > 0) {
-            setSelectedGroupId(workspace.groups[0].id);
+        // Set default team selection
+        if (targetTeamId) {
+            setSelectedTeamId(targetTeamId);
+        } else if (workspace && workspace.teams.length > 0) {
+            setSelectedTeamId(workspace.teams[0].id);
         }
         setCreateDialogOpen(true);
     };
 
     const handleCreateConfirm = () => {
-        if (newViewName.trim() && workspaceId && selectedGroupId) {
-            addPage(workspaceId, selectedGroupId, newViewName.trim(), newViewType);
+        if (newViewName.trim() && workspaceId && selectedTeamId) {
+            addPage(workspaceId, selectedTeamId, newViewName.trim(), newViewType);
             setNewViewName('');
             setCreateDialogOpen(false);
-            setTargetGroupId(null);
-            setSelectedGroupId('');
+            setTargetTeamId(null);
+            setSelectedTeamId('');
 
             // Navigate to the new page (optimistic)
             // Note: In a real app we'd wait for ID or use a deterministic ID
@@ -117,11 +117,11 @@ export default function Sidebar({ className }: { className?: string }) {
     };
 
     // Context Menu Handlers
-    const handleContextMenuOpen = (event: React.MouseEvent<HTMLElement>, groupId: string, pageId: string, title: string) => {
+    const handleContextMenuOpen = (event: React.MouseEvent<HTMLElement>, teamId: string, pageId: string, title: string) => {
         event.preventDefault();
         event.stopPropagation();
         setContextMenuAnchor(event.currentTarget);
-        setSelectedPageForAction({ groupId, pageId, title });
+        setSelectedPageForAction({ teamId, pageId, title });
     };
 
     const handleContextMenuClose = () => {
@@ -139,7 +139,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleRenameSubmit = () => {
         if (selectedPageForAction && renameValue.trim()) {
-            renamePage(workspaceId, selectedPageForAction.groupId, selectedPageForAction.pageId, renameValue.trim());
+            renamePage(workspaceId, selectedPageForAction.teamId, selectedPageForAction.pageId, renameValue.trim());
             setRenameDialogOpen(false);
             setSelectedPageForAction(null);
         }
@@ -152,7 +152,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleDeleteConfirm = () => {
         if (selectedPageForAction) {
-            deletePage(workspaceId, selectedPageForAction.groupId, selectedPageForAction.pageId);
+            deletePage(workspaceId, selectedPageForAction.teamId, selectedPageForAction.pageId);
             setDeleteDialogOpen(false);
             setSelectedPageForAction(null);
 
@@ -164,59 +164,59 @@ export default function Sidebar({ className }: { className?: string }) {
     };
 
     // Team Management State
-    const [createGroupOpen, setCreateGroupOpen] = useState(false);
-    const [newGroupName, setNewGroupName] = useState('');
-    const [groupContextMenuAnchor, setGroupContextMenuAnchor] = useState<null | HTMLElement>(null);
-    const [selectedGroupForAction, setSelectedGroupForAction] = useState<{ groupId: string, title: string } | null>(null);
-    const [renameGroupOpen, setRenameGroupOpen] = useState(false);
-    const [renameGroupValue, setRenameGroupValue] = useState('');
-    const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
+    const [createTeamOpen, setCreateTeamOpen] = useState(false);
+    const [newTeamName, setNewTeamName] = useState('');
+    const [teamContextMenuAnchor, setTeamContextMenuAnchor] = useState<null | HTMLElement>(null);
+    const [selectedTeamForAction, setSelectedTeamForAction] = useState<{ teamId: string, title: string } | null>(null);
+    const [renameTeamOpen, setRenameTeamOpen] = useState(false);
+    const [renameTeamValue, setRenameTeamValue] = useState('');
+    const [deleteTeamOpen, setDeleteTeamOpen] = useState(false);
 
-    const handleCreateGroup = () => {
-        if (newGroupName.trim() && workspaceId) {
-            addGroup(workspaceId, newGroupName.trim());
-            setNewGroupName('');
-            setCreateGroupOpen(false);
+    const handleCreateTeam = () => {
+        if (newTeamName.trim() && workspaceId) {
+            addTeam(workspaceId, newTeamName.trim());
+            setNewTeamName('');
+            setCreateTeamOpen(false);
         }
     };
 
-    const handleGroupContextMenuOpen = (event: React.MouseEvent<HTMLElement>, groupId: string, title: string) => {
+    const handleTeamContextMenuOpen = (event: React.MouseEvent<HTMLElement>, teamId: string, title: string) => {
         event.preventDefault();
         event.stopPropagation();
-        setGroupContextMenuAnchor(event.currentTarget);
-        setSelectedGroupForAction({ groupId, title });
+        setTeamContextMenuAnchor(event.currentTarget);
+        setSelectedTeamForAction({ teamId, title });
     };
 
-    const handleGroupContextMenuClose = () => {
-        setGroupContextMenuAnchor(null);
+    const handleTeamContextMenuClose = () => {
+        setTeamContextMenuAnchor(null);
     };
 
-    const handleRenameGroupClick = () => {
-        if (selectedGroupForAction) {
-            setRenameGroupValue(selectedGroupForAction.title);
-            setRenameGroupOpen(true);
-            handleGroupContextMenuClose();
+    const handleRenameTeamClick = () => {
+        if (selectedTeamForAction) {
+            setRenameTeamValue(selectedTeamForAction.title);
+            setRenameTeamOpen(true);
+            handleTeamContextMenuClose();
         }
     };
 
-    const handleRenameGroupSubmit = () => {
-        if (selectedGroupForAction && renameGroupValue.trim()) {
-            renameGroup(workspaceId, selectedGroupForAction.groupId, renameGroupValue.trim());
-            setRenameGroupOpen(false);
-            setSelectedGroupForAction(null);
+    const handleRenameTeamSubmit = () => {
+        if (selectedTeamForAction && renameTeamValue.trim()) {
+            renameTeam(workspaceId, selectedTeamForAction.teamId, renameTeamValue.trim());
+            setRenameTeamOpen(false);
+            setSelectedTeamForAction(null);
         }
     };
 
-    const handleDeleteGroupClick = () => {
-        setDeleteGroupOpen(true);
-        handleGroupContextMenuClose();
+    const handleDeleteTeamClick = () => {
+        setDeleteTeamOpen(true);
+        handleTeamContextMenuClose();
     };
 
-    const handleDeleteGroupConfirm = () => {
-        if (selectedGroupForAction) {
-            deleteGroup(workspaceId, selectedGroupForAction.groupId);
-            setDeleteGroupOpen(false);
-            setSelectedGroupForAction(null);
+    const handleDeleteTeamConfirm = () => {
+        if (selectedTeamForAction) {
+            deleteTeam(workspaceId, selectedTeamForAction.teamId);
+            setDeleteTeamOpen(false);
+            setSelectedTeamForAction(null);
         }
     };
 
@@ -225,13 +225,13 @@ export default function Sidebar({ className }: { className?: string }) {
 
         const { source, destination } = result;
 
-        // Extract group ID from droppableId (format: "group-[groupId]")
-        const groupId = source.droppableId.replace('group-', '');
+        // Extract team ID from droppableId (format: "team-[teamId]")
+        const teamId = source.droppableId.replace('team-', '');
 
-        // Ensure dropping in same group for now
+        // Ensure dropping in same team for now
         if (source.droppableId !== destination.droppableId) return;
 
-        reorderPage(workspaceId, groupId, source.index, destination.index);
+        reorderPage(workspaceId, teamId, source.index, destination.index);
     };
 
     // Keyboard shortcut for search (Cmd+K or Ctrl+K)
@@ -251,8 +251,8 @@ export default function Sidebar({ className }: { className?: string }) {
     const handleWorkspaceChange = (newWorkspaceId: string) => {
         setSelectedWorkspace(newWorkspaceId);
         const targetWorkspace = workspaces.find(w => w.id === newWorkspaceId);
-        if (targetWorkspace && targetWorkspace.groups.length > 0 && targetWorkspace.groups[0].pages.length > 0) {
-            router.push(`/${newWorkspaceId}/${targetWorkspace.groups[0].pages[0].id}`);
+        if (targetWorkspace && targetWorkspace.teams.length > 0 && targetWorkspace.teams[0].pages.length > 0) {
+            router.push(`/${newWorkspaceId}/${targetWorkspace.teams[0].pages[0].id}`);
         }
     };
 
@@ -265,8 +265,8 @@ export default function Sidebar({ className }: { className?: string }) {
             // Navigate to first page of new workspace
             setTimeout(() => {
                 const newWorkspace = workspaces.find(w => w.id === newId);
-                if (newWorkspace && newWorkspace.groups.length > 0 && newWorkspace.groups[0].pages.length > 0) {
-                    router.push(`/${newId}/${newWorkspace.groups[0].pages[0].id}`);
+                if (newWorkspace && newWorkspace.teams.length > 0 && newWorkspace.teams[0].pages.length > 0) {
+                    router.push(`/${newId}/${newWorkspace.teams[0].pages[0].id}`);
                 }
             }, 100);
         }
@@ -425,13 +425,13 @@ export default function Sidebar({ className }: { className?: string }) {
                         </Box>
                     </Box>
 
-                    {/* Add Group Action */}
+                    {/* Add Team Action */}
                     <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 600, color: '#6B778C' }}>
                             TEAMS
                         </Typography>
                         <Box
-                            onClick={() => setCreateGroupOpen(true)}
+                            onClick={() => setCreateTeamOpen(true)}
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -454,13 +454,13 @@ export default function Sidebar({ className }: { className?: string }) {
 
                     <Divider sx={{ borderColor: '#DFE1E6' }} />
 
-                    {/* Dynamic Groups & Pages */}
+                    {/* Dynamic Teams & Pages */}
                     <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
-                        {workspace.groups && workspace.groups.length > 0 && (
+                        {workspace.teams && workspace.teams.length > 0 && (
                             <DragDropContext onDragEnd={handleDragEnd}>
                                 <Box sx={{ px: 2, py: 1 }}>
-                                    {workspace.groups.map(group => (
-                                        <Box key={group.id} sx={{ mb: 2 }}>
+                                    {workspace.teams.map(team => (
+                                        <Box key={team.id} sx={{ mb: 2 }}>
                                             <Box
                                                 sx={{
                                                     px: 1.5,
@@ -468,26 +468,26 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
-                                                    '&:hover .group-actions': { opacity: 1 }
+                                                    '&:hover .team-actions': { opacity: 1 }
                                                 }}
                                             >
-                                                <Box 
-                                                    sx={{ 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
                                                         gap: 0.5,
                                                         cursor: 'pointer',
                                                         flex: 1
                                                     }}
-                                                    onClick={() => toggleTeamCollapse(group.id)}
+                                                    onClick={() => toggleTeamCollapse(team.id)}
                                                 >
-                                                    <ChevronDown 
-                                                        size={14} 
-                                                        style={{ 
-                                                            transform: collapsedTeams[group.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                                    <ChevronDown
+                                                        size={14}
+                                                        style={{
+                                                            transform: collapsedTeams[team.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
                                                             transition: 'transform 0.2s',
                                                             color: '#6B778C'
-                                                        }} 
+                                                        }}
                                                     />
                                                     <Typography
                                                         variant="caption"
@@ -498,13 +498,13 @@ export default function Sidebar({ className }: { className?: string }) {
                                                             fontSize: '0.75rem'
                                                         }}
                                                     >
-                                                        {group.title}
+                                                        {team.title}
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                                                     <Box
-                                                        className="group-actions"
-                                                        onClick={(e) => handleGroupAddClick(e, group.id)}
+                                                        className="team-actions"
+                                                        onClick={(e) => handleTeamAddClick(e, team.id)}
                                                         sx={{
                                                             opacity: 0,
                                                             transition: 'opacity 0.2s',
@@ -519,13 +519,13 @@ export default function Sidebar({ className }: { className?: string }) {
                                                                 color: '#0052CC'
                                                             }
                                                         }}
-                                                        title="Add View to Group"
+                                                        title="Add View to Team"
                                                     >
                                                         <Plus size={14} />
                                                     </Box>
                                                     <Box
-                                                        className="group-actions"
-                                                        onClick={(e) => handleGroupContextMenuOpen(e, group.id, group.title)}
+                                                        className="team-actions"
+                                                        onClick={(e) => handleTeamContextMenuOpen(e, team.id, team.title)}
                                                         sx={{
                                                             opacity: 0,
                                                             transition: 'opacity 0.2s',
@@ -545,111 +545,111 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     </Box>
                                                 </Box>
                                             </Box>
-                                            {!collapsedTeams[group.id] && (
-                                            <Droppable droppableId={`group-${group.id}`}>
-                                                {(provided) => (
-                                                    <List disablePadding ref={provided.innerRef} {...provided.droppableProps}>
-                                                        {group.pages.map((page, index) => {
-                                                            const pagePath = `/${selectedWorkspace}/${page.id}`;
-                                                            const isActive = pathname === pagePath;
+                                            {!collapsedTeams[team.id] && (
+                                                <Droppable droppableId={`team-${team.id}`}>
+                                                    {(provided) => (
+                                                        <List disablePadding ref={provided.innerRef} {...provided.droppableProps}>
+                                                            {team.pages.map((page, index) => {
+                                                                const pagePath = `/${selectedWorkspace}/${page.id}`;
+                                                                const isActive = pathname === pagePath;
 
-                                                            // Determine icon based on page type
-                                                            let PageIcon = FileText;
-                                                            if (page.icon) {
-                                                                if (page.icon === 'Bug') PageIcon = Bug;
-                                                                else if (page.icon === 'RotateCcw') PageIcon = RotateCcw;
-                                                                else if (page.icon === 'CheckSquare') PageIcon = CheckSquare;
-                                                                else if (page.icon === 'Rabbit' || page.icon === 'Zap') PageIcon = Zap;
-                                                                else if (page.icon === 'Layers') PageIcon = Layers;
-                                                                else if (page.icon === 'FileText') PageIcon = FileText;
-                                                                else if (page.icon === 'Target') PageIcon = Target;
-                                                            } else {
-                                                                if (page.type === 'board') PageIcon = Kanban;
-                                                                if (page.type === 'table') PageIcon = ListTodo;
-                                                                if (page.type === 'gantt' || page.type === 'calendar') PageIcon = Calendar;
-                                                                if (page.type === 'roadmap') PageIcon = TrendingUp;
-                                                                if (page.type === 'chart') PageIcon = BarChart3;
-                                                                if (page.type === 'list') PageIcon = ListIcon;
-                                                            }
+                                                                // Determine icon based on page type
+                                                                let PageIcon = FileText;
+                                                                if (page.icon) {
+                                                                    if (page.icon === 'Bug') PageIcon = Bug;
+                                                                    else if (page.icon === 'RotateCcw') PageIcon = RotateCcw;
+                                                                    else if (page.icon === 'CheckSquare') PageIcon = CheckSquare;
+                                                                    else if (page.icon === 'Rabbit' || page.icon === 'Zap') PageIcon = Zap;
+                                                                    else if (page.icon === 'Layers') PageIcon = Layers;
+                                                                    else if (page.icon === 'FileText') PageIcon = FileText;
+                                                                    else if (page.icon === 'Target') PageIcon = Target;
+                                                                } else {
+                                                                    if (page.type === 'board') PageIcon = Kanban;
+                                                                    if (page.type === 'table') PageIcon = ListTodo;
+                                                                    if (page.type === 'gantt' || page.type === 'calendar') PageIcon = Calendar;
+                                                                    if (page.type === 'roadmap') PageIcon = TrendingUp;
+                                                                    if (page.type === 'chart') PageIcon = BarChart3;
+                                                                    if (page.type === 'list') PageIcon = ListIcon;
+                                                                }
 
-                                                            return (
-                                                                <Draggable key={page.id} draggableId={page.id} index={index}>
-                                                                    {(provided, snapshot) => (
-                                                                        <Box
-                                                                            ref={provided.innerRef}
-                                                                            {...provided.draggableProps}
-                                                                            {...provided.dragHandleProps}
-                                                                            sx={{ mb: 0.5 }}
-                                                                        >
-                                                                            <ListItemButton
-                                                                                component={Link}
-                                                                                href={pagePath}
-                                                                                selected={isActive}
-                                                                                sx={{
-                                                                                    borderRadius: '3px',
-                                                                                    py: 0.75,
-                                                                                    px: 1.5,
-                                                                                    // Add group for hover effect on More button
-                                                                                    '&:hover .more-actions': {
-                                                                                        opacity: 1
-                                                                                    },
-                                                                                    '&.Mui-selected': {
-                                                                                        bgcolor: '#DEEBFF',
-                                                                                        color: '#0052CC',
-                                                                                        '& .MuiListItemIcon-root': {
-                                                                                            color: '#0052CC'
+                                                                return (
+                                                                    <Draggable key={page.id} draggableId={page.id} index={index}>
+                                                                        {(provided, snapshot) => (
+                                                                            <Box
+                                                                                ref={provided.innerRef}
+                                                                                {...provided.draggableProps}
+                                                                                {...provided.dragHandleProps}
+                                                                                sx={{ mb: 0.5 }}
+                                                                            >
+                                                                                <ListItemButton
+                                                                                    component={Link}
+                                                                                    href={pagePath}
+                                                                                    selected={isActive}
+                                                                                    sx={{
+                                                                                        borderRadius: '3px',
+                                                                                        py: 0.75,
+                                                                                        px: 1.5,
+                                                                                        // Add team for hover effect on More button
+                                                                                        '&:hover .more-actions': {
+                                                                                            opacity: 1
+                                                                                        },
+                                                                                        '&.Mui-selected': {
+                                                                                            bgcolor: '#DEEBFF',
+                                                                                            color: '#0052CC',
+                                                                                            '& .MuiListItemIcon-root': {
+                                                                                                color: '#0052CC'
+                                                                                            },
+                                                                                            '&:hover': {
+                                                                                                bgcolor: '#DEEBFF'
+                                                                                            }
                                                                                         },
                                                                                         '&:hover': {
-                                                                                            bgcolor: '#DEEBFF'
-                                                                                        }
-                                                                                    },
-                                                                                    '&:hover': {
-                                                                                        bgcolor: snapshot.isDragging ? '#DEEBFF' : 'white'
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#0052CC' : '#42526E' }}>
-                                                                                    <PageIcon size={16} />
-                                                                                </ListItemIcon>
-                                                                                <ListItemText
-                                                                                    primary={page.title}
-                                                                                    primaryTypographyProps={{
-                                                                                        variant: 'body2',
-                                                                                        fontWeight: isActive ? 500 : 400,
-                                                                                        color: isActive ? '#0052CC' : '#172B4D',
-                                                                                        noWrap: true
-                                                                                    }}
-                                                                                />
-                                                                                <Box
-                                                                                    component="div"
-                                                                                    className="more-actions"
-                                                                                    onClick={(e) => handleContextMenuOpen(e, group.id, page.id, page.title)}
-                                                                                    sx={{
-                                                                                        opacity: 0,
-                                                                                        transition: 'opacity 0.2s',
-                                                                                        display: 'flex',
-                                                                                        alignItems: 'center',
-                                                                                        color: '#6B778C',
-                                                                                        p: 0.5,
-                                                                                        borderRadius: '3px',
-                                                                                        '&:hover': {
-                                                                                            bgcolor: 'rgba(9, 30, 66, 0.08)',
-                                                                                            color: '#172B4D'
+                                                                                            bgcolor: snapshot.isDragging ? '#DEEBFF' : 'white'
                                                                                         }
                                                                                     }}
                                                                                 >
-                                                                                    <MoreHorizontal size={14} />
-                                                                                </Box>
-                                                                            </ListItemButton>
-                                                                        </Box>
-                                                                    )}
-                                                                </Draggable>
-                                                            );
-                                                        })}
-                                                        {provided.placeholder}
-                                                    </List>
-                                                )}
-                                            </Droppable>
+                                                                                    <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#0052CC' : '#42526E' }}>
+                                                                                        <PageIcon size={16} />
+                                                                                    </ListItemIcon>
+                                                                                    <ListItemText
+                                                                                        primary={page.title}
+                                                                                        primaryTypographyProps={{
+                                                                                            variant: 'body2',
+                                                                                            fontWeight: isActive ? 500 : 400,
+                                                                                            color: isActive ? '#0052CC' : '#172B4D',
+                                                                                            noWrap: true
+                                                                                        }}
+                                                                                    />
+                                                                                    <Box
+                                                                                        component="div"
+                                                                                        className="more-actions"
+                                                                                        onClick={(e) => handleContextMenuOpen(e, team.id, page.id, page.title)}
+                                                                                        sx={{
+                                                                                            opacity: 0,
+                                                                                            transition: 'opacity 0.2s',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            color: '#6B778C',
+                                                                                            p: 0.5,
+                                                                                            borderRadius: '3px',
+                                                                                            '&:hover': {
+                                                                                                bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                                                                                color: '#172B4D'
+                                                                                            }
+                                                                                        }}
+                                                                                    >
+                                                                                        <MoreHorizontal size={14} />
+                                                                                    </Box>
+                                                                                </ListItemButton>
+                                                                            </Box>
+                                                                        )}
+                                                                    </Draggable>
+                                                                );
+                                                            })}
+                                                            {provided.placeholder}
+                                                        </List>
+                                                    )}
+                                                </Droppable>
                                             )}
                                         </Box>
                                     ))}
@@ -785,18 +785,18 @@ export default function Sidebar({ className }: { className?: string }) {
                         />
 
                         <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>Group</InputLabel>
+                            <InputLabel>Team</InputLabel>
                             <Select
-                                value={selectedGroupId}
-                                label="Group"
-                                onChange={(e) => setSelectedGroupId(e.target.value)}
+                                value={selectedTeamId}
+                                label="Team"
+                                onChange={(e) => setSelectedTeamId(e.target.value)}
                             >
-                                {workspace && workspace.groups.map((group) => (
-                                    <MenuItem key={group.id} value={group.id}>
+                                {workspace && (workspace.teams || []).map((team) => (
+                                    <MenuItem key={team.id} value={team.id}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Layers size={16} />
                                             <Typography variant="body2">
-                                                {group.title}
+                                                {team.title}
                                             </Typography>
                                         </Box>
                                     </MenuItem>
@@ -837,7 +837,7 @@ export default function Sidebar({ className }: { className?: string }) {
                     <Button
                         onClick={handleCreateConfirm}
                         variant="contained"
-                        disabled={!newViewName.trim() || !selectedGroupId}
+                        disabled={!newViewName.trim() || !selectedTeamId}
                         sx={{
                             bgcolor: '#0052CC',
                             color: 'white',
@@ -932,115 +932,146 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogActions>
             </Dialog>
 
-            {/* Group Context Menu */}
-            <Menu
-                anchorEl={groupContextMenuAnchor}
-                open={Boolean(groupContextMenuAnchor)}
-                onClose={handleGroupContextMenuClose}
-                PaperProps={{
-                    sx: { minWidth: 160, boxShadow: '0 4px 8px rgba(9, 30, 66, 0.25)', border: '1px solid #DFE1E6' }
-                }}
-            >
-                <MenuItem onClick={handleRenameGroupClick} sx={{ gap: 1.5, py: 1 }}>
-                    <Edit size={16} color="#42526E" />
-                    <Typography variant="body2" color="#172B4D">Rename Team</Typography>
-                </MenuItem>
-                <MenuItem onClick={handleDeleteGroupClick} sx={{ gap: 1.5, py: 1 }}>
-                    <Trash2 size={16} color="#DE350B" />
-                    <Typography variant="body2" color="#DE350B">Delete Team</Typography>
-                </MenuItem>
-            </Menu>
-
-            {/* Create Group Dialog */}
+            {/* Create Team Dialog */}
             <Dialog
-                open={createGroupOpen}
-                onClose={() => setCreateGroupOpen(false)}
-                maxWidth="xs"
+                open={createTeamOpen}
+                onClose={() => setCreateTeamOpen(false)}
+                maxWidth="sm"
                 fullWidth
             >
-                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Create New Team</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>
+                    Create New Team
+                </DialogTitle>
                 <DialogContent>
                     <Box sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
                             label="Team Name"
-                            value={newGroupName}
-                            onChange={(e) => setNewGroupName(e.target.value)}
-                            placeholder="e.g., Marketing, QA"
+                            value={newTeamName}
+                            onChange={(e) => setNewTeamName(e.target.value)}
+                            placeholder="e.g., Design Team, Backend Squad"
                             autoFocus
                         />
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setCreateGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                    <Button onClick={() => setCreateTeamOpen(false)} sx={{ color: '#42526E', textTransform: 'none' }}>
+                        Cancel
+                    </Button>
                     <Button
-                        onClick={handleCreateGroup}
+                        onClick={handleCreateTeam}
                         variant="contained"
-                        disabled={!newGroupName.trim()}
-                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
+                        disabled={!newTeamName.trim()}
+                        sx={{
+                            bgcolor: '#0052CC',
+                            color: 'white',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: '#0747A6' }
+                        }}
                     >
-                        Create
+                        Create Team
                     </Button>
                 </DialogActions>
             </Dialog>
 
+            {/* Team Context Menu */}
+            <Menu
+                anchorEl={teamContextMenuAnchor}
+                open={Boolean(teamContextMenuAnchor)}
+                onClose={handleTeamContextMenuClose}
+                PaperProps={{
+                    sx: {
+                        mt: 1,
+                        minWidth: 160,
+                        boxShadow: '0 4px 8px rgba(9, 30, 66, 0.13), 0 0 1px rgba(9, 30, 66, 0.31)',
+                        border: '1px solid #DFE1E6'
+                    }
+                }}
+            >
+                <MuiMenuItem onClick={handleRenameTeamClick} sx={{ fontSize: '0.875rem' }}>
+                    <ListItemIcon>
+                        <Edit size={14} />
+                    </ListItemIcon>
+                    Rename
+                </MuiMenuItem>
+                <MuiMenuItem onClick={handleDeleteTeamClick} sx={{ fontSize: '0.875rem', color: '#DE350B' }}>
+                    <ListItemIcon sx={{ color: '#DE350B' }}>
+                        <Trash2 size={14} />
+                    </ListItemIcon>
+                    Delete
+                </MuiMenuItem>
+            </Menu>
+
             {/* Rename Team Dialog */}
             <Dialog
-                open={renameGroupOpen}
-                onClose={() => setRenameGroupOpen(false)}
-                maxWidth="xs"
+                open={renameTeamOpen}
+                onClose={() => setRenameTeamOpen(false)}
+                maxWidth="sm"
                 fullWidth
             >
-                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>Rename Team</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>
+                    Rename Team
+                </DialogTitle>
                 <DialogContent>
                     <Box sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
-                            value={renameGroupValue}
-                            onChange={(e) => setRenameGroupValue(e.target.value)}
+                            label="Team Name"
+                            value={renameTeamValue}
+                            onChange={(e) => setRenameTeamValue(e.target.value)}
                             autoFocus
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleRenameGroupSubmit();
-                            }}
                         />
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setRenameGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                    <Button onClick={() => setRenameTeamOpen(false)} sx={{ color: '#42526E', textTransform: 'none' }}>
+                        Cancel
+                    </Button>
                     <Button
-                        onClick={handleRenameGroupSubmit}
+                        onClick={handleRenameTeamSubmit}
                         variant="contained"
-                        disabled={!renameGroupValue.trim()}
-                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
+                        disabled={!renameTeamValue.trim()}
+                        sx={{
+                            bgcolor: '#0052CC',
+                            color: 'white',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: '#0747A6' }
+                        }}
                     >
-                        Save
+                        Rename
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* Delete Team Dialog */}
             <Dialog
-                open={deleteGroupOpen}
-                onClose={() => setDeleteGroupOpen(false)}
-                maxWidth="xs"
+                open={deleteTeamOpen}
+                onClose={() => setDeleteTeamOpen(false)}
+                maxWidth="sm"
                 fullWidth
             >
-                <DialogTitle sx={{ fontWeight: 600, color: '#DE350B', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Trash2 size={20} />
+                <DialogTitle sx={{ fontWeight: 600, color: '#172B4D' }}>
                     Delete Team?
                 </DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" color="#172B4D">
-                        Are you sure you want to delete <strong>{selectedGroupForAction?.title}</strong>? All pages within this team will be deleted.
+                    <Typography variant="body2" sx={{ color: '#172B4D' }}>
+                        Are you sure you want to delete <strong>{selectedTeamForAction?.title}</strong>? This action cannot be undone and will delete all pages within this team.
                     </Typography>
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setDeleteGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                    <Button onClick={() => setDeleteTeamOpen(false)} sx={{ color: '#42526E', textTransform: 'none' }}>
+                        Cancel
+                    </Button>
                     <Button
-                        onClick={handleDeleteGroupConfirm}
+                        onClick={handleDeleteTeamConfirm}
                         variant="contained"
                         color="error"
-                        sx={{ bgcolor: '#DE350B', '&:hover': { bgcolor: '#BF2600' } }}
+                        sx={{
+                            bgcolor: '#DE350B',
+                            color: 'white',
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: '#BF2600' }
+                        }}
                     >
                         Delete
                     </Button>

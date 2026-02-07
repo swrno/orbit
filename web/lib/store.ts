@@ -132,11 +132,11 @@ export type Page = {
   activeViewIndex?: number; // Which view is currently active
 };
 
-export type Group = {
+export type Team = {
   id: string;
   title: string;
   icon?: string; // Icon name from lucide-react
-  groups?: Group[]; // Nested subgroups
+  teams?: Team[]; // Nested sub-teams
   pages: Page[];
 };
 
@@ -147,7 +147,7 @@ export type Workspace = {
   color?: string; // Color for workspace icon
   key: string; // Project key for task IDs, e.g., "PROJ"
   plan: 'Free' | 'Pro';
-  groups: Group[];
+  teams: Team[];
   tasks: Task[]; // Flat list of tasks for the workspace
   sprints: Sprint[];
   epics: Epic[];
@@ -163,13 +163,16 @@ interface AppState {
   currentWorkspaceId: string | null;
 
   // Actions
-  createWorkspace: (title: string, id?: string) => void;
+  fetchWorkspaces: () => Promise<void>;
+  setWorkspaces: (workspaces: Workspace[]) => void;
+  addWorkspace: (workspace: Workspace) => void;
+  createWorkspace: (title: string, id?: string) => Promise<void>;
   updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
   deleteWorkspace: (id: string) => void;
   selectWorkspace: (id: string) => void;
-  addGroup: (workspaceId: string, title: string, icon?: string) => void;
-  addPage: (workspaceId: string, groupId: string, title: string, type: PageType) => void;
-  updatePage: (workspaceId: string, groupId: string, pageId: string, updates: Partial<Page>) => void;
+  addTeam: (workspaceId: string, title: string, icon?: string) => void;
+  addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => void;
+  updatePage: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>) => void;
 
   // Task Actions
   addTask: (workspaceId: string, task: Omit<Task, 'id' | 'key' | 'createdAt' | 'updatedAt'>) => void;
@@ -220,21 +223,21 @@ interface AppState {
   addActivity: (workspaceId: string, activity: Omit<Activity, 'id' | 'createdAt'>) => void;
 
   // Update Actions
-  renameGroup: (workspaceId: string, groupId: string, newTitle: string) => void;
-  renamePage: (workspaceId: string, groupId: string, pageId: string, newTitle: string) => void;
-  updateGroupIcon: (workspaceId: string, groupId: string, icon: string) => void;
+  renameTeam: (workspaceId: string, teamId: string, newTitle: string) => void;
+  renamePage: (workspaceId: string, teamId: string, pageId: string, newTitle: string) => void;
+  updateTeamIcon: (workspaceId: string, teamId: string, icon: string) => void;
 
   // Delete Actions
-  deleteGroup: (workspaceId: string, groupId: string) => void;
-  deletePage: (workspaceId: string, groupId: string, pageId: string) => void;
-  reorderPage: (workspaceId: string, groupId: string, startIndex: number, endIndex: number) => void;
+  deleteTeam: (workspaceId: string, teamId: string) => void;
+  deletePage: (workspaceId: string, teamId: string, pageId: string) => void;
+  reorderPage: (workspaceId: string, teamId: string, startIndex: number, endIndex: number) => void;
 }
 
 // Default Labels
 const DEFAULT_LABELS: Label[] = [];
 
 // Default Team Members
-const DEFAULT_TEAM: TeamMember[] = [];
+const DEFAULT_TEAM_MEMBERS: TeamMember[] = [];
 
 // Default Sprints
 const DEFAULT_SPRINTS: Sprint[] = [];
@@ -248,49 +251,45 @@ export const useAppStore = create<AppState>()(
       workspaces: INITIAL_WORKSPACES,
       currentWorkspaceId: null, // No default workspace
 
-      createWorkspace: (title, id) => set((state) => {
-        // Generate a key from the title (uppercase, first 4 letters, no spaces)
-        const key = title.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4) || 'PROJ';
-        const timestamp = Date.now();
-        
-        return {
-          workspaces: [...state.workspaces, {
-            id: id || `ws-${timestamp}`,
-            title,
-            name: title,
-            color: ['#0052CC', '#6554C0', '#00875A', '#FF8B00'][Math.floor(Math.random() * 4)],
-            key,
-            plan: 'Free',
-            groups: [{
-              id: `g-${timestamp}`,
-              title: 'Team',
-              icon: 'Users',
-              pages: [
-                { id: `p-${timestamp}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
-                { id: `p-${timestamp}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
-                { id: `p-${timestamp}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
-                { id: `p-${timestamp}-4`, title: 'Sprints', type: 'calendar', icon: 'Zap', views: ['calendar'], activeViewIndex: 0 },
-                { id: `p-${timestamp}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
-                { 
-                  id: `p-${timestamp}-6`, 
-                  title: 'Getting Started', 
-                  type: 'document', 
-                  icon: 'FileText',
-                  content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Create More Teams</h3><p>Click the <strong>+</strong> button next to "TEAMS" in the sidebar to create additional teams with the same structure.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Need Help?</h2><p>Start by adding your first task or epic, then explore the different views to find what works best for your team!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
-                },
-              ]
-            }],
-            tasks: [],
-            sprints: [],
-            epics: [],
-            labels: DEFAULT_LABELS,
-            teamMembers: DEFAULT_TEAM,
-            activities: [],
-            taskCounter: 0,
-            epicCounter: 0
-          }]
-        };
-      }),
+      fetchWorkspaces: async () => {
+        try {
+          const response = await fetch('/api/workspaces');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && Array.isArray(data.data)) {
+              set({ workspaces: data.data });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch workspaces:', error);
+        }
+      },
+
+      setWorkspaces: (workspaces) => set({ workspaces }),
+      addWorkspace: (workspace) => set((state) => ({ workspaces: [...state.workspaces, workspace] })),
+
+      createWorkspace: async (title, id) => {
+        try {
+          const workspaceId = id || `ws-${Date.now()}`;
+          const response = await fetch('/api/workspaces', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, id: workspaceId })
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            set((state) => ({
+              workspaces: [...state.workspaces, data.data]
+            }));
+          } else {
+            console.error('Failed to create workspace:', data.error || 'Unknown error');
+          }
+        } catch (error) {
+          console.error('Error creating workspace:', error);
+        }
+      },
 
       updateWorkspace: (id, updates) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
@@ -307,42 +306,42 @@ export const useAppStore = create<AppState>()(
 
       selectWorkspace: (id) => set({ currentWorkspaceId: id }),
 
-      addGroup: (workspaceId, title, icon) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-                ...ws,
-                groups: [...ws.groups, {
-                  id: `g-${Date.now()}`,
-                  title,
-                  icon,
-                  pages: [
-                    { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
-                    { 
-                      id: `p-${Date.now()}-6`, 
-                      title: 'Getting Started', 
-                      type: 'document', 
-                      icon: 'FileText',
-                      content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Customize Your Workspace</h3><p>Edit this document to add team-specific guidelines, links, or documentation.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Get Started</h2><p>Add your first task or epic, then explore the different views!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
-                    },
-                  ]
-                }]
-              }
-            : ws
-        )
-      })),
-
-      addPage: (workspaceId, groupId, title, type) => set((state) => ({
+      addTeam: (workspaceId, title, icon) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.map(g =>
-                g.id === groupId
+              teams: [...ws.teams, {
+                id: `g-${Date.now()}`,
+                title,
+                icon,
+                pages: [
+                  { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
+                  {
+                    id: `p-${Date.now()}-6`,
+                    title: 'Getting Started',
+                    type: 'document',
+                    icon: 'FileText',
+                    content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Customize Your Workspace</h3><p>Edit this document to add team-specific guidelines, links, or documentation.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Get Started</h2><p>Add your first task or epic, then explore the different views!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
+                  },
+                ]
+              }]
+            }
+            : ws
+        )
+      })),
+
+      addPage: (workspaceId, teamId, title, type) => set((state) => ({
+        workspaces: state.workspaces.map(ws =>
+          ws.id === workspaceId
+            ? {
+              ...ws,
+              teams: ws.teams.map(g =>
+                g.id === teamId
                   ? { ...g, pages: [...g.pages, { id: `p-${Date.now()}`, title, type }] }
                   : g
               )
@@ -351,13 +350,13 @@ export const useAppStore = create<AppState>()(
         )
       })),
 
-      updatePage: (workspaceId, groupId, pageId, updates) => set((state) => ({
+      updatePage: (workspaceId, teamId, pageId, updates) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.map(g =>
-                g.id === groupId
+              teams: ws.teams.map(g =>
+                g.id === teamId
                   ? {
                     ...g,
                     pages: g.pages.map(p =>
@@ -833,94 +832,98 @@ export const useAppStore = create<AppState>()(
         )
       })),
 
-      renameGroup: (workspaceId, groupId, newTitle) => set((state) => ({
+      // Update Actions
+      renameTeam: (workspaceId, teamId, newTitle) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.map(g =>
-                g.id === groupId ? { ...g, title: newTitle } : g
+              teams: ws.teams.map(t =>
+                t.id === teamId ? { ...t, title: newTitle } : t
               )
             }
             : ws
         )
       })),
 
-      renamePage: (workspaceId, groupId, pageId, newTitle) => set((state) => ({
+      renamePage: (workspaceId, teamId, pageId, newTitle) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.map(g =>
-                g.id === groupId
+              teams: ws.teams.map(t =>
+                t.id === teamId
                   ? {
-                    ...g,
-                    pages: g.pages.map(p =>
+                    ...t,
+                    pages: t.pages.map(p =>
                       p.id === pageId ? { ...p, title: newTitle } : p
                     )
                   }
-                  : g
+                  : t
               )
             }
             : ws
         )
       })),
 
-      updateGroupIcon: (workspaceId, groupId, icon) => set((state) => ({
+      updateTeamIcon: (workspaceId, teamId, icon) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.map(g =>
-                g.id === groupId ? { ...g, icon } : g
+              teams: ws.teams.map(t =>
+                t.id === teamId ? { ...t, icon } : t
               )
             }
             : ws
         )
       })),
 
-      deleteGroup: (workspaceId, groupId) => set((state) => ({
+      // Delete Actions
+      deleteTeam: (workspaceId, teamId) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.filter(g => g.id !== groupId)
+              teams: ws.teams.filter(t => t.id !== teamId)
             }
             : ws
         )
       })),
 
-      deletePage: (workspaceId, groupId, pageId) => set((state) => ({
+      deletePage: (workspaceId, teamId, pageId) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
           ws.id === workspaceId
             ? {
               ...ws,
-              groups: ws.groups.map(g =>
-                g.id === groupId
-                  ? { ...g, pages: g.pages.filter(p => p.id !== pageId) }
-                  : g
+              teams: ws.teams.map(t =>
+                t.id === teamId
+                  ? { ...t, pages: t.pages.filter(p => p.id !== pageId) }
+                  : t
               )
             }
             : ws
         )
       })),
 
-      reorderPage: (workspaceId, groupId, startIndex, endIndex) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-              ...ws,
-              groups: ws.groups.map(g => {
-                if (g.id !== groupId) return g;
-                const newPages = Array.from(g.pages);
-                const [reorderedItem] = newPages.splice(startIndex, 1);
-                newPages.splice(endIndex, 0, reorderedItem);
-                return { ...g, pages: newPages };
-              })
-            }
-            : ws
-        )
-      })),
+      reorderPage: (workspaceId, teamId, startIndex, endIndex) => set((state) => ({
+        workspaces: state.workspaces.map(ws => {
+          if (ws.id !== workspaceId) return ws;
+
+          return {
+            ...ws,
+            teams: ws.teams.map(t => {
+              if (t.id !== teamId) return t;
+
+              const newPages = Array.from(t.pages);
+              const [reorderedPage] = newPages.splice(startIndex, 1);
+              newPages.splice(endIndex, 0, reorderedPage);
+
+              return { ...t, pages: newPages };
+            })
+          };
+        })
+      }))
     }),
     {
       name: 'ORBIT-ai-storage',

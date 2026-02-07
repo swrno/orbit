@@ -47,16 +47,16 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
-  // Find the page and group
+  // Find the page and team
   let page: any = null;
-  let groupId: string | null = null;
+  let teamId: string | null = null;
 
-  if (workspace) {
-    for (const group of workspace.groups) {
-      const p = group.pages.find(pg => pg.id === pageId);
+  if (workspace && workspace.teams) {
+    for (const team of workspace.teams) {
+      const p = team.pages.find(pg => pg.id === pageId);
       if (p) {
         page = p;
-        groupId = group.id;
+        teamId = team.id;
         break;
       }
     }
@@ -95,17 +95,17 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const activeView = page?.type || 'table';
 
   const handleSetActiveView = (viewId: string) => {
-    if (workspaceId && groupId && page) {
-      updatePage(workspaceId, groupId, page.id, { type: viewId as any });
+    if (workspaceId && teamId && page) {
+      updatePage(workspaceId, teamId, page.id, { type: viewId as any });
     }
   };
 
   const handleRemoveView = (viewId: string) => {
-    if (workspaceId && groupId && page) {
+    if (workspaceId && teamId && page) {
       const newViews = page.views?.filter((v: string) => v !== viewId) || [];
       const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
 
-      updatePage(workspaceId, groupId, page.id, {
+      updatePage(workspaceId, teamId, page.id, {
         views: newViews,
         type: newActive as any
       });
@@ -115,8 +115,8 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const handleAddView = (viewType: string) => {
     const current = page?.views || [];
     if (!current.includes(viewType)) {
-      if (workspaceId && groupId && page) {
-        updatePage(workspaceId, groupId, page.id, {
+      if (workspaceId && teamId && page) {
+        updatePage(workspaceId, teamId, page.id, {
           views: [...current, viewType],
           type: viewType as any
         });
@@ -133,7 +133,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const fetchBugs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/bugs?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
+      const response = await fetch(`/api/bugs?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -151,7 +151,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
 
   const handleCreateOrUpdateBug = async (bugData: any) => {
     try {
-      if (!groupId) {
+      if (!teamId) {
         console.error('No team/group selected');
         return;
       }
@@ -164,8 +164,8 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
         ...bugData,
         workspaceId,
         pageId,
-        teamId: groupId,
-        id: isUpdate ? bugData._id : undefined // api expects 'id' for updates
+        teamId: teamId, // api expects 'id' for updates
+        id: isUpdate ? bugData._id : undefined
       };
 
       const response = await fetch(url, {

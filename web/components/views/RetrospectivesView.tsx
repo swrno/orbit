@@ -38,17 +38,17 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  
-  // Find the page and group
+
+  // Find the page and team
   let page: any = null;
-  let groupId: string | null = null;
-  
-  if (workspace) {
-    for (const group of workspace.groups) {
-      const p = group.pages.find(pg => pg.id === pageId);
+  let teamId: string | null = null;
+
+  if (workspace && workspace.teams) {
+    for (const team of workspace.teams) {
+      const p = team.pages.find(pg => pg.id === pageId);
       if (p) {
         page = p;
-        groupId = group.id;
+        teamId = team.id;
         break;
       }
     }
@@ -63,26 +63,26 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
   const [editingRetro, setEditingRetro] = useState<any>(null);
 
   // Initialize view state from page or defaults
-  const views = (page?.views || ['table']).map((v: string) => ({ 
-    id: v, 
-    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1), 
-    type: v 
+  const views = (page?.views || ['table']).map((v: string) => ({
+    id: v,
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
+    type: v
   }));
-  
+
   const activeView = page?.type || 'table';
 
   const handleSetActiveView = (viewId: string) => {
-    if (workspaceId && groupId && page) {
-      updatePage(workspaceId, groupId, page.id, { type: viewId as any });
+    if (workspaceId && teamId && page) {
+      updatePage(workspaceId, teamId, page.id, { type: viewId as any });
     }
   };
 
   const handleRemoveView = (viewId: string) => {
-    if (workspaceId && groupId && page) {
+    if (workspaceId && teamId && page) {
       const newViews = page.views?.filter((v: string) => v !== viewId) || [];
       const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
-      
-      updatePage(workspaceId, groupId, page.id, { 
+
+      updatePage(workspaceId, teamId, page.id, {
         views: newViews,
         type: newActive as any
       });
@@ -92,8 +92,8 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
   const handleAddView = (viewType: string) => {
     const current = page?.views || [];
     if (!current.includes(viewType)) {
-      if (workspaceId && groupId && page) {
-        updatePage(workspaceId, groupId, page.id, {
+      if (workspaceId && teamId && page) {
+        updatePage(workspaceId, teamId, page.id, {
           views: [...current, viewType],
           type: viewType as any
         });
@@ -110,9 +110,9 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
   const fetchRetrospectives = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/retrospectives?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
+      const response = await fetch(`/api/retrospectives?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setRetrospectives(data.data);
         groupRetrosBySprint(data.data);
@@ -129,11 +129,11 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
 
   const handleCreateOrUpdateRetro = async (retroData: any) => {
     try {
-      if (!groupId) {
+      if (!teamId) {
         console.error('No team/group selected');
         return;
       }
-      
+
       const isUpdate = !!retroData._id;
       const url = '/api/retrospectives';
       const method = isUpdate ? 'PUT' : 'POST';
@@ -142,7 +142,7 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
         ...retroData,
         workspaceId,
         pageId,
-        teamId: groupId,
+        teamId: teamId,
         id: isUpdate ? retroData._id : undefined
       };
 
@@ -173,7 +173,7 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
 
   const groupRetrosBySprint = (retroList: any[]) => {
     const grouped: Record<string, any[]> = {};
-    
+
     retroList.forEach(retro => {
       const sprint = retro.sprint || 'General';
       if (!grouped[sprint]) {
@@ -267,7 +267,7 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
                         </Box>
                       </TableCell>
                     </TableRow>
-    
+
                     {!collapsedGroups[groupName] && groupRetros.map((retro, index) => (
                       <TableRow
                         key={retro.id || index}
@@ -338,7 +338,7 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
                         </TableCell>
                       </TableRow>
                     ))}
-    
+
                     {!collapsedGroups[groupName] && (
                       <TableRow sx={{ bgcolor: '#fafbfc' }}>
                         <TableCell colSpan={7}>
@@ -370,10 +370,10 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
         onAddView={handleAddView}
         onRemoveView={handleRemoveView}
       />
-      
+
       <ViewToolbar
-        onSearch={() => {}}
-        onFilter={() => {}}
+        onSearch={() => { }}
+        onFilter={() => { }}
         onCreate={() => {
           setEditingRetro(null);
           setIsCreatorOpen(true);

@@ -127,24 +127,32 @@ export type Page = {
   pageType?: 'bugs' | 'tasks' | 'sprints' | 'epics' | 'retrospectives' | 'document'; // Schema type
 };
 
-// Group (Team)
-export type Group = {
+// Team (formerly Group)
+export type Team = {
   id: string;
   title: string;
-  icon?: string;
-  groups?: Group[];
+  icon?: string; // Icon name from lucide-react
+  teams?: Team[]; // Nested sub-teams
   pages: Page[];
+  members: TeamMember[]; // Members specific to this team
+
+  // Data associated with this team
+  bugs: BugItem[];
+  tasks: TaskItem[];
+  epics: EpicItem[];
+  sprints: SprintItem[];
+  retrospectives: RetrospectiveItem[];
 };
 
 // Workspace
 export type Workspace = {
   id: string;
   title: string;
-  name: string;
-  color: string;
-  key: string;
+  name: string; // Display name for workspace
+  color: string; // Color for workspace icon
+  key: string; // Project key for task IDs, e.g., "PROJ"
   plan: string;
-  groups: Group[];
+  teams: Team[];
 
   // Page-specific data stores
   bugs: Record<string, BugItem[]>; // pageId -> BugItem[]

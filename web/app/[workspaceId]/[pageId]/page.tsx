@@ -29,16 +29,16 @@ export default function GenericPage() {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
-  // Find the page within the workspace groups
+  // Find the page within the workspace teams
   let currentPage: Page | null = null;
-  let currentGroupId: string | null = null;
+  let currentTeamId: string | null = null;
 
-  if (workspace) {
-    for (const group of workspace.groups) {
-      const page = group.pages.find(p => p.id === pageId);
+  if (workspace && workspace.teams) {
+    for (const team of workspace.teams) {
+      const page = team.pages.find(p => p.id === pageId);
       if (page) {
         currentPage = page;
-        currentGroupId = group.id;
+        currentTeamId = team.id;
         break;
       }
     }
@@ -57,8 +57,8 @@ export default function GenericPage() {
   const currentViewIndex = currentPage.activeViewIndex ?? 0;
 
   const handleViewChange = (index: number) => {
-    if (workspaceId && currentGroupId && currentPage) {
-      updatePage(workspaceId, currentGroupId, currentPage.id, { 
+    if (workspaceId && currentTeamId && currentPage) {
+      updatePage(workspaceId, currentTeamId, currentPage.id, {
         activeViewIndex: index,
         type: pageViews[index]
       });
@@ -66,9 +66,9 @@ export default function GenericPage() {
   };
 
   const handleAddView = (viewType: PageType) => {
-    if (workspaceId && currentGroupId && currentPage) {
+    if (workspaceId && currentTeamId && currentPage) {
       const newViews = [...pageViews, viewType];
-      updatePage(workspaceId, currentGroupId, currentPage.id, { 
+      updatePage(workspaceId, currentTeamId, currentPage.id, {
         views: newViews,
         activeViewIndex: newViews.length - 1,
         type: viewType
@@ -77,15 +77,15 @@ export default function GenericPage() {
   };
 
   const handleRemoveView = (index: number) => {
-    if (workspaceId && currentGroupId && currentPage && pageViews.length > 1) {
+    if (workspaceId && currentTeamId && currentPage && pageViews.length > 1) {
       const newViews = pageViews.filter((_, i) => i !== index);
-      const newActiveIndex = index === currentViewIndex 
+      const newActiveIndex = index === currentViewIndex
         ? Math.max(0, currentViewIndex - 1)
-        : currentViewIndex > index 
-          ? currentViewIndex - 1 
+        : currentViewIndex > index
+          ? currentViewIndex - 1
           : currentViewIndex;
-      
-      updatePage(workspaceId, currentGroupId, currentPage.id, { 
+
+      updatePage(workspaceId, currentTeamId, currentPage.id, {
         views: newViews,
         activeViewIndex: newActiveIndex,
         type: newViews[newActiveIndex]
@@ -99,24 +99,24 @@ export default function GenericPage() {
 
   // Detect specialized view based on page title
   const pageTitle = currentPage.title.toLowerCase();
-  const isSpecializedView = 
-    pageTitle.includes('task') || 
-    pageTitle.includes('sprint') || 
-    pageTitle.includes('epic') || 
-    pageTitle.includes('bug') || 
+  const isSpecializedView =
+    pageTitle.includes('task') ||
+    pageTitle.includes('sprint') ||
+    pageTitle.includes('epic') ||
+    pageTitle.includes('bug') ||
     pageTitle.includes('retro');
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#f6f7fb' }}>
       {/* Page Header */}
-      <PageHeader 
+      <PageHeader
         workspaceName={workspace?.name || 'Workspace'}
         pageName={currentPage.title}
       />
 
       {/* View Tabs - only for non-document and non-specialized pages */}
       {!isDocument && !isSpecializedView && (
-        <ViewTabs 
+        <ViewTabs
           views={pageViews.map((viewType, index) => ({
             id: viewType + '-' + index, // Ensure unique ID
             label: viewType.charAt(0).toUpperCase() + viewType.slice(1),
@@ -131,9 +131,9 @@ export default function GenericPage() {
           }}
           onAddView={(viewType) => handleAddView(viewType as PageType)}
           onRemoveView={(viewId) => {
-             const indexStr = viewId.split('-').pop();
-             const index = indexStr ? parseInt(indexStr) : -1;
-             if (index !== -1 && !isNaN(index)) handleRemoveView(index);
+            const indexStr = viewId.split('-').pop();
+            const index = indexStr ? parseInt(indexStr) : -1;
+            if (index !== -1 && !isNaN(index)) handleRemoveView(index);
           }}
         />
       )}

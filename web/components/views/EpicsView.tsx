@@ -45,17 +45,17 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  
-  // Find the page and group
+
+  // Find the page and team
   let page: any = null;
-  let groupId: string | null = null;
-  
-  if (workspace) {
-    for (const group of workspace.groups) {
-      const p = group.pages.find(pg => pg.id === pageId);
+  let teamId: string | null = null;
+
+  if (workspace && workspace.teams) {
+    for (const team of workspace.teams) {
+      const p = team.pages.find(pg => pg.id === pageId);
       if (p) {
         page = p;
-        groupId = group.id;
+        teamId = team.id;
         break;
       }
     }
@@ -69,26 +69,26 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
   const [editingEpic, setEditingEpic] = useState<any>(null);
 
   // Initialize view state from page or defaults
-  const views = (page?.views || ['table']).map((v: string) => ({ 
-    id: v, 
-    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1), 
-    type: v 
+  const views = (page?.views || ['table']).map((v: string) => ({
+    id: v,
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
+    type: v
   }));
-  
+
   const activeView = page?.type || 'table';
 
   const handleSetActiveView = (viewId: string) => {
-    if (workspaceId && groupId && page) {
-      updatePage(workspaceId, groupId, page.id, { type: viewId as any });
+    if (workspaceId && teamId && page) {
+      updatePage(workspaceId, teamId, page.id, { type: viewId as any });
     }
   };
 
   const handleRemoveView = (viewId: string) => {
-    if (workspaceId && groupId && page) {
+    if (workspaceId && teamId && page) {
       const newViews = page.views?.filter((v: string) => v !== viewId) || [];
       const newActive = activeView === viewId ? (newViews[0] || 'table') : activeView;
-      
-      updatePage(workspaceId, groupId, page.id, { 
+
+      updatePage(workspaceId, teamId, page.id, {
         views: newViews,
         type: newActive as any
       });
@@ -98,8 +98,8 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
   const handleAddView = (viewType: string) => {
     const current = page?.views || [];
     if (!current.includes(viewType)) {
-      if (workspaceId && groupId && page) {
-        updatePage(workspaceId, groupId, page.id, {
+      if (workspaceId && teamId && page) {
+        updatePage(workspaceId, teamId, page.id, {
           views: [...current, viewType],
           type: viewType as any
         });
@@ -116,9 +116,9 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
   const fetchEpics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
+      const response = await fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setEpics(data.data);
       } else {
@@ -134,11 +134,11 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
 
   const handleCreateOrUpdateEpic = async (epicData: any) => {
     try {
-      if (!groupId) {
+      if (!teamId) {
         console.error('No team/group selected');
         return;
       }
-      
+
       const isUpdate = !!epicData._id;
       const url = '/api/epics';
       const method = isUpdate ? 'PUT' : 'POST';
@@ -147,7 +147,7 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
         ...epicData,
         workspaceId,
         pageId,
-        teamId: groupId,
+        teamId: teamId,
         id: isUpdate ? epicData._id : undefined
       };
 
@@ -317,8 +317,8 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
                       onClick={(e) => {
                         // Prevent edit when clicking expand icon
                         if ((e.target as HTMLElement).closest('.expand-icon')) {
-                           toggleEpic(epic.id);
-                           return;
+                          toggleEpic(epic.id);
+                          return;
                         }
                         handleEditEpic(epic);
                       }}
@@ -374,7 +374,7 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
                         />
                       </TableCell>
                     </TableRow>
-    
+
                     {/* Nested Children */}
                     {epic.children?.length > 0 && expandedEpics[epic.id] && epic.children.map((child: any, childIndex: number) => (
                       <TableRow
@@ -423,7 +423,7 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
                     ))}
                   </>
                 ))}
-    
+
                 {epics.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
@@ -447,10 +447,10 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
         onAddView={handleAddView}
         onRemoveView={handleRemoveView}
       />
-      
+
       <ViewToolbar
-        onSearch={() => {}}
-        onFilter={() => {}}
+        onSearch={() => { }}
+        onFilter={() => { }}
         onCreate={() => {
           setEditingEpic(null);
           setIsCreatorOpen(true);
@@ -488,8 +488,8 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
                   }}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('.expand-icon')) {
-                        toggleEpic(epic.id);
-                        return;
+                      toggleEpic(epic.id);
+                      return;
                     }
                     handleEditEpic(epic);
                   }}
