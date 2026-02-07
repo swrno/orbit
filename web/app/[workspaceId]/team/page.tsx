@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAppStore, TeamMember } from "@/lib/store";
 
 import {
@@ -26,6 +26,7 @@ const ROLE_COLORS = {
 
 export default function TeamPage() {
     const params = useParams();
+    const router = useRouter();
     const workspaceId = params.workspaceId as string;
 
     const { workspaces, addTeamMember, updateTeamMember, removeTeamMember } = useAppStore();
@@ -159,7 +160,18 @@ export default function TeamPage() {
 
                             return (
                                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={member.id}>
-                                    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                                    <Card
+                                        elevation={0}
+                                        sx={{
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            cursor: 'pointer',
+                                            transition: 'border-color 0.2s',
+                                            '&:hover': { borderColor: 'primary.main' }
+                                        }}
+                                        onClick={() => router.push(`/${workspaceId}/team/${member.id}`)}
+                                    >
                                         <CardContent>
                                             {/* Header */}
                                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
@@ -195,7 +207,7 @@ export default function TeamPage() {
                                                         </Typography>
                                                     )}
                                                 </Box>
-                                                <IconButton size="small" onClick={() => openEdit(member)}>
+                                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEdit(member); }}>
                                                     <Edit size={14} />
                                                 </IconButton>
                                             </Box>
@@ -238,7 +250,7 @@ export default function TeamPage() {
                                                 <IconButton
                                                     size="small"
                                                     color="error"
-                                                    onClick={() => handleDelete(member.id)}
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(member.id); }}
                                                 >
                                                     <Trash2 size={14} />
                                                 </IconButton>

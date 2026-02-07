@@ -73,9 +73,9 @@ export default function Dashboard() {
 
   const handleRenameSubmit = () => {
     if (renameDialog.name.trim()) {
-      updateWorkspace(renameDialog.workspaceId, { 
-        title: renameDialog.name, 
-        name: renameDialog.name 
+      updateWorkspace(renameDialog.workspaceId, {
+        title: renameDialog.name,
+        name: renameDialog.name
       });
       setRenameDialog({ open: false, workspaceId: "", name: "" });
     }
@@ -364,8 +364,8 @@ export default function Dashboard() {
       </Menu>
 
       {/* Rename Dialog */}
-      <Dialog 
-        open={renameDialog.open} 
+      <Dialog
+        open={renameDialog.open}
         onClose={() => setRenameDialog({ open: false, workspaceId: "", name: "" })}
         maxWidth="xs"
         fullWidth

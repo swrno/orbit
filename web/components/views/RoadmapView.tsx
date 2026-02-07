@@ -3,7 +3,8 @@
 import { useState } from "react";
 import {
     Box, Container, Typography, Paper, Button, Chip, Select, MenuItem,
-    FormControl, InputLabel, Tabs, Tab, Card, CardContent, Grid
+    FormControl, InputLabel, Tabs, Tab, Card, CardContent, Grid,
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField
 } from "@mui/material";
 import {
     Calendar, Target, TrendingUp, Plus, Filter, ChevronRight
@@ -16,11 +17,33 @@ interface RoadmapViewProps {
 }
 
 export function RoadmapView({ workspaceId }: RoadmapViewProps) {
-    const { workspaces } = useAppStore();
+    const { workspaces, addEpic } = useAppStore();
     const workspace = workspaces.find(w => w.id === workspaceId);
 
     const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
     const [timeRange, setTimeRange] = useState<'quarter' | 'year'>('quarter');
+
+    // Create Epic Dialog State
+    const [createEpicOpen, setCreateEpicOpen] = useState(false);
+    const [newEpicName, setNewEpicName] = useState('');
+    const [newEpicDesc, setNewEpicDesc] = useState('');
+
+    const handleCreateEpic = () => {
+        if (newEpicName.trim()) {
+            console.log('Creating epic:', newEpicName);
+            addEpic(workspaceId, {
+                name: newEpicName.trim(),
+                description: newEpicDesc || undefined,
+                status: 'In Progress',
+                color: '#6554C0', // Default purple
+                startDate: new Date().toISOString(),
+                targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // +3 months
+            });
+            setNewEpicName('');
+            setNewEpicDesc('');
+            setCreateEpicOpen(false);
+        }
+    };
 
     if (!workspace) {
         return (
@@ -86,6 +109,7 @@ export function RoadmapView({ workspaceId }: RoadmapViewProps) {
                             <Button
                                 variant="contained"
                                 startIcon={<Plus size={16} />}
+                                onClick={() => setCreateEpicOpen(true)}
                                 sx={{
                                     bgcolor: '#0052CC',
                                     color: 'white',
@@ -253,7 +277,9 @@ export function RoadmapView({ workspaceId }: RoadmapViewProps) {
                                 })
                             ) : (
                                 <Box sx={{ p: 8, textAlign: 'center' }}>
-                                    <Target size={48} color="#DFE1E6" style={{ marginBottom: 16 }} />
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                                        <Target size={48} color="#DFE1E6" />
+                                    </Box>
                                     <Typography variant="h6" gutterBottom sx={{ color: '#42526E' }}>
                                         No Epics Yet
                                     </Typography>
@@ -263,6 +289,7 @@ export function RoadmapView({ workspaceId }: RoadmapViewProps) {
                                     <Button
                                         variant="contained"
                                         startIcon={<Plus size={16} />}
+                                        onClick={() => setCreateEpicOpen(true)}
                                         sx={{
                                             bgcolor: '#0052CC',
                                             color: 'white',
@@ -368,7 +395,9 @@ export function RoadmapView({ workspaceId }: RoadmapViewProps) {
                             ) : (
                                 <Grid size={{ xs: 12 }}>
                                     <Paper sx={{ p: 8, textAlign: 'center', bgcolor: 'white', border: '1px solid #DFE1E6' }}>
-                                        <Target size={48} color="#DFE1E6" style={{ marginBottom: 16 }} />
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                                            <Target size={48} color="#DFE1E6" />
+                                        </Box>
                                         <Typography variant="h6" gutterBottom sx={{ color: '#42526E' }}>
                                             No Epics Yet
                                         </Typography>
@@ -378,6 +407,7 @@ export function RoadmapView({ workspaceId }: RoadmapViewProps) {
                                         <Button
                                             variant="contained"
                                             startIcon={<Plus size={16} />}
+                                            onClick={() => setCreateEpicOpen(true)}
                                             sx={{
                                                 bgcolor: '#0052CC',
                                                 color: 'white',
@@ -394,6 +424,38 @@ export function RoadmapView({ workspaceId }: RoadmapViewProps) {
                     )}
                 </Container>
             </Box>
+
+            {/* Create Epic Dialog */}
+            <Dialog open={createEpicOpen} onClose={() => setCreateEpicOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Create New Epic</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                        <TextField
+                            autoFocus
+                            label="Epic Name"
+                            fullWidth
+                            value={newEpicName}
+                            onChange={(e) => setNewEpicName(e.target.value)}
+                            placeholder="e.g., Q3 Marketing Campaign"
+                        />
+                        <TextField
+                            label="Description"
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={newEpicDesc}
+                            onChange={(e) => setNewEpicDesc(e.target.value)}
+                            placeholder="What is this epic about?"
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setCreateEpicOpen(false)} color="inherit">Cancel</Button>
+                    <Button onClick={handleCreateEpic} variant="contained" disabled={!newEpicName.trim()}>
+                        Create Epic
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

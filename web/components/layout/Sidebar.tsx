@@ -23,16 +23,31 @@ export default function Sidebar({ className }: { className?: string }) {
     const params = useParams();
     const pathname = usePathname();
     const router = useRouter();
-    const workspaceId = params.workspaceId as string;
+    const paramId = params.workspaceId as string;
+
+    // Hydration fix for DragDropContext and store persistence
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const { workspaces, createWorkspace, addPage, renamePage, deletePage, reorderPage, addGroup, renameGroup, deleteGroup } = useAppStore();
-    const workspace = workspaces.find(w => w.id === workspaceId);
+
+    // Fallback to first workspace if ID is invalid, preventing sidebar crash
+    const workspace = workspaces.find(w => w.id === paramId) || workspaces[0];
+    const workspaceId = workspace?.id || paramId;
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedWorkspace, setSelectedWorkspace] = useState(workspaceId || 'ws-1');
+
+    // Keep selection in sync with URL
+    useEffect(() => {
+        if (workspaceId) setSelectedWorkspace(workspaceId);
+    }, [workspaceId]);
+
     const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
     const [newWorkspaceName, setNewWorkspaceName] = useState('');
-    
+
     // View Creation State
     const [addMenuAnchor, setAddMenuAnchor] = useState<null | HTMLElement>(null);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -92,7 +107,7 @@ export default function Sidebar({ className }: { className?: string }) {
             setCreateDialogOpen(false);
             setTargetGroupId(null);
             setSelectedGroupId('');
-            
+
             // Navigate to the new page (optimistic)
             // Note: In a real app we'd wait for ID or use a deterministic ID
         }
@@ -137,7 +152,7 @@ export default function Sidebar({ className }: { className?: string }) {
             deletePage(workspaceId, selectedPageForAction.groupId, selectedPageForAction.pageId);
             setDeleteDialogOpen(false);
             setSelectedPageForAction(null);
-            
+
             // If we deleted the current page, navigate to backlog
             if (pathname?.includes(selectedPageForAction.pageId)) {
                 router.push(`/${workspaceId}/backlog`);
@@ -209,7 +224,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
         // Extract group ID from droppableId (format: "group-[groupId]")
         const groupId = source.droppableId.replace('group-', '');
-        
+
         // Ensure dropping in same group for now
         if (source.droppableId !== destination.droppableId) return;
 
@@ -298,7 +313,7 @@ export default function Sidebar({ className }: { className?: string }) {
         }
     };
 
-    if (!workspace) return null;
+    if (!isMounted || !workspace) return null;
 
     return (
         <>
@@ -454,7 +469,7 @@ export default function Sidebar({ className }: { className?: string }) {
                     {/* Add Group Action */}
                     <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 600, color: '#6B778C' }}>
-                            VIEWS
+                            GROUPS
                         </Typography>
                         <Box
                             onClick={() => setCreateGroupOpen(true)}
@@ -536,12 +551,12 @@ export default function Sidebar({ className }: { className?: string }) {
                                 <Box sx={{ px: 2, py: 1 }}>
                                     {workspace.groups.map(group => (
                                         <Box key={group.id} sx={{ mb: 2 }}>
-                                            <Box 
-                                                sx={{ 
+                                            <Box
+                                                sx={{
                                                     px: 1.5,
-                                                    mb: 1, 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
+                                                    mb: 1,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                     justifyContent: 'space-between',
                                                     '&:hover .group-actions': { opacity: 1 }
                                                 }}
@@ -765,7 +780,7 @@ export default function Sidebar({ className }: { className?: string }) {
             </Dialog>
 
             {/* Add View Menu */}
-             <Menu
+            <Menu
                 anchorEl={addMenuAnchor}
                 open={Boolean(addMenuAnchor)}
                 onClose={handleCloseMenu}
@@ -936,9 +951,9 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setRenameDialogOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
-                    <Button 
-                        onClick={handleRenameSubmit} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleRenameSubmit}
+                        variant="contained"
                         disabled={!renameValue.trim()}
                         sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
                     >
@@ -965,9 +980,9 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setDeleteDialogOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
-                    <Button 
-                        onClick={handleDeleteConfirm} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        variant="contained"
                         color="error"
                         sx={{ bgcolor: '#DE350B', '&:hover': { bgcolor: '#BF2600' } }}
                     >
@@ -1017,9 +1032,9 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setCreateGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
-                    <Button 
-                        onClick={handleCreateGroup} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleCreateGroup}
+                        variant="contained"
                         disabled={!newGroupName.trim()}
                         sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
                     >
@@ -1051,9 +1066,9 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setRenameGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
-                    <Button 
-                        onClick={handleRenameGroupSubmit} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleRenameGroupSubmit}
+                        variant="contained"
                         disabled={!renameGroupValue.trim()}
                         sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' } }}
                     >
@@ -1080,9 +1095,9 @@ export default function Sidebar({ className }: { className?: string }) {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setDeleteGroupOpen(false)} sx={{ color: '#42526E' }}>Cancel</Button>
-                    <Button 
-                        onClick={handleDeleteGroupConfirm} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleDeleteGroupConfirm}
+                        variant="contained"
                         color="error"
                         sx={{ bgcolor: '#DE350B', '&:hover': { bgcolor: '#BF2600' } }}
                     >

@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import {
     Plus, GripVertical, MoreVertical, Trash2, Edit, MoveRight,
-    Filter, ArrowUpDown, Layers, Flag, User, Clock, Target
+    Filter, ArrowUpDown, Layers, Flag, User, Clock, Target, AlertTriangle, CheckCircle2, Circle
 } from "lucide-react";
 import { useState, useMemo } from "react";
 
@@ -17,11 +17,11 @@ interface BacklogViewProps {
     workspaceId: string;
 }
 
-const PRIORITY_CONFIG: Record<TaskPriority, { color: string; bgColor: string; order: number }> = {
-    'Critical': { color: '#ef4444', bgColor: '#fee2e2', order: 0 },
-    'High': { color: '#f97316', bgColor: '#ffedd5', order: 1 },
-    'Medium': { color: '#3b82f6', bgColor: '#dbeafe', order: 2 },
-    'Low': { color: '#94a3b8', bgColor: '#f1f5f9', order: 3 },
+const PRIORITY_CONFIG: Record<TaskPriority, { color: string; bgColor: string; order: number; icon: any }> = {
+    'Critical': { color: '#ef4444', bgColor: '#fee2e2', order: 0, icon: AlertTriangle },
+    'High': { color: '#f97316', bgColor: '#ffedd5', order: 1, icon: Flag },
+    'Medium': { color: '#3b82f6', bgColor: '#dbeafe', order: 2, icon: Flag },
+    'Low': { color: '#94a3b8', bgColor: '#f1f5f9', order: 3, icon: Flag },
 };
 
 const STATUS_CONFIG: Record<TaskStatus, { color: string }> = {
@@ -55,6 +55,7 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
     const [newDescription, setNewDescription] = useState('');
     const [newPriority, setNewPriority] = useState<TaskPriority>('Medium');
     const [newPoints, setNewPoints] = useState(0);
+    const [newAssignee, setNewAssignee] = useState('');
 
     if (!workspace) return null;
 
@@ -109,6 +110,7 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
                 status: 'Todo',
                 sprintId: 'backlog',
                 estimatedPoints: newPoints,
+                owner: newAssignee || undefined
             });
             resetForm();
             setCreateDialogOpen(false);
@@ -120,6 +122,7 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
         setNewDescription('');
         setNewPriority('Medium');
         setNewPoints(0);
+        setNewAssignee('');
     };
 
     const handleSelectTask = (taskId: string, checked: boolean) => {
@@ -310,10 +313,19 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
                                             width: 4,
                                             height: 36,
                                             borderRadius: 2,
-                                            bgcolor: PRIORITY_CONFIG[task.priority || 'Medium'].color
+                                            bgcolor: PRIORITY_CONFIG[task.priority || 'Medium'].color,
+                                            mr: 1.5
                                         }}
                                     />
                                 </Tooltip>
+
+                                {/* Priority Icon */}
+                                <Box sx={{ color: PRIORITY_CONFIG[task.priority || 'Medium'].color, mr: 1, display: 'flex' }}>
+                                    {(() => {
+                                        const Icon = PRIORITY_CONFIG[task.priority || 'Medium'].icon;
+                                        return <Icon size={16} />;
+                                    })()}
+                                </Box>
 
                                 {/* Task Content */}
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -457,6 +469,31 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
                             onChange={(e) => setNewDescription(e.target.value)}
                             placeholder="Acceptance criteria and details..."
                         />
+                        <FormControl fullWidth>
+                            <InputLabel>Assignee</InputLabel>
+                            <Select
+                                value={newAssignee}
+                                onChange={(e) => setNewAssignee(e.target.value)}
+                                label="Assignee"
+                            >
+                                <MenuItem value="">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>U</Avatar>
+                                        Unassigned
+                                    </Box>
+                                </MenuItem>
+                                {workspace.teamMembers?.map(member => (
+                                    <MenuItem key={member.id} value={member.name}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem', bgcolor: 'primary.main' }}>
+                                                {member.name.charAt(0)}
+                                            </Avatar>
+                                            {member.name}
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <FormControl fullWidth>
                                 <InputLabel>Priority</InputLabel>
