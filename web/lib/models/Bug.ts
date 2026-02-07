@@ -11,6 +11,8 @@ const BugSchema = new Schema<BugItem>({
     role: String
   },
   timeUntilResolution: { type: String, default: '' },
+  description: { type: String, default: '' },
+  dueDate: { type: Date },
   status: {
     type: String,
     enum: ['Awaiting Review', 'Pending Review', 'Ready for Dev', 'Done', 'Fixed'],
@@ -36,7 +38,6 @@ const BugSchema = new Schema<BugItem>({
 });
 
 // Indexes
-BugSchema.index({ bugId: 1 });
 BugSchema.index({ group: 1 });
 BugSchema.index({ priority: 1 });
 BugSchema.index({ status: 1 });

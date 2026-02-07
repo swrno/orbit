@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { BugCreator } from "@/components/creators/BugCreator";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 interface BugsViewProps {
   workspaceId: string;
@@ -70,6 +71,17 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredBugs = bugs.filter(b =>
+    b.bug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    b.bugId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    groupBugsByStatus(filteredBugs);
+  }, [bugs, searchQuery]); // Re-group when bugs or search changes
 
   const [editingBug, setEditingBug] = useState<any>(null);
 
@@ -126,7 +138,6 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
 
       if (data.success && Array.isArray(data.data)) {
         setBugs(data.data);
-        groupBugsByStatus(data.data);
       } else {
         console.error('Invalid bugs data format:', data);
         setBugs([]);
@@ -169,6 +180,59 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
       }
     } catch (error) {
       console.error('Error saving bug:', error);
+    }
+  };
+
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+
+    // IF dropped in the same place
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
+
+    // Find the bug
+    const bug = bugs.find(b => b._id === draggableId || b.id === draggableId);
+    if (!bug) return;
+
+    // Optimistic update
+    const newGroup = destination.droppableId;
+    const newStatus = getStatusForGroup(newGroup);
+
+    // Update local state
+    const updatedBugs = bugs.map(b => {
+      if (b._id === draggableId || b.id === draggableId) {
+        return { ...b, group: newGroup, status: newStatus };
+      }
+      return b;
+    });
+
+    setBugs(updatedBugs);
+    groupBugsByStatus(updatedBugs);
+
+    // API Update
+    try {
+      await handleCreateOrUpdateBug({
+        ...bug,
+        _id: bug._id || bug.id,
+        group: newGroup,
+        status: newStatus
+      });
+    } catch (error) {
+      console.error("Failed to update bug position", error);
+      // Revert on error would be ideal here
+      fetchBugs();
+    }
+  };
+
+  const getStatusForGroup = (group: string) => {
+    switch (group) {
+      case "Incoming Bugs": return "Awaiting Review";
+      case "Development Work": return "In Progress";
+      case "Resolved": return "Fixed";
+      default: return "Awaiting Review";
     }
   };
 
@@ -218,106 +282,250 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
     switch (activeView) {
       case 'kanban':
         return (
-          <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
-            {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
-              <Box key={groupName} sx={{ minWidth: 320, maxWidth: 320 }}>
-                <Box sx={{
-                  bgcolor: 'white',
-                  borderRadius: 1,
-                  border: '1px solid #e6e9ef',
-                  p: 2,
-                  mb: 1,
-                  borderTop: `3px solid ${GROUP_COLORS[groupName]}`
-                }}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>
-                    {groupName}
-                  </Typography>
-                  <Typography sx={{ fontSize: '12px', color: '#676879' }}>
-                    {groupBugs.length} bugs
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {groupBugs.map((bug, idx) => (
-                    <Paper
-                      key={bug._id || idx}
-                      onClick={() => handleEditBug(bug)}
-                      sx={{
-                        p: 2,
-                        cursor: 'pointer',
-                        '&:hover': { boxShadow: 2 }
-                      }}
-                    >
-                      <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>
-                        {bug.bug}
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Chip label={bug.priority} size="small" sx={{
-                          bgcolor: PRIORITY_COLORS[bug.priority]?.bg,
-                          color: PRIORITY_COLORS[bug.priority]?.text,
-                          fontSize: '11px'
-                        }} />
-                        <Chip label={bug.status} size="small" sx={{ fontSize: '11px' }} />
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Box sx={{ display: 'flex', gap: 2, p: 2, overflowX: 'auto', height: '100%' }}>
+              {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
+                <Box key={groupName} sx={{ minWidth: 320, maxWidth: 320, display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{
+                    bgcolor: 'white',
+                    borderRadius: 1,
+                    border: '1px solid #e6e9ef',
+                    p: 2,
+                    mb: 1,
+                    borderTop: `3px solid ${GROUP_COLORS[groupName]}`
+                  }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>
+                      {groupName}
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#676879' }}>
+                      {groupBugs.length} bugs
+                    </Typography>
+                  </Box>
+
+                  <Droppable droppableId={groupName}>
+                    {(provided, snapshot) => (
+                      <Box
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        sx={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                          bgcolor: snapshot.isDraggingOver ? 'rgba(0, 82, 204, 0.04)' : 'transparent',
+                          transition: 'background-color 0.2s',
+                          borderRadius: 1,
+                          minHeight: 100
+                        }}
+                      >
+                        {groupBugs.map((bug, idx) => (
+                          <Draggable key={bug._id || bug.id || idx} draggableId={bug._id || bug.id} index={idx}>
+                            {(provided, snapshot) => (
+                              <Paper
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                onClick={() => handleEditBug(bug)}
+                                sx={{
+                                  p: 2,
+                                  cursor: 'pointer',
+                                  '&:hover': { boxShadow: 2 },
+                                  ...provided.draggableProps.style,
+                                  opacity: snapshot.isDragging ? 0.8 : 1
+                                }}
+                              >
+                                <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>
+                                  {bug.bug}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                  <Chip label={bug.priority} size="small" sx={{
+                                    bgcolor: PRIORITY_COLORS[bug.priority]?.bg,
+                                    color: PRIORITY_COLORS[bug.priority]?.text,
+                                    fontSize: '11px',
+                                    height: 20
+                                  }} />
+                                  <Chip label={bug.status} size="small" sx={{ fontSize: '11px', height: 20 }} />
+                                  {bug.dueDate && (
+                                    <Chip
+                                      label={new Date(bug.dueDate).toLocaleDateString()}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{ fontSize: '11px', height: 20 }}
+                                    />
+                                  )}
+                                </Box>
+                                <Typography sx={{ fontSize: '11px', color: '#676879', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                  {bug.bugId}
+                                </Typography>
+                              </Paper>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
                       </Box>
-                      <Typography sx={{ fontSize: '11px', color: '#676879', fontFamily: 'monospace' }}>
-                        {bug.bugId}
-                      </Typography>
-                    </Paper>
-                  ))}
+                    )}
+                  </Droppable>
                 </Box>
-              </Box>
-            ))}
-          </Box>
+              ))}
+            </Box>
+          </DragDropContext>
         );
 
       case 'calendar':
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const daysInMonth = endOfMonth.getDate();
+        const startDay = startOfMonth.getDay(); // 0-6 (Sun-Sat)
+
+        const days = [];
+        // Fill empty slots for previous month
+        for (let i = 0; i < startDay; i++) days.push(null);
+        // Fill days
+        for (let i = 1; i <= daysInMonth; i++) days.push(new Date(today.getFullYear(), today.getMonth(), i));
+
         return (
-          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Bug Calendar View</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <Box key={day} sx={{ p: 1, textAlign: 'center', fontWeight: 600, fontSize: '13px' }}>
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef', height: '100%', overflow: 'auto' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6">{today.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</Typography>
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', bgcolor: '#e6e9ef', border: '1px solid #e6e9ef' }}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <Box key={day} sx={{ p: 1, textAlign: 'center', fontWeight: 600, fontSize: '13px', bgcolor: 'white' }}>
                   {day}
                 </Box>
               ))}
-              {Array.from({ length: 35 }, (_, i) => (
-                <Box key={i} sx={{
-                  aspectRatio: '1',
-                  border: '1px solid #e6e9ef',
-                  borderRadius: 1,
-                  p: 1,
-                  fontSize: '12px'
-                }}>
-                  {i + 1}
-                </Box>
-              ))}
+              {days.map((date, i) => {
+                const dayBugs = date ? bugs.filter(b => {
+                  if (!b.dueDate) return false;
+                  const d = new Date(b.dueDate);
+                  return d.getDate() === date.getDate() && d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
+                }) : [];
+
+                return (
+                  <Box key={i} sx={{
+                    aspectRatio: '0.8',
+                    bgcolor: 'white',
+                    p: 1,
+                    fontSize: '12px',
+                    overflow: 'hidden'
+                  }}>
+                    {date && (
+                      <>
+                        <Typography sx={{ fontWeight: date.getDate() === today.getDate() ? 700 : 400, color: date.getDate() === today.getDate() ? 'primary.main' : 'inherit' }}>
+                          {date.getDate()}
+                        </Typography>
+                        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          {dayBugs.map(b => (
+                            <Box
+                              key={b._id || b.id}
+                              onClick={() => handleEditBug(b)}
+                              sx={{
+                                p: 0.5,
+                                bgcolor: PRIORITY_COLORS[b.priority]?.bg,
+                                color: 'white',
+                                borderRadius: '2px',
+                                cursor: 'pointer',
+                                fontSize: '10px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
+                              {b.bug}
+                            </Box>
+                          ))}
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                )
+              })}
             </Box>
           </Box>
         );
 
       case 'gantt':
+        const validBugs = filteredBugs.filter(b => b.createdAt);
+        if (validBugs.length === 0) return <Box sx={{ p: 3 }}>No bugs to show in timeline.</Box>;
+
+        const earliest = validBugs.reduce((min, b) => {
+          const d = new Date(b.createdAt);
+          return d < min ? d : min;
+        }, new Date());
+
+        // Add buffer
+        earliest.setDate(earliest.getDate() - 2);
+
+        const latest = validBugs.reduce((max, b) => {
+          const d = b.dueDate ? new Date(b.dueDate) : new Date(b.createdAt);
+          // If no due date, assume +7 days for viz
+          if (!b.dueDate) d.setDate(d.getDate() + 7);
+          return d > max ? d : max;
+        }, new Date());
+
+        // Add buffer
+        latest.setDate(latest.getDate() + 5);
+
+        const totalDuration = latest.getTime() - earliest.getTime();
+
         return (
-          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Bug Timeline (Gantt)</Typography>
-            {bugs.map((bug, idx) => (
-              <Box key={bug._id || idx} sx={{ mb: 2 }}>
-                <Typography sx={{ fontSize: '13px', mb: 0.5 }}>{bug.bug}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{
-                    height: 24,
-                    bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#e6e9ef',
-                    borderRadius: 1,
-                    width: `${Math.random() * 60 + 20}%`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    px: 1
-                  }}>
-                    <Typography sx={{ fontSize: '11px', color: 'white' }}>
-                      {bug.status}
-                    </Typography>
-                  </Box>
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef', overflow: 'auto' }}>
+            <Typography variant="h6" sx={{ mb: 3 }}>Bug Timeline</Typography>
+            <Box sx={{ position: 'relative', minWidth: 800 }}>
+              {/* Header dates */}
+              <Box sx={{ display: 'flex', borderBottom: '1px solid #eee', mb: 2, pb: 1 }}>
+                <Typography sx={{ width: 200, flexShrink: 0, fontWeight: 600, fontSize: '13px' }}>Bug</Typography>
+                <Box sx={{ flex: 1, position: 'relative', height: 20 }}>
+                  <Typography sx={{ position: 'absolute', left: 0, fontSize: '12px', color: '#666' }}>
+                    {earliest.toLocaleDateString()}
+                  </Typography>
+                  <Typography sx={{ position: 'absolute', right: 0, fontSize: '12px', color: '#666' }}>
+                    {latest.toLocaleDateString()}
+                  </Typography>
                 </Box>
               </Box>
-            ))}
+
+              {validBugs.map((bug) => {
+                const start = new Date(bug.createdAt).getTime();
+                const end = bug.dueDate
+                  ? new Date(bug.dueDate).getTime()
+                  : new Date(bug.createdAt).getTime() + (7 * 24 * 60 * 60 * 1000); // +7 days default
+
+                const left = ((start - earliest.getTime()) / totalDuration) * 100;
+                const width = ((end - start) / totalDuration) * 100;
+
+                return (
+                  <Box key={bug._id || bug.id} sx={{ display: 'flex', alignItems: 'center', mb: 2, height: 32 }}>
+                    <Typography sx={{ width: 200, flexShrink: 0, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pr: 2 }}>
+                      {bug.bug}
+                    </Typography>
+                    <Box sx={{ flex: 1, position: 'relative', height: '100%' }}>
+                      <Box
+                        onClick={() => handleEditBug(bug)}
+                        sx={{
+                          position: 'absolute',
+                          left: `${left}%`,
+                          width: `${Math.max(width, 1)}%`, // Ensure at least visible
+                          height: 24,
+                          bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#e6e9ef',
+                          borderRadius: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                          px: 1,
+                          cursor: 'pointer',
+                          '&:hover': { opacity: 0.9 }
+                        }}
+                      >
+                        <Typography sx={{ fontSize: '11px', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                          {bug.status}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
           </Box>
         );
 
@@ -433,7 +641,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                         </TableCell>
                         <TableCell>
                           <Typography sx={{ fontSize: '13px', color: '#676879' }}>
-                            {bug.timeUntilResolution || '-'}
+                            {bug.timeUntilResolution || (bug.dueDate ? new Date(bug.dueDate).toLocaleDateString() : '-')}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -466,7 +674,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879' }}>
+                          <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120, display: 'block' }} title={bug.bugId}>
                             {bug.bugId}
                           </Typography>
                         </TableCell>
@@ -506,7 +714,7 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
       />
 
       <ViewToolbar
-        onSearch={() => { }}
+        onSearch={(query) => setSearchQuery(query)}
         onFilter={() => { }}
         onCreate={() => {
           setEditingBug(null);

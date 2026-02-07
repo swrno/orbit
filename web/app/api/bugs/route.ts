@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Bug from '@/lib/models/Bug';
+import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get('workspaceId');
     const pageId = searchParams.get('pageId');
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const body = await request.json();
 
     // Validate required fields
@@ -62,10 +63,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate bug ID if not provided
+    // Generate bug ID if not provided - using UUID as requested to prevent collisions
     if (!body.bugId) {
-      const count = await Bug.countDocuments({ workspaceId: body.workspaceId });
-      body.bugId = `BUG-${String(count + 1).padStart(3, '0')}`;
+      body.bugId = crypto.randomUUID();
     }
 
     if (!body.teamId) {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -135,7 +135,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

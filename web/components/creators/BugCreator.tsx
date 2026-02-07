@@ -26,6 +26,8 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
 
   const [formData, setFormData] = useState({
     bug: '',
+    description: '',
+    dueDate: '',
     reporter: {
       id: '',
       name: '',
@@ -41,6 +43,8 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
     if (open && initialData) {
       setFormData({
         bug: initialData.bug || '',
+        description: initialData.description || '',
+        dueDate: initialData.dueDate ? new Date(initialData.dueDate).toISOString().split('T')[0] : '',
         reporter: initialData.reporter || { id: '', name: '', email: '' },
         status: initialData.status || 'Awaiting Review',
         priority: initialData.priority || 'Medium',
@@ -82,6 +86,8 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
     // Reset form
     setFormData({
       bug: '',
+      description: '',
+      dueDate: '',
       reporter: {
         id: '',
         name: '',
@@ -101,14 +107,31 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
-              label="Bug Description"
+              label="Title"
               value={formData.bug}
               onChange={(e) => setFormData({ ...formData, bug: e.target.value })}
               required
               fullWidth
+              placeholder="Brief summary of the bug"
+            />
+
+            <TextField
+              label="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              fullWidth
               multiline
               rows={3}
-              placeholder="Describe the bug..."
+              placeholder="Detailed description..."
+            />
+
+            <TextField
+              label="Due Date"
+              type="date"
+              value={formData.dueDate}
+              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
             />
 
             <TextField
@@ -132,9 +155,10 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
               fullWidth
             >
               <MenuItem value="Awaiting Review">Awaiting Review</MenuItem>
-              <MenuItem value="In Progress">In Progress</MenuItem>
+              <MenuItem value="Pending Review">Pending Review</MenuItem>
+              <MenuItem value="Ready for Dev">Ready for Dev</MenuItem>
               <MenuItem value="Fixed">Fixed</MenuItem>
-              <MenuItem value="Won't Fix">Won't Fix</MenuItem>
+              <MenuItem value="Done">Done</MenuItem>
             </TextField>
 
             <TextField
@@ -155,6 +179,6 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
           <Button type="submit" variant="contained">{initialData ? 'Update Bug' : 'Create Bug'}</Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </Dialog >
   );
 }

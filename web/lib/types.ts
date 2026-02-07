@@ -15,8 +15,10 @@ export type TeamMember = {
 export type BugItem = {
   id: string;
   bug: string;
+  description: string;
+  dueDate?: Date;
   reporter: TeamMember;
-  timeUntilResolution: string;
+  timeUntilResolution?: string;
   status: 'Awaiting Review' | 'Pending Review' | 'Ready for Dev' | 'Done' | 'Fixed';
   priority: 'Critical' | 'High' | 'Low' | 'Medium';
   connectedTasks: string[]; // Task IDs
@@ -25,6 +27,8 @@ export type BugItem = {
   workspaceId: string;
   teamId: string;
   pageId: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 // Task Item
@@ -141,14 +145,14 @@ export type Workspace = {
   key: string;
   plan: string;
   groups: Group[];
-  
+
   // Page-specific data stores
   bugs: Record<string, BugItem[]>; // pageId -> BugItem[]
   tasks: Record<string, TaskItem[]>;
   sprints: Record<string, SprintItem[]>;
   epics: Record<string, EpicItem[]>;
   retrospectives: Record<string, RetrospectiveItem[]>;
-  
+
   // Shared resources
   teamMembers: TeamMember[];
 };
