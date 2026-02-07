@@ -167,7 +167,7 @@ export const components: TamboComponent[] = [
     component: WorkspaceSelector,
     propsSchema: z.object({
       value: z.string().describe("The currently selected workspace ID"),
-      onChange: z.any().describe("Callback function when workspace selection changes"),
+      onChange: z.custom<(value: string) => void>().describe("Callback function when workspace selection changes"),
       label: z.string().optional().describe("Label for the selector (default: 'Workspace')"),
     }),
   },
