@@ -192,7 +192,7 @@ export default function Dashboard() {
                   {ws.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {ws.groups.length} Groups • {ws.groups.reduce((acc, g) => acc + g.pages.length, 0)} Pages
+                  {ws.teams?.length || 0} Teams • {ws.teams?.reduce((acc, g) => acc + g.pages.length, 0) || 0} Pages
                 </Typography>
 
                 {/* Footer */}

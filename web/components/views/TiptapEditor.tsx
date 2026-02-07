@@ -149,7 +149,7 @@ export function TiptapEditor({ workspaceId, pageId }: TiptapEditorProps) {
   const workspace = workspaces.find((w) => w.id === workspaceId);
   
   // Find page and group to verify existence and get initial content
-  const group = workspace?.groups.find(g => g.pages.some(p => p.id === pageId));
+  const group = workspace?.teams.find(g => g.pages.some(p => p.id === pageId));
   const page = group?.pages.find(p => p.id === pageId);
 
   // Local state to handle initial load vs updates

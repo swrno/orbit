@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppStore, Workspace, Group, Page } from "@/lib/store";
+import { useAppStore, Workspace, Team, Page } from "@/lib/store";
 import { Box, Paper, Typography, List, ListItem, ListItemButton, ListItemText, ListItemAvatar, Avatar, Chip } from "@mui/material";
 import { Clock, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -10,12 +10,12 @@ export function RecentActivity() {
   const router = useRouter();
 
   // Flatten all pages from all workspaces with their workspace context
-  const allPages: Array<{ page: Page; workspace: Workspace; group: Group }> = [];
+  const allPages: Array<{ page: Page; workspace: Workspace; team: Team }> = [];
 
   workspaces.forEach((ws: Workspace) => {
-    ws.groups.forEach((g: Group) => {
+    ws.teams?.forEach((g: Team) => {
       g.pages.forEach((p: Page) => {
-        allPages.push({ page: p, workspace: ws, group: g });
+        allPages.push({ page: p, workspace: ws, team: g });
       });
     });
   });
@@ -44,9 +44,9 @@ export function RecentActivity() {
         }}
       >
         <List sx={{ p: 0 }}>
-          {recentItems.map(({ page, workspace, group }, index) => (
+          {recentItems.map(({ page, workspace, team }, index) => (
             <ListItem
-              key={`${workspace.id}-${group.id}-${page.id}`}
+              key={`${workspace.id}-${team.id}-${page.id}`}
               disablePadding
               sx={{
                 borderBottom: index < recentItems.length - 1 ? '1px solid' : 'none',
@@ -77,7 +77,7 @@ export function RecentActivity() {
                         sx={{ height: 20, fontSize: '0.7rem' }}
                       />
                       <Typography variant="caption" color="text.secondary">
-                        {group.title}
+                        {team.title}
                       </Typography>
                     </Box>
                   }

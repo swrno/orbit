@@ -156,6 +156,17 @@ export type Workspace = {
   activities: Activity[];
   taskCounter: number; // For generating task keys
   epicCounter: number; // For generating epic keys
+  
+  // Access Control Fields
+  ownerId?: string; // Firebase UID of the workspace owner
+  members?: Array<{
+    id: string;
+    name: string;
+    email?: string;
+    avatar?: string;
+    role: 'OWNER' | 'EDITOR' | 'VIEWER';
+    addedAt?: Date | string;
+  }>;
 };
 
 interface AppState {

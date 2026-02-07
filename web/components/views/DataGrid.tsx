@@ -32,7 +32,7 @@ export function DataGrid({ workspaceId, pageId }: DataGridProps) {
     if (!workspace) return null;
 
     // Hardcoded data matching Monday.com screenshot
-    const groups = [
+    const teams = [
         {
             id: 'q1-2026',
             name: 'Q1 2026',
@@ -189,15 +189,15 @@ export function DataGrid({ workspaceId, pageId }: DataGridProps) {
                     ))}
                 </Box>
 
-                {/* Groups and Rows */}
-                {groups.map((group) => {
-                    const isExpanded = expandedGroups[group.id];
+                {/* Teams and Rows */}
+                {teams.map((team) => {
+                    const isExpanded = expandedGroups[team.id];
                     
                     return (
-                        <Box key={group.id}>
+                        <Box key={team.id}>
                             {/* Group Header */}
                             <Box
-                                onClick={() => toggleGroup(group.id)}
+                                onClick={() => toggleGroup(team.id)}
                                 sx={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -216,7 +216,7 @@ export function DataGrid({ workspaceId, pageId }: DataGridProps) {
                                     sx={{ 
                                         width: 6,
                                         height: 32,
-                                        bgcolor: group.color,
+                                        bgcolor: team.color,
                                         borderRadius: '3px',
                                         mr: 0.5
                                     }} 
@@ -231,13 +231,13 @@ export function DataGrid({ workspaceId, pageId }: DataGridProps) {
                                         }} 
                                     />
                                 </IconButton>
-                                <Typography sx={{ fontSize: '15px', fontWeight: 600, color: group.id === 'epics-backlog' ? group.color : '#323338' }}>
-                                    {group.name}
+                                <Typography sx={{ fontSize: '15px', fontWeight: 600, color: team.id === 'epics-backlog' ? team.color : '#323338' }}>
+                                    {team.name}
                                 </Typography>
                             </Box>
 
                             {/* Task Rows */}
-                            {isExpanded && group.tasks.map((task) => (
+                            {isExpanded && team.tasks.map((task) => (
                                 <Box
                                     key={task.id}
                                     sx={{

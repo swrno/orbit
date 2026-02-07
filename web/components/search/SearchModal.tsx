@@ -89,14 +89,14 @@ export function SearchModal({ open, onClose, workspaceId }: SearchModalProps) {
         });
 
         // Search pages
-        workspace.groups?.forEach(group => {
-            group.pages.forEach(page => {
+        workspace.teams?.forEach(team => {
+            team.pages.forEach(page => {
                 if (page.title.toLowerCase().includes(lowerQuery)) {
                     results.push({
                         type: 'page',
                         id: page.id,
                         title: page.title,
-                        subtitle: `${page.type.charAt(0).toUpperCase() + page.type.slice(1)} • ${group.title}`,
+                        subtitle: `${page.type.charAt(0).toUpperCase() + page.type.slice(1)} • ${team.title}`,
                         path: `/${workspaceId}/${page.id}`
                     });
                 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppStore, Workspace, Group, Page } from "@/lib/store";
+import { useAppStore, Workspace, Team, Page } from "@/lib/store";
 import { Box, TextField, InputAdornment, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Typography, Avatar } from "@mui/material";
 import { Search, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,8 +16,8 @@ export function BoardList({ workspaceId }: BoardListProps) {
 
   if (!workspace) return null;
 
-  // Flatten pages from groups
-  const allPages = workspace.groups.flatMap((g: Group) => g.pages.map((p: Page) => ({ ...p, groupName: g.title })));
+  // Flatten pages from teams
+  const allPages = workspace.teams?.flatMap((g: Team) => g.pages.map((p: Page) => ({ ...p, teamName: g.title }))) || [];
 
   return (
     <Box>
@@ -52,7 +52,7 @@ export function BoardList({ workspaceId }: BoardListProps) {
                 </TableRow>
             </TableHead>
             <TableBody>
-                {allPages.map((page: Page & { groupName: string }) => (
+                {allPages.map((page: Page & { teamName: string }) => (
                     <TableRow
                         key={page.id}
                         hover
@@ -78,7 +78,7 @@ export function BoardList({ workspaceId }: BoardListProps) {
                                     {workspace.title.charAt(0)}
                                 </Avatar>
                                 <Typography variant="body2" color="text.primary">
-                                    {workspace.title} ({page.groupName?.toUpperCase()})
+                                    {workspace.title} ({page.teamName?.toUpperCase()})
                                 </Typography>
                             </Box>
                         </TableCell>

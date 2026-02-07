@@ -18,27 +18,27 @@ export function PageTabs() {
 
   if (!workspace) return null;
 
-  // Find current group
-  let currentGroup = null;
-  for (const group of workspace.groups) {
-    if (group.pages.find((p) => p.id === pageId)) {
-      currentGroup = group;
+  // Find current team
+  let currentTeam = null;
+  for (const team of workspace.teams) {
+    if (team.pages.find((p) => p.id === pageId)) {
+      currentTeam = team;
       break;
     }
   }
   
   // Fallback for empty state or navigation
-  if (!currentGroup && workspace.groups.length > 0) {
-      if (workspace.groups[0].pages.length > 0) {
-         currentGroup = workspace.groups[0]; 
+  if (!currentTeam && workspace.teams.length > 0) {
+      if (workspace.teams[0].pages.length > 0) {
+         currentTeam = workspace.teams[0]; 
       }
   }
   
-  if (!currentGroup) return null;
+  if (!currentTeam) return null;
 
   const handleCreatePage = (title: string, type: PageType) => {
-    if (currentGroup) {
-      addPage(workspaceId, currentGroup.id, title, type);
+    if (currentTeam) {
+      addPage(workspaceId, currentTeam.id, title, type);
     }
   };
 
@@ -46,10 +46,10 @@ export function PageTabs() {
     e.preventDefault(); 
     e.stopPropagation();
     if (confirm("Delete this page?")) {
-        deletePage(workspaceId, currentGroup!.id, pId);
+        deletePage(workspaceId, currentTeam!.id, pId);
         // Navigation logic
         if (pId === pageId) {
-             const remaining = currentGroup!.pages.filter(p => p.id !== pId);
+             const remaining = currentTeam!.pages.filter(p => p.id !== pId);
              if (remaining.length > 0) {
                  router.push(`/${workspaceId}/${remaining[0].id}`);
              } else {
@@ -59,7 +59,7 @@ export function PageTabs() {
     }
   };
 
-  const currentTab = currentGroup.pages.find(p => p.id === pageId)?.id || false;
+  const currentTab = currentTeam.pages.find(p => p.id === pageId)?.id || false;
 
   const handleChange = (event: SyntheticEvent, newValue: string) => {
      router.push(`/${workspaceId}/${newValue}`);
@@ -78,7 +78,7 @@ export function PageTabs() {
             scrollButtons="auto"
             sx={{ minHeight: 48 }}
         >
-            {currentGroup.pages.map((page) => {
+            {currentTeam.pages.map((page) => {
                 const Icon = page.type === 'board' ? Kanban : page.type === 'table' ? Table : FileText;
                 
                 return (
