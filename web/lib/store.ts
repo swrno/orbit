@@ -176,10 +176,10 @@ interface AppState {
   currentWorkspaceId: string | null;
 
   // Actions
-  fetchWorkspaces: () => Promise<void>;
+  fetchWorkspaces: (userId?: string) => Promise<void>;
   setWorkspaces: (workspaces: Workspace[]) => void;
   addWorkspace: (workspace: Workspace) => void;
-  createWorkspace: (title: string, id?: string) => Promise<void>;
+  createWorkspace: (title: string, id?: string, creatorId?: string, creatorEmail?: string, creatorName?: string) => Promise<void>;
   updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
   deleteWorkspace: (id: string) => void;
   selectWorkspace: (id: string) => void;
@@ -264,9 +264,10 @@ export const useAppStore = create<AppState>()(
       workspaces: INITIAL_WORKSPACES,
       currentWorkspaceId: null, // No default workspace
 
-      fetchWorkspaces: async () => {
+      fetchWorkspaces: async (userId) => {
         try {
-          const response = await fetch('/api/workspaces');
+          const url = userId ? `/api/workspaces?userId=${userId}` : '/api/workspaces';
+          const response = await fetch(url);
           if (response.ok) {
             const data = await response.json();
             if (data.success && Array.isArray(data.data)) {
@@ -281,13 +282,23 @@ export const useAppStore = create<AppState>()(
       setWorkspaces: (workspaces) => set({ workspaces }),
       addWorkspace: (workspace) => set((state) => ({ workspaces: [...state.workspaces, workspace] })),
 
-      createWorkspace: async (title, id) => {
+      createWorkspace: async (title, id, creatorId, creatorEmail, creatorName) => {
         try {
           const workspaceId = id || `ws-${Date.now()}`;
           const response = await fetch('/api/workspaces', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, id: workspaceId })
+            headers: { 
+              'Content-Type': 'application/json',
+              ...(creatorId && { 'X-User-Id': creatorId }),
+              ...(creatorEmail && { 'X-User-Email': creatorEmail })
+            },
+            body: JSON.stringify({ 
+              title, 
+              id: workspaceId,
+              creatorId,
+              creatorEmail,
+              creatorName
+            })
           });
 
           const data = await response.json();
@@ -298,9 +309,11 @@ export const useAppStore = create<AppState>()(
             }));
           } else {
             console.error('Failed to create workspace:', data.error || 'Unknown error');
+            alert('Failed to create workspace: ' + (data.error || 'Unknown error'));
           }
         } catch (error) {
           console.error('Error creating workspace:', error);
+          alert('Error creating workspace. Please try again.');
         }
       },
 

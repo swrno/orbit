@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore, Workspace } from "@/lib/store";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,6 +28,7 @@ import {
 
 export default function Dashboard() {
   const { workspaces, createWorkspace, selectWorkspace, updateWorkspace, deleteWorkspace } = useAppStore();
+  const { user } = useAuth();
   const router = useRouter();
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -37,10 +39,16 @@ export default function Dashboard() {
     name: ""
   });
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newWorkspaceName.trim()) {
-      createWorkspace(newWorkspaceName);
+    if (newWorkspaceName.trim() && user) {
+      await createWorkspace(
+        newWorkspaceName,
+        undefined,
+        user.uid,
+        user.email || '',
+        user.displayName || user.email?.split('@')[0] || 'User'
+      );
       setNewWorkspaceName("");
       setIsCreating(false);
     }
