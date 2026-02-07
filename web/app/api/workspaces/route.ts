@@ -82,6 +82,11 @@ export async function POST(request: NextRequest) {
             body.key = body.title.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4) || 'PROJ';
         }
 
+        // Set name to title if not provided (name is required by schema)
+        if (!body.name) {
+            body.name = body.title;
+        }
+
         // Set creator as owner
         body.ownerId = creatorId;
 
