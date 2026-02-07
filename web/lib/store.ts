@@ -148,6 +148,8 @@ export type Workspace = {
   key: string; // Project key for task IDs, e.g., "PROJ"
   plan: 'Free' | 'Pro';
   teams: Team[];
+  
+  // Client-side cache of data (fetched from separate collections via references)
   tasks: Task[]; // Flat list of tasks for the workspace
   sprints: Sprint[];
   epics: Epic[];

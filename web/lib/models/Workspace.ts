@@ -53,14 +53,14 @@ const TeamSchema = new Schema({
     icon: String,
     pages: [PageSchema],
     members: [TeamMemberSchema], // Members specific to this team
-    leaderId: String, // User ID of team leader
-
-    // Embedded Data Arrays (using loose schema for flexibility during refactor)
-    bugs: [new Schema({}, { strict: false })],
-    tasks: [new Schema({}, { strict: false })],
-    epics: [new Schema({}, { strict: false })],
-    sprints: [new Schema({}, { strict: false })],
-    retrospectives: [new Schema({}, { strict: false })]
+    leaderId: String // User ID of team leader
+    
+    // Data is now stored in separate collections and fetched via references:
+    // - Tasks collection: filter by teamId
+    // - Bugs collection: filter by teamId
+    // - Epics collection: filter by teamId
+    // - Sprints collection: filter by teamId
+    // - Retrospectives collection: filter by teamId
 });
 
 // Add nested teams support (recursive)
