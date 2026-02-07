@@ -84,19 +84,43 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
   const fetchSprintsAndEpics = async () => {
     try {
       setLoading(true);
-      const teamQuery = teamId ? `&teamId=${teamId}` : '';
+      // Fetch based on workspaceId and teamId only
+      if (!workspaceId || !teamId) {
+        console.warn('Missing workspaceId or teamId');
+        setSprints([]);
+        setEpics([]);
+        setLoading(false);
+        return;
+      }
+
       const [sprintsRes, epicsRes] = await Promise.all([
-        fetch(`/api/sprints?workspaceId=${workspaceId}&pageId=${pageId}${teamQuery}`),
-        fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}${teamQuery}`)
+        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`),
+        fetch(`/api/epics?workspaceId=${workspaceId}&teamId=${teamId}`)
       ]);
 
       const sprintsData = await sprintsRes.json();
       const epicsData = await epicsRes.json();
 
-      if (sprintsData.success) setSprints(sprintsData.data);
-      if (epicsData.success) setEpics(epicsData.data);
+      console.log('Sprints data:', sprintsData);
+      console.log('Epics data:', epicsData);
+
+      if (sprintsData.success && Array.isArray(sprintsData.data)) {
+        setSprints(sprintsData.data);
+      } else {
+        console.warn('Invalid sprints data format:', sprintsData);
+        setSprints([]);
+      }
+      
+      if (epicsData.success && Array.isArray(epicsData.data)) {
+        setEpics(epicsData.data);
+      } else {
+        console.warn('Invalid epics data format:', epicsData);
+        setEpics([]);
+      }
     } catch (error) {
       console.error('Error fetching sprints/epics:', error);
+      setSprints([]);
+      setEpics([]);
     } finally {
       setLoading(false);
     }
@@ -196,16 +220,26 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
                   value={formData.sprint}
                   label="Sprint"
                   onChange={(e) => setFormData({ ...formData, sprint: e.target.value as string })}
+                  disabled={loading}
                 >
                   <MenuItem value="">
                     <em>No Sprint</em>
                   </MenuItem>
-                  {sprints.map((sprint) => (
-                    <MenuItem key={sprint._id || sprint.id} value={sprint.sprint}>
-                      {sprint.sprint}
-                    </MenuItem>
-                  ))}
+                  {loading ? (
+                    <MenuItem disabled>Loading sprints...</MenuItem>
+                  ) : sprints.length === 0 ? (
+                    <MenuItem disabled>No sprints available</MenuItem>
+                  ) : (
+                    sprints.map((sprint) => (
+                      <MenuItem key={sprint._id || sprint.id} value={sprint.sprint}>
+                        {sprint.sprint}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
+                {!loading && sprints.length === 0 && (
+                  <FormHelperText>Create a sprint first to assign tasks</FormHelperText>
+                )}
               </FormControl>
             </Box>
 
@@ -215,16 +249,26 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
                 value={formData.epic}
                 label="Epic"
                 onChange={(e) => setFormData({ ...formData, epic: e.target.value as string })}
+                disabled={loading}
               >
                 <MenuItem value="">
                   <em>No Epic</em>
                 </MenuItem>
-                {epics.map((epic) => (
-                  <MenuItem key={epic._id || epic.id} value={epic.epic}>
-                    {epic.epic}
-                  </MenuItem>
-                ))}
+                {loading ? (
+                  <MenuItem disabled>Loading epics...</MenuItem>
+                ) : epics.length === 0 ? (
+                  <MenuItem disabled>No epics available</MenuItem>
+                ) : (
+                  epics.map((epic) => (
+                    <MenuItem key={epic._id || epic.id} value={epic.epic}>
+                      {epic.epic}
+                    </MenuItem>
+                  ))
+                )}
               </Select>
+              {!loading && epics.length === 0 && (
+                <FormHelperText>Create an epic first to assign tasks</FormHelperText>
+              )}
             </FormControl>
 
             <TextField

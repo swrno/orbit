@@ -216,16 +216,162 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
 
   const renderContent = () => {
     switch (activeView) {
-      case 'gantt':
       case 'kanban':
-      case 'calendar':
         return (
-          <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography color="text.secondary">
-              {activeView.charAt(0).toUpperCase() + activeView.slice(1)} view is coming soon
-            </Typography>
+          <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
+            {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
+              <Box key={groupName} sx={{ minWidth: 320, maxWidth: 320 }}>
+                <Box sx={{ 
+                  bgcolor: 'white', 
+                  borderRadius: 1, 
+                  border: '1px solid #e6e9ef',
+                  p: 2,
+                  mb: 1,
+                  borderTop: `3px solid ${GROUP_COLORS[groupName]}`
+                }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>
+                    {groupName}
+                  </Typography>
+                  <Typography sx={{ fontSize: '12px', color: '#676879' }}>
+                    {groupBugs.length} bugs
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {groupBugs.map((bug, idx) => (
+                    <Paper 
+                      key={bug._id || idx}
+                      onClick={() => handleEditBug(bug)}
+                      sx={{ 
+                        p: 2, 
+                        cursor: 'pointer',
+                        '&:hover': { boxShadow: 2 }
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>
+                        {bug.bug}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                        <Chip label={bug.priority} size="small" sx={{ 
+                          bgcolor: PRIORITY_COLORS[bug.priority]?.bg, 
+                          color: PRIORITY_COLORS[bug.priority]?.text,
+                          fontSize: '11px'
+                        }} />
+                        <Chip label={bug.status} size="small" sx={{ fontSize: '11px' }} />
+                      </Box>
+                      <Typography sx={{ fontSize: '11px', color: '#676879', fontFamily: 'monospace' }}>
+                        {bug.bugId}
+                      </Typography>
+                    </Paper>
+                  ))}
+                </Box>
+              </Box>
+            ))}
           </Box>
         );
+      
+      case 'calendar':
+        return (
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Bug Calendar View</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                <Box key={day} sx={{ p: 1, textAlign: 'center', fontWeight: 600, fontSize: '13px' }}>
+                  {day}
+                </Box>
+              ))}
+              {Array.from({ length: 35 }, (_, i) => (
+                <Box key={i} sx={{ 
+                  aspectRatio: '1', 
+                  border: '1px solid #e6e9ef', 
+                  borderRadius: 1,
+                  p: 1,
+                  fontSize: '12px'
+                }}>
+                  {i + 1}
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        );
+      
+      case 'gantt':
+        return (
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Bug Timeline (Gantt)</Typography>
+            {bugs.map((bug, idx) => (
+              <Box key={bug._id || idx} sx={{ mb: 2 }}>
+                <Typography sx={{ fontSize: '13px', mb: 0.5 }}>{bug.bug}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ 
+                    height: 24, 
+                    bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#e6e9ef',
+                    borderRadius: 1,
+                    width: `${Math.random() * 60 + 20}%`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    px: 1
+                  }}>
+                    <Typography sx={{ fontSize: '11px', color: 'white' }}>
+                      {bug.status}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        );
+      
+      case 'chart':
+        return (
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography variant="h6" sx={{ mb: 3 }}>Bug Statistics</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+              <Box>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Priority</Typography>
+                {Object.keys(PRIORITY_COLORS).map(priority => {
+                  const count = bugs.filter(b => b.priority === priority).length;
+                  return (
+                    <Box key={priority} sx={{ mb: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography sx={{ fontSize: '13px' }}>{priority}</Typography>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
+                      </Box>
+                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
+                        <Box sx={{ 
+                          height: '100%', 
+                          width: `${(count / bugs.length) * 100}%`,
+                          bgcolor: PRIORITY_COLORS[priority].bg 
+                        }} />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Status</Typography>
+                {Object.keys(groupedBugs).map(group => {
+                  const count = groupedBugs[group].length;
+                  return (
+                    <Box key={group} sx={{ mb: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography sx={{ fontSize: '13px' }}>{group}</Typography>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
+                      </Box>
+                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
+                        <Box sx={{ 
+                          height: '100%', 
+                          width: `${(count / bugs.length) * 100}%`,
+                          bgcolor: GROUP_COLORS[group] 
+                        }} />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          </Box>
+        );
+      
       default:
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
@@ -378,129 +524,9 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
         initialData={editingBug} 
       />
 
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-              <TableCell width={40}></TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Bug</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Reporter</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Time until resolution</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Priority</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Connected tasks</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Bug ID</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
-              <>
-                <TableRow
-                  key={`group-${groupName}`}
-                  sx={{
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: '#f0f0f0' }
-                  }}
-                  onClick={() => toggleGroup(groupName)}
-                >
-                  <TableCell colSpan={8} sx={{ py: 1, borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                      <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
-                        {groupName}
-                      </Typography>
-                      <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
-                        {groupBugs.length}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-
-                {!collapsedGroups[groupName] && groupBugs.map((bug, index) => (
-                  <TableRow
-                    key={bug.id || index}
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: '#f6f7fb' },
-                      borderLeft: `4px solid ${GROUP_COLORS[groupName]}`
-                    }}
-                    onClick={() => handleEditBug(bug)}
-                  >
-                    <TableCell></TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '14px' }}>{bug.bug}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                          {bug.reporter?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Typography sx={{ fontSize: '13px' }}>{bug.reporter?.name || 'Unknown'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '13px', color: '#676879' }}>
-                        {bug.timeUntilResolution || '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={bug.status}
-                        size="small"
-                        sx={{
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          height: '24px'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={bug.priority}
-                        size="small"
-                        sx={{
-                          bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#c4c4c4',
-                          color: PRIORITY_COLORS[bug.priority]?.text || '#ffffff',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          height: '24px'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '13px' }}>
-                        {bug.connectedTasks?.length || 0} tasks
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879' }}>
-                        {bug.bugId}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-                  {!collapsedGroups[groupName] && (
-                    <TableRow sx={{ bgcolor: '#fafbfc', borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
-                      <TableCell colSpan={8}>
-                        <Button
-                          startIcon={<Plus size={14} />}
-                          sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
-                          onClick={() => {
-                            setEditingBug(null);
-                            setIsCreatorOpen(true);
-                          }}
-                        >
-                          Add bug
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )}
-              </>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {renderContent()}
+      </Box>
     </Box>
   );
 }

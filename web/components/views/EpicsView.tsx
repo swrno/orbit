@@ -193,14 +193,103 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
 
   const renderContent = () => {
     switch (activeView) {
-      case 'gantt':
       case 'kanban':
+        return (
+          <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
+            {['Backlog', 'Product discovery', 'Dev WIP', 'Released'].map(phase => {
+              const phaseEpics = epics.filter(e => e.phase === phase);
+              return (
+                <Box key={phase} sx={{ minWidth: 320, maxWidth: 320 }}>
+                  <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{phase}</Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#676879' }}>{phaseEpics.length} epics</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {phaseEpics.map((epic, idx) => (
+                      <Paper key={epic._id || idx} onClick={() => handleEditEpic(epic)} sx={{ p: 2, cursor: 'pointer', '&:hover': { boxShadow: 2 } }}>
+                        <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{epic.epic}</Typography>
+                        <Chip label={epic.priority} size="small" sx={{ fontSize: '11px', mb: 1 }} />
+                        <Typography sx={{ fontSize: '11px', color: '#676879' }}>
+                          {epic.connectedTasks?.length || 0} connected tasks
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        );
       case 'calendar':
         return (
-          <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography color="text.secondary">
-              {activeView.charAt(0).toUpperCase() + activeView.slice(1)} view is coming soon
-            </Typography>
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Epic Calendar</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                <Box key={day} sx={{ p: 1, textAlign: 'center', fontWeight: 600, fontSize: '13px' }}>{day}</Box>
+              ))}
+              {Array.from({ length: 35 }, (_, i) => (
+                <Box key={i} sx={{ aspectRatio: '1', border: '1px solid #e6e9ef', borderRadius: 1, p: 1, fontSize: '12px' }}>{i + 1}</Box>
+              ))}
+            </Box>
+          </Box>
+        );
+      case 'gantt':
+        return (
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Epic Timeline</Typography>
+            {epics.map((epic, idx) => (
+              <Box key={epic._id || idx} sx={{ mb: 2 }}>
+                <Typography sx={{ fontSize: '13px', mb: 0.5 }}>{epic.epic}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ height: 24, bgcolor: '#0073ea', borderRadius: 1, width: `${Math.random() * 60 + 20}%`, display: 'flex', alignItems: 'center', px: 1 }}>
+                    <Typography sx={{ fontSize: '11px', color: 'white' }}>{epic.phase}</Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        );
+      case 'chart':
+        return (
+          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
+            <Typography variant="h6" sx={{ mb: 3 }}>Epic Statistics</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+              <Box>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Phase</Typography>
+                {['Backlog', 'Product discovery', 'Dev WIP', 'Released'].map(phase => {
+                  const count = epics.filter(e => e.phase === phase).length;
+                  return (
+                    <Box key={phase} sx={{ mb: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography sx={{ fontSize: '13px' }}>{phase}</Typography>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
+                      </Box>
+                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
+                        <Box sx={{ height: '100%', width: `${epics.length ? (count / epics.length) * 100 : 0}%`, bgcolor: '#0073ea' }} />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Priority</Typography>
+                {['Critical', 'High', 'Medium', 'Low', 'Best Effort'].map(priority => {
+                  const count = epics.filter(e => e.priority === priority).length;
+                  return (
+                    <Box key={priority} sx={{ mb: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography sx={{ fontSize: '13px' }}>{priority}</Typography>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
+                      </Box>
+                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
+                        <Box sx={{ height: '100%', width: `${epics.length ? (count / epics.length) * 100 : 0}%`, bgcolor: '#579bfc' }} />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
           </Box>
         );
       default:

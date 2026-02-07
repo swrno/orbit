@@ -64,11 +64,6 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const viewTypes = [
         { value: 'table', label: 'Table View', icon: <Table size={18} />, description: 'Spreadsheet-style table' },
-        { value: 'board', label: 'Board View', icon: <Kanban size={18} />, description: 'Kanban-style workflow' },
-        { value: 'gantt', label: 'Gantt Chart', icon: <Calendar size={18} />, description: 'Timeline and dependencies' },
-        { value: 'roadmap', label: 'Roadmap', icon: <TrendingUp size={18} />, description: 'Strategic planning timeline' },
-        { value: 'calendar', label: 'Calendar View', icon: <Calendar size={18} />, description: 'Calendar view' },
-        { value: 'chart', label: 'Chart View', icon: <BarChart3 size={18} />, description: 'Data visualization' },
         { value: 'document', label: 'Document', icon: <FileText size={18} />, description: 'Rich text document' }
     ];
 
