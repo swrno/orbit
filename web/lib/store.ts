@@ -181,7 +181,7 @@ interface AppState {
   addWorkspace: (workspace: Workspace) => void;
   createWorkspace: (title: string, id?: string, creatorId?: string, creatorEmail?: string, creatorName?: string) => Promise<Workspace | null>;
   updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
-  deleteWorkspace: (id: string) => void;
+  deleteWorkspace: (id: string, userId: string) => void;
   selectWorkspace: (id: string) => void;
   addTeam: (workspaceId: string, title: string, icon?: string, leaderId?: string, leaderEmail?: string, leaderName?: string) => Promise<void>;
   addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => void;
@@ -241,7 +241,7 @@ interface AppState {
   updateTeamIcon: (workspaceId: string, teamId: string, icon: string) => void;
 
   // Delete Actions
-  deleteTeam: (workspaceId: string, teamId: string) => void;
+  deleteTeam: (workspaceId: string, teamId: string, userId: string) => void;
   deletePage: (workspaceId: string, teamId: string, pageId: string) => void;
   reorderPage: (workspaceId: string, teamId: string, startIndex: number, endIndex: number) => void;
 }
@@ -331,42 +331,78 @@ export const useAppStore = create<AppState>()(
         )
       })),
 
-      deleteWorkspace: (id) => set((state) => ({
-        workspaces: state.workspaces.filter(ws => ws.id !== id),
-        currentWorkspaceId: state.currentWorkspaceId === id
-          ? (state.workspaces.find(ws => ws.id !== id)?.id || null)
-          : state.currentWorkspaceId
-      })),
+      deleteWorkspace: async (id, userId) => {
+        try {
+          console.log('Deleting workspace:', id);
+          const response = await fetch(`/api/workspaces?id=${id}&userId=${userId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userId}`, // Mock token for now as per auth-middleware
+              'X-User-Id': userId
+            }
+          });
+          
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+             set((state) => ({
+              workspaces: state.workspaces.filter(ws => ws.id !== id),
+              currentWorkspaceId: state.currentWorkspaceId === id
+                ? (state.workspaces.find(ws => ws.id !== id)?.id || null)
+                : state.currentWorkspaceId
+            }));
+          } else {
+             console.error('Failed to delete workspace:', data.error);
+             alert(`Failed to delete workspace: ${data.error}`);
+          }
+        } catch (error) {
+          console.error('Error deleting workspace:', error);
+          alert('Error deleting workspace. Please try again.');
+        }
+      },
 
       selectWorkspace: (id) => set({ currentWorkspaceId: id }),
 
       addTeam: async (workspaceId, title, icon, leaderId, leaderEmail, leaderName) => {
         try {
+          console.log('Adding team:', { workspaceId, title, leaderId });
           const response = await fetch('/api/teams', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${leaderId}`,
+              'X-User-Id': leaderId || ''
+            },
             body: JSON.stringify({ 
               workspaceId, 
               title, 
               icon,
               leaderId,
               leaderEmail,
-              leaderName
+              leaderName,
+              currentUserId: leaderId // Also pass in body as fallback
             })
           });
 
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.data) {
-              set((state) => ({
-                workspaces: state.workspaces.map(ws =>
-                  ws.id === workspaceId ? data.data : ws
-                )
-              }));
-            }
+          const data = await response.json();
+          console.log('Add team response:', data);
+
+          if (response.ok && data.success && data.data) {
+            // Update workspace with the new data from server which contains the new team
+            set((state) => ({
+              workspaces: state.workspaces.map(ws =>
+                ws.id === workspaceId ? data.data : ws
+              )
+            }));
+            return data.data; // Return full workspace
+          } else {
+            console.error('Failed to add team:', data.error);
+            alert(`Failed to add team: ${data.error}`);
           }
         } catch (error) {
           console.error('Failed to add team:', error);
+          alert('Error adding team. Please try again.');
         }
       },
 

@@ -166,6 +166,7 @@ export default function Sidebar({ className }: { className?: string }) {
         }
     };
 
+
     // Team Management State
     const [createTeamOpen, setCreateTeamOpen] = useState(false);
     const [newTeamName, setNewTeamName] = useState('');
@@ -225,7 +226,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleDeleteTeamConfirm = () => {
         if (selectedTeamForAction) {
-            deleteTeam(workspaceId, selectedTeamForAction.teamId);
+            deleteTeam(workspaceId, selectedTeamForAction.teamId, user?.uid || '');
             setDeleteTeamOpen(false);
             setSelectedTeamForAction(null);
         }

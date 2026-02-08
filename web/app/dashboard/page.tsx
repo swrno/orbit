@@ -106,7 +106,7 @@ export default function Dashboard() {
     if (menuAnchor) {
       const workspace = workspaces.find(w => w.id === menuAnchor.workspaceId);
       if (workspace && confirm(`Are you sure you want to delete "${workspace.title}"? This cannot be undone.`)) {
-        deleteWorkspace(menuAnchor.workspaceId);
+        deleteWorkspace(menuAnchor.workspaceId, user?.uid || '');
       }
     }
     handleMenuClose();

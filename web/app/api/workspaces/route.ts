@@ -114,6 +114,9 @@ export async function POST(request: NextRequest) {
                 id: `g-${timestamp}`,
                 title: 'Team',
                 icon: 'Users',
+                leaderId: creatorId,
+                leaderName: creatorName,
+                leaderEmail: creatorEmail,
                 members: [],
                 bugs: [],
                 tasks: [],
@@ -254,6 +257,65 @@ export async function PUT(request: NextRequest) {
         console.error('PUT /api/workspaces error:', error);
         return NextResponse.json(
             { success: false, error: error.message || 'Failed to update workspace' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(request: NextRequest) {
+    try {
+        await connectDB();
+
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json(
+                { success: false, error: 'Workspace ID is required' },
+                { status: 400 }
+            );
+        }
+
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const userId = authUser?.uid || searchParams.get('userId');
+
+        if (!userId) {
+            return NextResponse.json(
+                { success: false, error: 'User authentication required' },
+                { status: 401 }
+            );
+        }
+
+        // Find the workspace
+        const workspace = await Workspace.findOne({ id });
+
+        if (!workspace) {
+            return NextResponse.json(
+                { success: false, error: 'Workspace not found' },
+                { status: 404 }
+            );
+        }
+
+        // Check permissions - only owner can delete
+        if (workspace.ownerId !== userId) {
+            return NextResponse.json(
+                { success: false, error: 'Permission denied. Only workspace owner can delete workspace.' },
+                { status: 403 }
+            );
+        }
+
+        await Workspace.deleteOne({ id });
+
+        return NextResponse.json({
+            success: true,
+            message: 'Workspace deleted successfully',
+            data: { id }
+        });
+    } catch (error: any) {
+        console.error('DELETE /api/workspaces error:', error);
+        return NextResponse.json(
+            { success: false, error: error.message || 'Failed to delete workspace' },
             { status: 500 }
         );
     }
