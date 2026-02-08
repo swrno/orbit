@@ -40,7 +40,36 @@ import type { TamboComponent } from "@tambo-ai/react";
  * ];
  * ```
  */
-export const components: TamboComponent[] = [];
 
-// Import your custom components that utilize the Tambo SDK
-// import { CustomChart } from "../components/tambo/custom-chart";
+import { z } from "zod";
+import Clock from "../components/tambo/clock";
+import type { TamboTool } from "@tambo-ai/react";
+
+/**
+ * Components Array - A collection of Tambo components to register
+ */
+export const components: TamboComponent[] = [
+  {
+    name: "Clock",
+    description: "Displays the current time to the user.",
+    component: Clock,
+    propsSchema: z.object({
+      time: z.string().optional().describe("The current time to display, e.g. '10:00 AM'"),
+    }),
+  },
+];
+
+/**
+ * Tools Array - A collection of Tambo tools to register
+ */
+export const tools: TamboTool[] = [
+  {
+    name: "get-time",
+    description: "Get the current time.",
+    tool: async () => {
+      return new Date().toString();
+    },
+    inputSchema: z.object({}),
+    outputSchema: z.string(),
+  },
+];
