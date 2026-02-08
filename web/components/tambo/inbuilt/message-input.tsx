@@ -5,7 +5,7 @@ import {
   McpPromptButton,
   McpResourceButton,
 } from "@/components/tambo/inbuilt/mcp-components";
-import { McpConfigModal } from "@/components/tambo/inbuilt/mcp-config-modal";
+import { McpConfigModal } from "./mcp-config-modal";
 import {
   Tooltip,
   TooltipProvider,

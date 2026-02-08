@@ -61,9 +61,15 @@ export const getNavigateToViewTool = (context: ToolContext): TamboTool => {
         }
       }
 
-      // 3. Fallback to static route (legacy or standard views explicitly routed)
-      router.push(`/${workspaceId}/${normalizedView.toLowerCase()}`);
-      return `Navigating to ${normalizedView} view.`;
+      // 3. Fallback to static route ONLY for known static views
+      const staticViews = ["backlog", "roadmap", "settings", "team access"];
+      if (staticViews.includes(normalizedView.toLowerCase())) {
+        const route = normalizedView.toLowerCase().replace(/\s+/g, '-');
+        router.push(`/${workspaceId}/${route}`);
+        return `Navigating to ${normalizedView}.`;
+      }
+
+      return `Error: Could not find a page named '${view}'. Please verify the page name.`;
     },
   };
 };

@@ -157,6 +157,7 @@ export const components: TamboComponent[] = [
  */
 import { getSearchActivitiesTool } from "../components/tambo/tools/search-activities";
 import { getFetchDataTool } from "../components/tambo/tools/fetch-data";
+import { getListPagesTool } from "../components/tambo/tools/list-pages";
 
 /**
  * Tools Factory - A function to generate Tambo tools with context
@@ -174,5 +175,6 @@ export const createTools = (context: ToolContext): TamboTool[] => {
     getRefreshPageTool(context),
     getSearchActivitiesTool(context),
     getFetchDataTool(context),
+    getListPagesTool(context),
   ];
 };
