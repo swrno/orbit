@@ -133,6 +133,14 @@ export async function POST(request: NextRequest) {
                         icon: 'FileText',
                         content: `<h1>Welcome to ${body.title}! 🎉</h1><p>This is your team's workspace.</p>`
                     },
+                    {
+                        id: `p-${timestamp}-7`,
+                        title: 'Team Access',
+                        type: 'document',
+                        icon: 'Shield',
+                        pageType: 'team-access',
+                        content: `<h1>Team Access Management</h1><p>Manage team member access and permissions.</p>`
+                    },
                 ]
             }];
         }

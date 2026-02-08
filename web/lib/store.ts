@@ -362,6 +362,14 @@ export const useAppStore = create<AppState>()(
                     icon: 'FileText',
                     content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Customize Your Workspace</h3><p>Edit this document to add team-specific guidelines, links, or documentation.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Get Started</h2><p>Add your first task or epic, then explore the different views!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
                   },
+                  {
+                    id: `p-${Date.now()}-7`,
+                    title: 'Team Access',
+                    type: 'document',
+                    icon: 'Shield',
+                    pageType: 'team-access',
+                    content: `<h1>Team Access Management</h1><p>Manage team member access and permissions.</p>`
+                  },
                 ]
               }]
             }
