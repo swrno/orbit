@@ -61,7 +61,7 @@ export function ChartView({ workspaceId, pageId, viewType }: ChartViewProps) {
                 
                 // Fetch Tasks
                 let tasksUrl = `/api/tasks?workspaceId=${workspaceId}`;
-                if (pageId) tasksUrl += `&pageId=${pageId}`;
+                // if (pageId) tasksUrl += `&pageId=${pageId}`; // Removed per user request
                 const tasksRes = await fetch(tasksUrl);
                 const tasksData = await tasksRes.json();
                 

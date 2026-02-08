@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch workspace to check permissions (and get members for assignee lookup)
-    const workspace = await (await import('@/lib/models/Workspace')).default.findOne({ workspaceId: body.workspaceId });
+    const workspace = await (await import('@/lib/models/Workspace')).default.findOne({ id: body.workspaceId });
     if (!workspace) {
         return NextResponse.json({ success: false, error: 'Workspace not found' }, { status: 404 });
     }

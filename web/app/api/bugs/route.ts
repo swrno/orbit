@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch workspace to check permissions
-    const workspace = await Workspace.findOne({ workspaceId: body.workspaceId });
+    const workspace = await Workspace.findOne({ id: body.workspaceId });
     if (!workspace) {
       return NextResponse.json(
         { success: false, error: 'Workspace not found' },
@@ -195,7 +195,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Fetch workspace to check permissions
-    const workspace = await Workspace.findOne({ workspaceId: existingBug.workspaceId });
+    const workspace = await Workspace.findOne({ id: existingBug.workspaceId });
     if (!workspace) {
       return NextResponse.json(
         { success: false, error: 'Workspace not found' },
@@ -284,7 +284,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Fetch workspace to check permissions
-    const workspace = await Workspace.findOne({ workspaceId: existingBug.workspaceId });
+    const workspace = await Workspace.findOne({ id: existingBug.workspaceId });
     if (!workspace) {
       return NextResponse.json(
         { success: false, error: 'Workspace not found' },

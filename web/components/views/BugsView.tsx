@@ -157,7 +157,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   const fetchBugs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/bugs?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
+      const response = await fetch(`/api/bugs?workspaceId=${workspaceId}&teamId=${teamId}`);
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {

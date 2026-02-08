@@ -16,16 +16,14 @@ import type { TamboComponent, TamboTool } from "@tambo-ai/react";
 
 // Component Imports
 import Clock from "../components/tambo/clock";
+import {
+  CreateBugForm,
+  CreateTaskForm,
+  CreateEpicForm,
+  CreateSprintForm,
+  CreateRetroForm,
+} from "../components/tambo/NewTamboComponents";
 
-// Tool Imports
-import { 
-  getBugsTool, createBugTool, updateBugTool,
-  getTasksTool, createTaskTool, updateTaskTool,
-  getEpicsTool, createEpicTool, updateEpicTool,
-  getRetrosTool, createRetroTool, voteRetroTool,
-  addTeamMemberTool, removeTeamMemberTool,
-  getSprintsTool, createSprintTool, updateSprintTool
-} from "./tools";
 
 /**
  * Components Array - A collection of Tambo components to register
@@ -40,6 +38,90 @@ export const components: TamboComponent[] = [
     component: Clock,
     propsSchema: z.object({
       time: z.string().optional().describe("The current time to display, e.g. '10:00 AM'"),
+    }),
+  },
+  // Create Bug Form - renders a form to create a new bug
+  {
+    name: "CreateBugForm",
+    description: "ALWAYS use this component when the user wants to create a bug. Display this form immediately. The user will select the workspace and team in the form.",
+    component: CreateBugForm,
+    propsSchema: z.object({
+      bug: z.string().optional().describe("Pre-filled bug title"),
+      description: z.string().optional().describe("Pre-filled bug description"),
+      dueDate: z.string().optional().describe("Pre-filled due date (YYYY-MM-DD format)"),
+      priority: z.string().optional().describe("Pre-selected priority (Critical, High, Medium, Low)"),
+      status: z.string().optional().describe("Pre-selected status (Awaiting Review, Pending Review, Ready for Dev, Fixed, Done)"),
+      group: z.string().optional().describe("Pre-selected group (Incoming Bugs, Development Work, Resolved)"),
+      teamId: z.string().optional().describe("The ID of the team this bug belongs to"),
+      pageId: z.string().optional().describe("The ID of the page this bug belongs to"),
+      workspaceId: z.string().optional().describe("The workspace ID"),
+    }),
+  },
+  // Create Task Form - renders a form to create a new task
+  {
+    name: "CreateTaskForm",
+    description: "ALWAYS use this component when the user wants to create a task. Display this form immediately. The user will select the workspace and team in the form.",
+    component: CreateTaskForm,
+    propsSchema: z.object({
+      task: z.string().optional().describe("Pre-filled task name"),
+      status: z.string().optional().describe("Pre-selected status (Ready to start, In Progress, Done)"),
+      type: z.string().optional().describe("Pre-selected type (Feature, Bug, Other)"),
+      estimatedSP: z.number().optional().describe("Pre-filled story points estimate"),
+      sprint: z.string().optional().describe("Pre-selected sprint name"),
+      epic: z.string().optional().describe("Pre-selected epic name"),
+      githubLink: z.string().optional().describe("Pre-filled GitHub link"),
+      teamId: z.string().optional().describe("The ID of the team"),
+      pageId: z.string().optional().describe("The ID of the page"),
+      workspaceId: z.string().optional().describe("The workspace ID"),
+    }),
+  },
+  // Create Epic Form - renders a form to create a new epic
+  {
+    name: "CreateEpicForm",
+    description: "ALWAYS use this component when the user wants to create an epic. Display this form immediately. The user will select the workspace and team in the form.",
+    component: CreateEpicForm,
+    propsSchema: z.object({
+      epic: z.string().optional().describe("Pre-filled epic name"),
+      description: z.string().optional().describe("Pre-filled epic description"),
+      startDate: z.string().optional().describe("Pre-filled start date (YYYY-MM-DD format)"),
+      dueDate: z.string().optional().describe("Pre-filled due date (YYYY-MM-DD format)"),
+      phase: z.string().optional().describe("Pre-selected phase (Product discovery, Backlog, Dev WIP, etc.)"),
+      priority: z.string().optional().describe("Pre-selected priority (Must Have, Critical, Nice to Have)"),
+      hierarchy: z.number().optional().describe("Pre-selected hierarchy level (0=Top, 1=Sub, 2=Sub-sub)"),
+      teamId: z.string().optional().describe("The ID of the team"),
+      pageId: z.string().optional().describe("The ID of the page"),
+      workspaceId: z.string().optional().describe("The workspace ID"),
+    }),
+  },
+  // Create Sprint Form - renders a form to create a new sprint
+  {
+    name: "CreateSprintForm",
+    description: "ALWAYS use this component when the user wants to create a sprint. Display this form immediately. The user will select the workspace and team in the form.",
+    component: CreateSprintForm,
+    propsSchema: z.object({
+      sprint: z.string().optional().describe("Pre-filled sprint name"),
+      sprintGoals: z.string().optional().describe("Pre-filled sprint goals"),
+      activeSprintStatus: z.string().optional().describe("Pre-selected status (Planned, Active, Completed)"),
+      sprintStartDate: z.string().optional().describe("Pre-filled start date (YYYY-MM-DD format)"),
+      sprintEndDate: z.string().optional().describe("Pre-filled end date (YYYY-MM-DD format)"),
+      teamId: z.string().optional().describe("The ID of the team"),
+      pageId: z.string().optional().describe("The ID of the page"),
+      workspaceId: z.string().optional().describe("The workspace ID"),
+    }),
+  },
+  // Create Retro Form - renders a form to create retrospective feedback
+  {
+    name: "CreateRetroForm",
+    description: "ALWAYS use this component when the user wants to add retrospective feedback. Display this form immediately. The user will select the workspace and team in the form.",
+    component: CreateRetroForm,
+    propsSchema: z.object({
+      feedback: z.string().optional().describe("Pre-filled feedback text"),
+      type: z.string().optional().describe("Pre-selected feedback type (Keep, Improve, Discussion)"),
+      sprint: z.string().optional().describe("Pre-filled sprint identifier"),
+      repeating: z.boolean().optional().describe("Whether this is a repeating issue"),
+      teamId: z.string().optional().describe("The ID of the team"),
+      pageId: z.string().optional().describe("The ID of the page"),
+      workspaceId: z.string().optional().describe("The workspace ID"),
     }),
   },
 ];
@@ -59,28 +141,5 @@ export const createTools = (context: { workspaceId: string, userId: string }): T
       inputSchema: z.object({}),
       outputSchema: z.string(),
     },
-    // Bugs
-    getBugsTool(workspaceId, userId),
-    createBugTool(workspaceId, userId),
-    updateBugTool(workspaceId, userId),
-    // Tasks
-    getTasksTool(workspaceId, userId),
-    createTaskTool(workspaceId, userId),
-    updateTaskTool(workspaceId, userId),
-    // Epics
-    getEpicsTool(workspaceId, userId),
-    createEpicTool(workspaceId, userId),
-    updateEpicTool(workspaceId, userId),
-    // Retros
-    getRetrosTool(workspaceId, userId),
-    createRetroTool(workspaceId, userId),
-    voteRetroTool(workspaceId, userId),
-    // Teams
-    addTeamMemberTool(workspaceId, userId),
-    removeTeamMemberTool(workspaceId, userId),
-    // Sprints
-    getSprintsTool(workspaceId, userId),
-    createSprintTool(workspaceId, userId),
-    updateSprintTool(workspaceId, userId),
   ];
 };

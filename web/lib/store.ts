@@ -266,17 +266,35 @@ export const useAppStore = create<AppState>()(
 
       fetchWorkspaces: async (userId, userEmail) => {
         try {
-          const url = userId ? `/api/workspaces?userId=${userId}` : '/api/workspaces';
-          const headers: HeadersInit = {};
+          const encodedUserId = userId ? encodeURIComponent(userId) : '';
+          const timestamp = Date.now();
+          const url = userId 
+            ? `/api/workspaces?userId=${encodedUserId}&_t=${timestamp}` 
+            : `/api/workspaces?_t=${timestamp}`;
+          
+          const headers: HeadersInit = {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          };
           if (userId) headers['X-User-Id'] = userId;
           if (userEmail) headers['X-User-Email'] = userEmail;
           
-          const response = await fetch(url, { headers });
+          console.log(`Store: fetching workspaces from ${url}`, headers);
+          const response = await fetch(url, { 
+            headers,
+            cache: 'no-store' 
+          });
+          
           if (response.ok) {
             const data = await response.json();
+            console.log("Store: workspaces fetched", data);
             if (data.success && Array.isArray(data.data)) {
               set({ workspaces: data.data });
+            } else {
+               console.warn("Store: fetched data is not success or not array", data);
             }
+          } else {
+            console.error("Store: fetch failed", response.status, response.statusText);
           }
         } catch (error) {
           console.error('Failed to fetch workspaces:', error);

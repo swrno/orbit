@@ -166,7 +166,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
     try {
       setLoading(true);
       const [tasksRes, sprintsRes] = await Promise.all([
-        fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`),
+        fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${groupId}`),
         fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${groupId}`)
       ]);
 

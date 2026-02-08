@@ -162,7 +162,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     try {
       setLoading(true);
       const [retrosRes, sprintsRes] = await Promise.all([
-        fetch(`/api/retrospectives?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`),
+        fetch(`/api/retrospectives?workspaceId=${workspaceId}&teamId=${teamId}`),
         fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`)
       ]);
 

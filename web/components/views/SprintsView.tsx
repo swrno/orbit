@@ -121,7 +121,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     // ... existing fetch logic
     try {
       setLoading(true);
-      const response = await fetch(`/api/sprints?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`, { cache: 'no-store' });
+      const response = await fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`, { cache: 'no-store' });
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -132,7 +132,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
       }
       // After loading sprints, also load tasks for this workspace/page/team
       try {
-        const tResp = await fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`, { cache: 'no-store' });
+        const tResp = await fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`, { cache: 'no-store' });
         const tData = await tResp.json();
         if (tData.success && Array.isArray(tData.data)) {
           setTasks(tData.data);

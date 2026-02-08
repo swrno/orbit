@@ -150,7 +150,7 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
     try {
       setLoading(true);
       const [epicsRes, tasksRes] = await Promise.all([
-        fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`),
+        fetch(`/api/epics?workspaceId=${workspaceId}&teamId=${teamId}`),
         fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`)
       ]);
 
