@@ -18,10 +18,6 @@ const UserSchema = new Schema({
   timestamps: true
 });
 
-// Indexes
-UserSchema.index({ id: 1 });
-UserSchema.index({ email: 1 });
-
 let UserModel: Model<User>;
 
 if (mongoose.models.User) {
