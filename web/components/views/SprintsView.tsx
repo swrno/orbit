@@ -112,7 +112,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     // ... existing fetch logic
     try {
       setLoading(true);
-      const response = await fetch(`/api/sprints?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
+      const response = await fetch(`/api/sprints?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`, { cache: 'no-store' });
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -123,7 +123,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
       }
       // After loading sprints, also load tasks for this workspace/page/team
       try {
-        const tResp = await fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
+        const tResp = await fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`, { cache: 'no-store' });
         const tData = await tResp.json();
         if (tData.success && Array.isArray(tData.data)) {
           setTasks(tData.data);
@@ -202,9 +202,33 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     // Dynamic timeline-based progress
     if (!sprint.sprintTimeline && !sprint.sprintStartDate) return 0;
 
+    const parseDate = (d: any) => {
+        if (!d) return null;
+        
+        // Handle DD/MM/YYYY format (allow 1 or 2 digits)
+        if (typeof d === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) {
+            const [day, month, year] = d.split('/').map(num => parseInt(num, 10));
+            // Month is 0-indexed in Date constructor
+            const date = new Date(year, month - 1, day);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+
+        const date = new Date(d);
+        if (isNaN(date.getTime())) return null; // Invalid date check
+        
+        // Reset to midnight to calculate pure day difference
+        date.setHours(0, 0, 0, 0);
+        return date;
+    };
+
     const now = new Date();
-    const start = new Date(sprint.sprintTimeline?.start || sprint.sprintStartDate);
-    const end = new Date(sprint.sprintTimeline?.end || sprint.sprintEndDate);
+    now.setHours(0, 0, 0, 0);
+
+    const start = parseDate(sprint.sprintTimeline?.start || sprint.sprintStartDate);
+    const end = parseDate(sprint.sprintTimeline?.end || sprint.sprintEndDate);
+
+    if (!start || !end) return 0;
 
     // Before sprint starts: 0%
     if (now < start) return 0;
@@ -212,10 +236,15 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     // After sprint ends: 100%
     if (now > end) return 100;
 
-    // During sprint: calculate based on elapsed time
-    const total = end.getTime() - start.getTime();
-    const elapsed = now.getTime() - start.getTime();
-    return Math.round((elapsed / total) * 100);
+    const oneDay = 1000 * 60 * 60 * 24;
+    const totalDuration = Math.round((end.getTime() - start.getTime()) / oneDay);
+    const daysElapsed = Math.round((now.getTime() - start.getTime()) / oneDay);
+
+    if (totalDuration <= 0) return 100; // Edge case: start date equals or is after end date
+
+    // Calculate percentage based on days
+    const percentage = Math.round((daysElapsed / totalDuration) * 100);
+    return Math.min(Math.max(percentage, 0), 100);
   };
 
   if (loading) {
@@ -330,7 +359,6 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
                         />
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ width: '100%' }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                             <Typography sx={{ fontSize: '11px', color: '#676879' }}>
                               {Math.round(progress)}%
@@ -349,7 +377,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
                               }
                             }}
                           />
-                        </Box>
+
                       </TableCell>
                       <TableCell>
                         <Chip

@@ -122,6 +122,25 @@ export async function PUT(request: NextRequest) {
     const sprintId = body._id || body.id;
     
     // Update logic...
+    // Sync sprintTimeline if dates are provided
+    if (body.sprintStartDate || body.sprintEndDate) {
+        body.sprintTimeline = {
+            start: body.sprintStartDate ? new Date(body.sprintStartDate) : undefined,
+            end: body.sprintEndDate ? new Date(body.sprintEndDate) : undefined
+        };
+        
+        // If one is missing, we might need to fetch the existing doc to handle it perfectly,
+        // but typically the creator sends both. For now, let's assume if sent, they are sent.
+        // Or better, let's use check keys.
+        const updateData: any = { ...body };
+        if (body.sprintStartDate && body.sprintEndDate) {
+             updateData.sprintTimeline = {
+                start: new Date(body.sprintStartDate),
+                end: new Date(body.sprintEndDate)
+            };
+        }
+    }
+
     const updatedSprint = await Sprint.findByIdAndUpdate(
         sprintId,
         { $set: body },
