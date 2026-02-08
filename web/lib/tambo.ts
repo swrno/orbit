@@ -16,7 +16,7 @@ import type { TamboComponent, TamboTool } from "@tambo-ai/react";
 import type { Workspace, Page, PageType } from "./store";
 
 // Component Imports
-import Clock from "../components/tambo/clock";
+import Clock from "../components/tambo/addedComponents/clock";
 import {
   CreateBugForm,
   CreateTaskForm,
