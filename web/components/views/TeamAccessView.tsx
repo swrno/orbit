@@ -16,14 +16,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-// Team role type - Leader instead of Owner for teams
-type TeamRole = 'LEADER' | 'EDITOR' | 'VIEWER';
+import { TeamRole } from "@/lib/types";
+
 
 interface TeamMember {
     id: string;
     name: string;
     email: string;
-    role: TeamRole;
+    role?: string;
+    teamRole?: TeamRole;
     addedAt: Date;
 }
 
@@ -316,10 +317,10 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                         </TableCell>
                                         <TableCell>{member.email}</TableCell>
                                         <TableCell>
-                                            {canManageAccess && member.role !== 'LEADER' ? (
+                                            {canManageAccess && member.teamRole !== 'LEADER' ? (
                                                 <FormControl size="small" sx={{ minWidth: 120 }}>
                                                     <Select
-                                                        value={member.role || 'VIEWER'}
+                                                        value={member.teamRole || 'VIEWER'}
                                                         onChange={(e) => handleUpdateRole(member.id, e.target.value as TeamRole)}
                                                         disabled={loading}
                                                     >
@@ -339,12 +340,12 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                                 </FormControl>
                                             ) : (
                                                 <Chip
-                                                    icon={getRoleIcon(member.role || 'VIEWER')}
-                                                    label={member.role || 'VIEWER'}
+                                                    icon={getRoleIcon(member.teamRole || 'VIEWER')}
+                                                    label={member.teamRole || 'VIEWER'}
                                                     size="small"
                                                     sx={{
-                                                        bgcolor: (ROLE_COLORS[member.role] || ROLE_COLORS.VIEWER) + '20',
-                                                        color: ROLE_COLORS[member.role] || ROLE_COLORS.VIEWER,
+                                                        bgcolor: (ROLE_COLORS[member.teamRole || 'VIEWER'] || ROLE_COLORS.VIEWER) + '20',
+                                                        color: ROLE_COLORS[member.teamRole || 'VIEWER'] || ROLE_COLORS.VIEWER,
                                                         fontWeight: 500
                                                     }}
                                                 />
@@ -357,7 +358,7 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                         </TableCell>
                                         {canManageAccess && (
                                             <TableCell align="right">
-                                                {member.role !== 'LEADER' && (
+                                                {member.teamRole !== 'LEADER' && (
                                                     <IconButton
                                                         size="small"
                                                         onClick={() => handleRemoveMember(member.id)}

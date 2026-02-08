@@ -33,7 +33,7 @@ const TeamMemberSchema = new Schema({
     email: String,
     avatar: String,
     role: String,
-    teamRole: { type: String, enum: ['LEADER', 'MEMBER', 'VIEWER'] }
+    teamRole: { type: String, enum: ['LEADER', 'EDITOR', 'VIEWER'] }
 });
 
 // Workspace Member Schema (with access control)
@@ -92,10 +92,11 @@ WorkspaceSchema.index({ "teamMembers.id": 1 }); // Backward compatibility
 
 let WorkspaceModel: Model<Workspace>;
 
+// Prevent model re-compilation error in dev, but force schema update
 if (mongoose.models.Workspace) {
-    WorkspaceModel = mongoose.models.Workspace as Model<Workspace>;
-} else {
-    WorkspaceModel = mongoose.model<Workspace>('Workspace', WorkspaceSchema);
+    delete mongoose.models.Workspace;
 }
+
+WorkspaceModel = mongoose.model<Workspace>('Workspace', WorkspaceSchema);
 
 export default WorkspaceModel;

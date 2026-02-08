@@ -49,7 +49,7 @@ const TEAM_PERMISSIONS: Record<TeamRole, Permission[]> = {
     'team:edit',
     'team:manage_members'
   ],
-  MEMBER: [
+  EDITOR: [
     'team:view',
     'team:edit'
   ],

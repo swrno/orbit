@@ -18,6 +18,7 @@ import { TaskDetailModal } from "@/components/modals/TaskDetailModal";
 interface BoardViewProps {
   workspaceId: string;
   sprintId?: string;
+  teamId?: string;
 }
 
 // Monday.com inspired status colors
@@ -39,10 +40,10 @@ const STATUS_MAPPING: Record<TaskStatus, string> = {
 
 const STATUSES: TaskStatus[] = ['Todo', 'In Progress', 'In Review', 'Done', 'Blocked'];
 
-export function BoardView({ workspaceId, sprintId }: BoardViewProps) {
+export function BoardView({ workspaceId, sprintId, teamId }: BoardViewProps) {
   const { workspaces, addTask, deleteTask, moveTask } = useAppStore();
   const workspace = workspaces.find((w) => w.id === workspaceId);
-  const { canEdit } = usePermissions(workspaceId);
+  const { canEdit } = usePermissions(workspaceId, teamId);
 
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);

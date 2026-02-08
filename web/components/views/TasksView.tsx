@@ -60,8 +60,6 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  const { canEdit } = usePermissions(workspaceId);
-
   // Find the page and group
   let page: any = null;
   let groupId: string | null = null;
@@ -78,6 +76,8 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
       }
     }
   }
+
+  const { canEdit } = usePermissions(workspaceId, groupId || undefined);
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [sprints, setSprints] = useState<any[]>([]);
@@ -267,7 +267,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   const renderContent = () => {
     switch (activeView) {
       case 'board':
-        return <BoardView workspaceId={workspaceId} />;
+        return <BoardView workspaceId={workspaceId} teamId={groupId || undefined} />;
       case 'kanban':
         return (
           <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>

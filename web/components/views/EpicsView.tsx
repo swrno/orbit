@@ -51,8 +51,6 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  const { canEdit } = usePermissions(workspaceId);
-
   // Find the page and team
   let page: any = null;
   let teamId: string | null = null;
@@ -67,6 +65,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
       }
     }
   }
+
+  const { canEdit } = usePermissions(workspaceId, teamId || undefined);
 
   const [epics, setEpics] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);

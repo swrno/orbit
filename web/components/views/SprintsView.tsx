@@ -38,8 +38,6 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function SprintsView({ workspaceId, pageId, viewType = 'table' }: SprintsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  const { canEdit } = usePermissions(workspaceId);
-
   // Find the page and team
   let page: any = null;
   let teamId: string | null = null;
@@ -54,6 +52,8 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
       }
     }
   }
+
+  const { canEdit } = usePermissions(workspaceId, teamId || undefined);
 
   const [sprints, setSprints] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);

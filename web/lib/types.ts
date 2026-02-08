@@ -4,7 +4,7 @@ export type PageType = 'table' | 'board' | 'gantt' | 'chart' | 'calendar' | 'roa
 
 // Access Control Types
 export type WorkspaceRole = 'OWNER' | 'EDITOR' | 'VIEWER';
-export type TeamRole = 'LEADER' | 'MEMBER' | 'VIEWER';
+export type TeamRole = 'LEADER' | 'EDITOR' | 'VIEWER';
 
 // Workspace Member (with access control)
 export type WorkspaceMember = {

@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         const body = await request.json();
-        const { workspaceId, teamId, userId, name, email, teamRole = 'MEMBER', avatar } = body;
+        const { workspaceId, teamId, userId: originalUserId, name, email, teamRole = 'EDITOR', avatar } = body;
+        
+        // Always use email as the ID for team members
+        const userId = email;
 
         if (!workspaceId || !teamId || !userId || !name || !email) {
             return NextResponse.json(
@@ -22,9 +25,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate team role
-        if (!['LEADER', 'MEMBER', 'VIEWER'].includes(teamRole)) {
+        if (!['LEADER', 'EDITOR', 'VIEWER'].includes(teamRole)) {
             return NextResponse.json(
-                { success: false, error: 'Invalid team role. Must be LEADER, MEMBER, or VIEWER' },
+                { success: false, error: 'Invalid team role. Must be LEADER, EDITOR, or VIEWER' },
                 { status: 400 }
             );
         }
@@ -105,6 +108,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        workspace.markModified('teams');
         await workspace.save();
 
         return NextResponse.json({
@@ -139,9 +143,9 @@ export async function PUT(request: NextRequest) {
         }
 
         // Validate team role
-        if (!['LEADER', 'MEMBER', 'VIEWER'].includes(teamRole)) {
+        if (!['LEADER', 'EDITOR', 'VIEWER'].includes(teamRole)) {
             return NextResponse.json(
-                { success: false, error: 'Invalid team role. Must be LEADER, MEMBER, or VIEWER' },
+                { success: false, error: 'Invalid team role. Must be LEADER, EDITOR, or VIEWER' },
                 { status: 400 }
             );
         }
@@ -197,6 +201,7 @@ export async function PUT(request: NextRequest) {
         }
 
         member.teamRole = teamRole;
+        workspace.markModified('teams');
         await workspace.save();
 
         return NextResponse.json({
@@ -275,6 +280,7 @@ export async function DELETE(request: NextRequest) {
 
         // Remove member from team
         team.members = team.members?.filter((m: any) => m.id !== userId) || [];
+        workspace.markModified('teams');
         await workspace.save();
 
         return NextResponse.json({

@@ -48,17 +48,30 @@ export function usePermissions(workspaceId?: string, teamId?: string): Permissio
     // In this model, team roles might be stricter or grant specific access
     // For now, we'll assume workspace role is the baseline, and team leader adds management rights for that team
     let isTeamLeader = false;
-    if (teamId && workspace.teams) {
       const team = workspace.teams.find((t) => t.id === teamId);
-      // We need to check finding the member in the team if we have a team member list separate from workspace
-      // But typically "Leader" status is what we care about for "canManageAccess" in a team context
-        
-       // Use a loose check if the team object has a leaderId field (it might not be typed yet in all places)
-       // cast to any to avoid TS errors if the type isn't fully updated in store.ts yet
-       if (team && (team as any).leaderId === user.uid) {
-           isTeamLeader = true;
-       }
-    }
+      
+      if (team) {
+          // Check for team leadership
+          // Use a loose check if the team object has a leaderId field (it might not be typed yet in all places)
+          if ((team as any).leaderId === user.uid) {
+              isTeamLeader = true;
+          }
+
+          // Check for team membership role
+          const teamMember = (team as any).members?.find((m: any) => m.id === user.uid || m.email === user.email);
+          if (teamMember) {
+              const teamRole = teamMember.teamRole || teamMember.role; // Fallback for safety
+              
+              if (teamRole === 'LEADER') {
+                  isTeamLeader = true;
+              } else if (teamRole === 'EDITOR') {
+                  // If user is an EDITOR in the team, upgrade their effective role for this context if they were just a VIEWER
+                   if (role === 'VIEWER') {
+                       role = 'EDITOR';
+                   }
+              }
+          }
+      }
 
     // Refine permissions based on Role
     let canEdit = false;
