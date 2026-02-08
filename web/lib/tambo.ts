@@ -159,6 +159,7 @@ import { getSearchActivitiesTool } from "../components/tambo/tools/search-activi
 import { getFetchDataTool } from "../components/tambo/tools/fetch-data";
 import { getListPagesTool } from "../components/tambo/tools/list-pages";
 import { getListTeamsTool } from "../components/tambo/tools/list-teams";
+import { getListWorkspacesTool } from "../components/tambo/tools/list-workspaces";
 
 /**
  * Tools Factory - A function to generate Tambo tools with context
@@ -178,5 +179,6 @@ export const createTools = (context: ToolContext): TamboTool[] => {
     getFetchDataTool(context),
     getListPagesTool(context),
     getListTeamsTool(context),
+    getListWorkspacesTool(context),
   ];
 };
