@@ -881,10 +881,12 @@ export default function Sidebar({ className }: { className?: string }) {
                     <Edit size={16} color="#42526E" />
                     <Typography variant="body2" color="#172B4D">Rename</Typography>
                 </MenuItem>
-                <MenuItem onClick={handleDeleteClick} sx={{ gap: 1.5, py: 1 }}>
-                    <Trash2 size={16} color="#DE350B" />
-                    <Typography variant="body2" color="#DE350B">Delete</Typography>
-                </MenuItem>
+                {(selectedPageForAction?.title !== 'Team Access') && (
+                    <MenuItem onClick={handleDeleteClick} sx={{ gap: 1.5, py: 1 }}>
+                        <Trash2 size={16} color="#DE350B" />
+                        <Typography variant="body2" color="#DE350B">Delete</Typography>
+                    </MenuItem>
+                )}
             </Menu>
 
             {/* Rename Dialog */}
