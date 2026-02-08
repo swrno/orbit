@@ -39,8 +39,8 @@ export const createTaskTool = (workspaceId: string, userId: string): TamboTool =
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...args,
-                workspaceId,
-                owner: { id: userId, name: "AI User" }, // Placeholder for now
+                workspaceId: args.workspaceId || workspaceId,
+                owner: { id: userId, name: "AI User" }, // Placeholder
             })
         });
         const data = await response.json();
@@ -59,6 +59,9 @@ export const createTaskTool = (workspaceId: string, userId: string): TamboTool =
     type: z.string().default('Feature').describe("Type of task (Feature, Bug, Other)"),
     estimatedSP: z.number().optional().describe("Estimated Story Points"),
     sprint: z.string().optional().describe("Sprint to assign the task to (e.g., 'Sprint 1')"),
+    assigneeId: z.string().optional().describe("ID of the user assigned to this task"),
+    group: z.string().optional().describe("Group/Column (e.g., 'Backlog', 'Doing')"),
+    workspaceId: z.string().optional().describe("Override workspace ID"),
   }),
   outputSchema: z.string(),
 });

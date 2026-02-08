@@ -35,7 +35,7 @@ export const createEpicTool = (workspaceId: string, userId: string): TamboTool =
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...args,
-                workspaceId,
+                workspaceId: args.workspaceId || workspaceId,
                 owner: { id: userId, name: "AI User" },
             })
         });
@@ -55,6 +55,9 @@ export const createEpicTool = (workspaceId: string, userId: string): TamboTool =
     priority: z.enum(['Low', 'Medium', 'High', 'Critical']).default('Medium').describe("Priority"),
     startDate: z.string().optional().describe("Start date (ISO string)"),
     endDate: z.string().optional().describe("End date (ISO string)"),
+    phase: z.string().default('Backlog').describe("Phase of the epic"),
+    hierarchy: z.number().default(0).describe("Hierarchy level (0=Top, 1=Sub, 2=Sub-sub)"),
+    workspaceId: z.string().optional().describe("Override workspace ID"),
   }),
   outputSchema: z.string(),
 });

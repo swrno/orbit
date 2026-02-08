@@ -81,10 +81,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fetch workspace to check permissions (and get members for assignee lookup)
+    const workspace = await (await import('@/lib/models/Workspace')).default.findOne({ workspaceId: body.workspaceId });
+    if (!workspace) {
+        return NextResponse.json({ success: false, error: 'Workspace not found' }, { status: 404 });
+    }
+
+    // Handle Assignee
+    let assignee;
+    if (body.assigneeId) {
+        const member = workspace.members?.find((m: any) => m.id === body.assigneeId);
+        if (member) {
+            assignee = {
+                id: member.id,
+                name: member.name,
+                email: member.email,
+                avatar: member.avatar,
+                role: member.role
+            };
+        }
+    }
+
     const newTask = await Task.create({
       ...body,
       taskId,
-      group: body.sprint || 'Backlog' // Use sprint as group by default
+      assignee, // Add constructed assignee
+      group: body.sprint || body.group || 'Backlog' // Prioritize sprint, then group, then backlog
     });
 
     return NextResponse.json({

@@ -35,7 +35,7 @@ export const createSprintTool = (workspaceId: string, userId: string): TamboTool
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...args,
-                workspaceId,
+                workspaceId: args.workspaceId || workspaceId,
                 owner: { id: userId, name: "AI User" },
             })
         });
@@ -54,6 +54,7 @@ export const createSprintTool = (workspaceId: string, userId: string): TamboTool
     sprintStartDate: z.string().describe("Start date (ISO string)"),
     sprintEndDate: z.string().describe("End date (ISO string)"),
     activeSprintStatus: z.enum(['Active', 'Planned', 'Completed']).default('Planned').describe("Status"),
+    workspaceId: z.string().optional().describe("Override workspace ID"),
   }),
   outputSchema: z.string(),
 });

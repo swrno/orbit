@@ -37,8 +37,9 @@ export const createRetroTool = (workspaceId: string, userId: string): TamboTool 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...args,
-                workspaceId,
+                workspaceId: args.workspaceId || workspaceId,
                 submitter: { id: userId, name: "AI User" },
+                owner: { id: userId, name: "AI User" }, // API requires owner
             })
         });
         const data = await response.json();
@@ -55,6 +56,7 @@ export const createRetroTool = (workspaceId: string, userId: string): TamboTool 
     pageId: z.string().describe("The ID of the page"),
     sprint: z.string().describe("The sprint identifier (e.g., 'Sprint 1')"),
     repeating: z.boolean().optional().describe("Is this a repeating issue?"),
+    workspaceId: z.string().optional().describe("Override workspace ID"),
   }),
   outputSchema: z.string(),
 });

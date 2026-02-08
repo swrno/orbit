@@ -122,7 +122,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const bug = await Bug.create(body);
+
+
+    // Handle Assignee
+    let assignee = body.assignee;
+    if (body.assigneeId && !assignee) {
+        const member = workspace.members?.find((m: any) => m.id === body.assigneeId);
+        if (member) {
+            assignee = {
+                id: member.id,
+                name: member.name,
+                email: member.email,
+                avatar: member.avatar,
+                role: member.role
+            };
+        }
+    }
+
+    const bugData = {
+        ...body,
+        assignee, // Add constructed assignee
+        dueDate: body.dueDate ? new Date(body.dueDate) : undefined, // Ensure date format
+        // group is already in body
+    };
+
+    const bug = await Bug.create(bugData);
 
     return NextResponse.json({
       success: true,

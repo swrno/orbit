@@ -32,16 +32,20 @@ export const createBugTool = (workspaceId: string, userId: string): TamboTool =>
   description: "Create a new bug report in the workspace.",
   tool: async (args) => {
     try {
+        console.log("createBugTool called with args:", args);
+        console.log("Context workspaceId:", workspaceId);
+        
+        const payload = {
+            ...args,
+            workspaceId: args.workspaceId || workspaceId,
+            reporter: { id: userId, name: "AI User" },
+        };
+        console.log("createBugTool payload:", payload);
+
         const response = await fetch('/api/bugs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...args,
-                workspaceId,
-                // We need pageId and teamId. If not provided, the AI should have asked for them or inferred them.
-                // For now, we assume they are passed in args.
-                reporter: { id: userId, name: "AI User" }, // Ideally need real user name
-            })
+            body: JSON.stringify(payload)
         });
         const data = await response.json();
         if(!data.success) throw new Error(data.error);
@@ -57,6 +61,10 @@ export const createBugTool = (workspaceId: string, userId: string): TamboTool =>
     pageId: z.string().describe("The ID of the page this bug belongs to"),
     priority: z.enum(['Critical', 'High', 'Medium', 'Low']).default('Medium').describe("Priority of the bug"),
     status: z.string().default('Awaiting Review').describe("Status of the bug"),
+    group: z.string().optional().describe("Group/Status of the bug (e.g., 'Incoming Bugs')"),
+    assigneeId: z.string().optional().describe("ID of the user assigned to this bug"),
+    dueDate: z.string().optional().describe("Due date for the bug (ISO string)"),
+    workspaceId: z.string().optional().describe("Override workspace ID if different from current context"),
   }),
   outputSchema: z.string(),
 });
