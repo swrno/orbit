@@ -176,7 +176,7 @@ interface AppState {
   currentWorkspaceId: string | null;
 
   // Actions
-  fetchWorkspaces: (userId?: string) => Promise<void>;
+  fetchWorkspaces: (userId?: string, userEmail?: string | null) => Promise<void>;
   setWorkspaces: (workspaces: Workspace[]) => void;
   addWorkspace: (workspace: Workspace) => void;
   createWorkspace: (title: string, id?: string, creatorId?: string, creatorEmail?: string, creatorName?: string) => Promise<Workspace | null>;
@@ -264,10 +264,14 @@ export const useAppStore = create<AppState>()(
       workspaces: INITIAL_WORKSPACES,
       currentWorkspaceId: null, // No default workspace
 
-      fetchWorkspaces: async (userId) => {
+      fetchWorkspaces: async (userId, userEmail) => {
         try {
           const url = userId ? `/api/workspaces?userId=${userId}` : '/api/workspaces';
-          const response = await fetch(url);
+          const headers: HeadersInit = {};
+          if (userId) headers['X-User-Id'] = userId;
+          if (userEmail) headers['X-User-Email'] = userEmail;
+          
+          const response = await fetch(url, { headers });
           if (response.ok) {
             const data = await response.json();
             if (data.success && Array.isArray(data.data)) {

@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
+        const userEmail = request.headers.get('X-User-Email');
 
         // Get authenticated user
         const authUser = await getAuthUser(request);
@@ -24,13 +25,22 @@ export async function GET(request: NextRequest) {
         }
 
         // Find workspaces where user is owner or member
-        const workspaces = await Workspace.find({
+        const query: any = {
             $or: [
                 { ownerId: currentUserId },
                 { "members.id": currentUserId },
                 { "teamMembers.id": currentUserId } // Backward compatibility
             ]
-        }).sort({ createdAt: -1 });
+        };
+
+        if (userEmail) {
+            query.$or.push({ "members.email": userEmail });
+            query.$or.push({ "teamMembers.email": userEmail });
+            // Also check if member ID is the email (legacy/invite state)
+            query.$or.push({ "members.id": userEmail });
+        }
+
+        const workspaces = await Workspace.find(query).sort({ createdAt: -1 });
 
         return NextResponse.json({
             success: true,
