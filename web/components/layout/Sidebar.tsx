@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
     BarChart3, ListTodo, ChevronDown, FileText, Plus, Kanban,
     LayoutGrid, Search, Layers, Calendar, Users, Bug, TrendingUp, Table, List as ListIcon,
-    MoreHorizontal, Trash2, Edit, RotateCcw, CheckSquare, Zap, Target, Shield
+    MoreHorizontal, Trash2, Edit, RotateCcw, CheckSquare, Zap, Target, Shield, Settings
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
@@ -679,6 +679,27 @@ export default function Sidebar({ className }: { className?: string }) {
 
                     {/* Footer */}
                     <Box sx={{ p: 2, borderTop: '1px solid #DFE1E6' }}>
+                        <Link href={`/${selectedWorkspace}/settings`} style={{ textDecoration: 'none' }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                color: '#42526E',
+                                px: 1.5,
+                                py: 1,
+                                borderRadius: 1,
+                                mb: 2,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                    color: '#172B4D'
+                                }
+                            }}>
+                                <Settings size={16} />
+                                <Typography variant="body2" fontWeight={500}>Workspace Settings</Typography>
+                            </Box>
+                        </Link>
+
                         <Typography variant="caption" sx={{ color: '#6B778C', display: 'block', textAlign: 'center' }}>
                             Orbit AI Workspace v1.0
                         </Typography>
