@@ -1,9 +1,10 @@
 "use client";
 
 import { useAppStore, Workspace } from "@/lib/store";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, LayoutGrid, ArrowRight, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Navbar } from "@/components/layout/Navbar";
 import {
@@ -27,6 +28,7 @@ import {
 
 export default function Dashboard() {
   const { workspaces, createWorkspace, selectWorkspace, updateWorkspace, deleteWorkspace } = useAppStore();
+  const { user } = useAuth();
   const router = useRouter();
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -37,12 +39,32 @@ export default function Dashboard() {
     name: ""
   });
 
-  const handleCreate = (e: React.FormEvent) => {
+  // Log workspaces when they change
+  useEffect(() => {
+    console.log('Current workspaces in dashboard:', workspaces);
+  }, [workspaces]);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newWorkspaceName.trim()) {
-      createWorkspace(newWorkspaceName);
-      setNewWorkspaceName("");
-      setIsCreating(false);
+    if (newWorkspaceName.trim() && user) {
+      console.log('Creating workspace with name:', newWorkspaceName);
+      const result = await createWorkspace(
+        newWorkspaceName,
+        undefined,
+        user.uid,
+        user.email || '',
+        user.displayName || user.email?.split('@')[0] || 'User'
+      );
+      
+      if (result) {
+        console.log('Workspace created successfully:', result);
+        setNewWorkspaceName("");
+        setIsCreating(false);
+        // Optionally navigate to the new workspace
+        // router.push(`/${result.id}`);
+      } else {
+        console.error('Failed to create workspace');
+      }
     }
   };
 
@@ -192,7 +214,7 @@ export default function Dashboard() {
                   {ws.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {ws.groups.length} Groups • {ws.groups.reduce((acc, g) => acc + g.pages.length, 0)} Pages
+                  {ws.teams?.length || 0} Teams • {ws.teams?.reduce((acc, g) => acc + g.pages.length, 0) || 0} Pages
                 </Typography>
 
                 {/* Footer */}

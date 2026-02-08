@@ -19,10 +19,15 @@ import {
 } from "@mui/material";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { EpicCreator } from "@/components/creators/EpicCreator";
+import { BoardView } from "./BoardView";
+import { GanttView } from "./GanttView";
+import { CalendarView } from "./CalendarView";
+import { ChartView } from "./ChartView";
 
 interface EpicsViewProps {
   workspaceId: string;
   pageId: string;
+  viewType?: string;
 }
 
 const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -42,7 +47,7 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
 import { ViewTabs } from "@/components/ui/ViewTabs";
 import { ViewToolbar } from "@/components/ui/ViewToolbar";
 
-export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
+export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
@@ -438,6 +443,24 @@ export function EpicsView({ workspaceId, pageId }: EpicsViewProps) {
     }
   };
 
+  // Render different views based on viewType
+  if (viewType === 'board') {
+    return <BoardView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'gantt') {
+    return <GanttView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'calendar') {
+    return <CalendarView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'chart') {
+    return <ChartView workspaceId={workspaceId} />;
+  }
+
+  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
       <ViewTabs

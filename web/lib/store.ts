@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type PageType = 'board' | 'table' | 'document' | 'gantt' | 'roadmap' | 'calendar' | 'chart' | 'list';
+export type PageType = 'board' | 'table' | 'document' | 'gantt' | 'roadmap' | 'calendar' | 'chart' | 'list' | 'team-access';
 export type TaskStatus = 'Todo' | 'In Progress' | 'In Review' | 'Done' | 'Blocked';
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
@@ -148,6 +148,8 @@ export type Workspace = {
   key: string; // Project key for task IDs, e.g., "PROJ"
   plan: 'Free' | 'Pro';
   teams: Team[];
+  
+  // Client-side cache of data (fetched from separate collections via references)
   tasks: Task[]; // Flat list of tasks for the workspace
   sprints: Sprint[];
   epics: Epic[];
@@ -156,6 +158,17 @@ export type Workspace = {
   activities: Activity[];
   taskCounter: number; // For generating task keys
   epicCounter: number; // For generating epic keys
+  
+  // Access Control Fields
+  ownerId?: string; // Firebase UID of the workspace owner
+  members?: Array<{
+    id: string;
+    name: string;
+    email?: string;
+    avatar?: string;
+    role: 'OWNER' | 'EDITOR' | 'VIEWER';
+    addedAt?: Date | string;
+  }>;
 };
 
 interface AppState {
@@ -163,10 +176,10 @@ interface AppState {
   currentWorkspaceId: string | null;
 
   // Actions
-  fetchWorkspaces: () => Promise<void>;
+  fetchWorkspaces: (userId?: string) => Promise<void>;
   setWorkspaces: (workspaces: Workspace[]) => void;
   addWorkspace: (workspace: Workspace) => void;
-  createWorkspace: (title: string, id?: string) => Promise<void>;
+  createWorkspace: (title: string, id?: string, creatorId?: string, creatorEmail?: string, creatorName?: string) => Promise<Workspace | null>;
   updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
   deleteWorkspace: (id: string) => void;
   selectWorkspace: (id: string) => void;
@@ -251,9 +264,10 @@ export const useAppStore = create<AppState>()(
       workspaces: INITIAL_WORKSPACES,
       currentWorkspaceId: null, // No default workspace
 
-      fetchWorkspaces: async () => {
+      fetchWorkspaces: async (userId) => {
         try {
-          const response = await fetch('/api/workspaces');
+          const url = userId ? `/api/workspaces?userId=${userId}` : '/api/workspaces';
+          const response = await fetch(url);
           if (response.ok) {
             const data = await response.json();
             if (data.success && Array.isArray(data.data)) {
@@ -268,26 +282,46 @@ export const useAppStore = create<AppState>()(
       setWorkspaces: (workspaces) => set({ workspaces }),
       addWorkspace: (workspace) => set((state) => ({ workspaces: [...state.workspaces, workspace] })),
 
-      createWorkspace: async (title, id) => {
+      createWorkspace: async (title, id, creatorId, creatorEmail, creatorName) => {
         try {
           const workspaceId = id || `ws-${Date.now()}`;
+          console.log('Creating workspace:', { title, workspaceId, creatorId, creatorEmail, creatorName });
+          
           const response = await fetch('/api/workspaces', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, id: workspaceId })
+            headers: { 
+              'Content-Type': 'application/json',
+              ...(creatorId && { 'X-User-Id': creatorId }),
+              ...(creatorEmail && { 'X-User-Email': creatorEmail })
+            },
+            body: JSON.stringify({ 
+              title, 
+              id: workspaceId,
+              creatorId,
+              creatorEmail,
+              creatorName
+            })
           });
 
           const data = await response.json();
+          console.log('Workspace creation response:', data);
 
           if (response.ok && data.success) {
+            // Add the workspace to the store
             set((state) => ({
               workspaces: [...state.workspaces, data.data]
             }));
+            console.log('Workspace added to store:', data.data);
+            return data.data; // Return the created workspace
           } else {
             console.error('Failed to create workspace:', data.error || 'Unknown error');
+            alert('Failed to create workspace: ' + (data.error || 'Unknown error'));
+            return null;
           }
         } catch (error) {
           console.error('Error creating workspace:', error);
+          alert('Error creating workspace. Please try again.');
+          return null;
         }
       },
 
@@ -316,17 +350,25 @@ export const useAppStore = create<AppState>()(
                 title,
                 icon,
                 pages: [
-                  { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
                   {
                     id: `p-${Date.now()}-6`,
                     title: 'Getting Started',
                     type: 'document',
                     icon: 'FileText',
                     content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace for managing projects, tasks, and collaboration.</p><h2>Quick Start Guide</h2><h3>1. Organize Your Work</h3><ul><li><strong>Bugs Queue</strong> - Track and prioritize bugs</li><li><strong>Retrospectives</strong> - Document team reflections and improvements</li><li><strong>Tasks</strong> - Manage day-to-day work items</li><li><strong>Sprints</strong> - Plan and track sprint cycles</li><li><strong>Epics</strong> - Break down large initiatives</li></ul><h3>2. Multiple Views</h3><p>Each page supports multiple views - click the <strong>+</strong> button to add:</p><ul><li>📊 <strong>Main Table</strong> - Spreadsheet-style data view</li><li>📅 <strong>Gantt</strong> - Timeline and dependencies</li><li>🎯 <strong>Kanban</strong> - Visual workflow boards</li><li>📈 <strong>Chart</strong> - Visual analytics</li></ul><h3>3. Customize Your Workspace</h3><p>Edit this document to add team-specific guidelines, links, or documentation.</p><h2>Tips</h2><blockquote><p>💡 Use <strong>Cmd/Ctrl + K</strong> to quickly search across your workspace</p></blockquote><blockquote><p>💡 Drag and drop to reorder pages within teams</p></blockquote><blockquote><p>💡 Close view tabs with the ✕ button when you don't need them</p></blockquote><h2>Get Started</h2><p>Add your first task or epic, then explore the different views!</p><p><br></p><p><em>Happy organizing! ✨</em></p>`
+                  },
+                  {
+                    id: `p-${Date.now()}-7`,
+                    title: 'Team Access',
+                    type: 'document',
+                    icon: 'Shield',
+                    pageType: 'team-access',
+                    content: `<h1>Team Access Management</h1><p>Manage team member access and permissions.</p>`
                   },
                 ]
               }]

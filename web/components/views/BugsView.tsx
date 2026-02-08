@@ -21,10 +21,15 @@ import {
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { BugCreator } from "@/components/creators/BugCreator";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { BoardView } from "./BoardView";
+import { GanttView } from "./GanttView";
+import { CalendarView } from "./CalendarView";
+import { ChartView } from "./ChartView";
 
 interface BugsViewProps {
   workspaceId: string;
   pageId: string;
+  viewType?: string;
 }
 
 const GROUP_COLORS: Record<string, string> = {
@@ -43,7 +48,7 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
 import { ViewTabs } from "@/components/ui/ViewTabs";
 import { ViewToolbar } from "@/components/ui/ViewToolbar";
 
-export function BugsView({ workspaceId, pageId }: BugsViewProps) {
+export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
@@ -703,6 +708,24 @@ export function BugsView({ workspaceId, pageId }: BugsViewProps) {
     }
   };
 
+  // Render different views based on viewType
+  if (viewType === 'board') {
+    return <BoardView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'gantt') {
+    return <GanttView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'calendar') {
+    return <CalendarView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'chart') {
+    return <ChartView workspaceId={workspaceId} />;
+  }
+
+  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
       <ViewTabs

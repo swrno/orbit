@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Workspace from '@/lib/models/Workspace';
+import User from '@/lib/models/User';
 import crypto from 'crypto';
+import { getAuthUser } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,12 +12,25 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
 
-        let query: any = {};
-        if (userId) {
-            query["teamMembers.id"] = userId;
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const currentUserId = authUser?.uid || userId;
+
+        if (!currentUserId) {
+            return NextResponse.json(
+                { success: false, error: 'User ID is required' },
+                { status: 400 }
+            );
         }
 
-        const workspaces = await Workspace.find(query).sort({ createdAt: -1 });
+        // Find workspaces where user is owner or member
+        const workspaces = await Workspace.find({
+            $or: [
+                { ownerId: currentUserId },
+                { "members.id": currentUserId },
+                { "teamMembers.id": currentUserId } // Backward compatibility
+            ]
+        }).sort({ createdAt: -1 });
 
         return NextResponse.json({
             success: true,
@@ -37,6 +52,19 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
 
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const creatorId = authUser?.uid || body.creatorId;
+        const creatorEmail = authUser?.email || body.creatorEmail;
+        const creatorName = body.creatorName || creatorEmail?.split('@')[0] || 'Unknown';
+
+        if (!creatorId) {
+            return NextResponse.json(
+                { success: false, error: 'User authentication required' },
+                { status: 401 }
+            );
+        }
+
         if (!body.title) {
             return NextResponse.json(
                 { success: false, error: 'Workspace title is required' },
@@ -54,6 +82,31 @@ export async function POST(request: NextRequest) {
             body.key = body.title.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4) || 'PROJ';
         }
 
+        // Set name to title if not provided (name is required by schema)
+        if (!body.name) {
+            body.name = body.title;
+        }
+
+        // Set creator as owner
+        body.ownerId = creatorId;
+
+        // Initialize members array with owner
+        if (!body.members) {
+            body.members = [];
+        }
+
+        // Add owner to members if not already there
+        const ownerInMembers = body.members.find((m: any) => m.id === creatorId);
+        if (!ownerInMembers) {
+            body.members.push({
+                id: creatorId,
+                name: creatorName,
+                email: creatorEmail,
+                role: 'OWNER',
+                addedAt: new Date()
+            });
+        }
+
         // Ensure default structure if missing
         if (!body.teams) {
             const timestamp = Date.now();
@@ -68,11 +121,11 @@ export async function POST(request: NextRequest) {
                 sprints: [],
                 retrospectives: [],
                 pages: [
-                    { id: `p-${timestamp}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
+                    { id: `p-${timestamp}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                    { id: `p-${timestamp}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                    { id: `p-${timestamp}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                    { id: `p-${timestamp}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                    { id: `p-${timestamp}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
                     {
                         id: `p-${timestamp}-6`,
                         title: 'Getting Started',
@@ -80,11 +133,37 @@ export async function POST(request: NextRequest) {
                         icon: 'FileText',
                         content: `<h1>Welcome to ${body.title}! 🎉</h1><p>This is your team's workspace.</p>`
                     },
+                    {
+                        id: `p-${timestamp}-7`,
+                        title: 'Team Access',
+                        type: 'document',
+                        icon: 'Shield',
+                        pageType: 'team-access',
+                        content: `<h1>Team Access Management</h1><p>Manage team member access and permissions.</p>`
+                    },
                 ]
             }];
         }
 
+        // Ensure backward compatibility with teamMembers
+        if (!body.teamMembers) {
+            body.teamMembers = [];
+        }
+
         const workspace = await Workspace.create(body);
+
+        // Create or update user profile
+        if (creatorEmail) {
+            await User.findOneAndUpdate(
+                { id: creatorId },
+                {
+                    id: creatorId,
+                    email: creatorEmail,
+                    name: creatorName
+                },
+                { upsert: true, new: true }
+            );
+        }
 
         return NextResponse.json({
             success: true,
@@ -111,7 +190,7 @@ export async function PUT(request: NextRequest) {
         await connectDB();
 
         const body = await request.json();
-        const { id, ...updates } = body; // Expect custom 'id' not '_id' based on schema, but let's see
+        const { id, ...updates } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -120,11 +199,19 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const workspace = await Workspace.findOneAndUpdate(
-            { id: id }, // use custom id field
-            { $set: updates },
-            { new: true }
-        );
+        // Get authenticated user
+        const authUser = await getAuthUser(request);
+        const userId = authUser?.uid || body.userId;
+
+        if (!userId) {
+            return NextResponse.json(
+                { success: false, error: 'User authentication required' },
+                { status: 401 }
+            );
+        }
+
+        // Find the workspace
+        const workspace = await Workspace.findOne({ id });
 
         if (!workspace) {
             return NextResponse.json(
@@ -133,9 +220,35 @@ export async function PUT(request: NextRequest) {
             );
         }
 
+        // Check permissions - only owner or editor can update
+        const isOwner = workspace.ownerId === userId;
+        const member = workspace.members?.find((m: any) => m.id === userId);
+        const canEdit = isOwner || member?.role === 'EDITOR';
+
+        if (!canEdit) {
+            return NextResponse.json(
+                { success: false, error: 'Permission denied. Only owners and editors can update workspace.' },
+                { status: 403 }
+            );
+        }
+
+        // Prevent changing owner through update
+        if (updates.ownerId && updates.ownerId !== workspace.ownerId && !isOwner) {
+            return NextResponse.json(
+                { success: false, error: 'Only workspace owner can change ownership' },
+                { status: 403 }
+            );
+        }
+
+        const updatedWorkspace = await Workspace.findOneAndUpdate(
+            { id: id },
+            { $set: updates },
+            { new: true }
+        );
+
         return NextResponse.json({
             success: true,
-            data: workspace
+            data: updatedWorkspace
         });
     } catch (error: any) {
         console.error('PUT /api/workspaces error:', error);

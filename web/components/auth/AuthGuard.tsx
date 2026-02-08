@@ -22,7 +22,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!user && !isPublicRoute) {
         router.push('/login');
       } else if (user) {
-        fetchWorkspaces();
+        fetchWorkspaces(user.uid);
         if (isPublicRoute) {
           router.push('/dashboard');
         }

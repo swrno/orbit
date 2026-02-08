@@ -75,7 +75,7 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
 
     // Group bugs
     const groupedBugs = useMemo(() => {
-        const groups: Record<string, Task[]> = {};
+        const bugGroups: Record<string, Task[]> = {};
 
         filteredBugs.forEach(bug => {
             let key = '';
@@ -83,11 +83,11 @@ export default function BugsQueuePage({ params }: { params: Promise<{ workspaceI
             else if (groupBy === 'priority') key = bug.priority || 'Medium';
             else if (groupBy === 'reporter') key = bug.reporter || 'Unassigned';
 
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(bug);
+            if (!bugGroups[key]) bugGroups[key] = [];
+            bugGroups[key].push(bug);
         });
 
-        return groups;
+        return bugGroups;
     }, [filteredBugs, groupBy]);
 
     const handleCreateBug = () => {

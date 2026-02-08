@@ -15,17 +15,17 @@ export function RecentGroups({ workspaceId }: RecentGroupsProps) {
 
   if (!workspace) return null;
 
-  // Get groups from the workspace
-  const groups = workspace.groups;
+  // Get teams from the workspace
+  const teams = workspace.teams || [];
 
-  if (groups.length === 0) {
+  if (teams.length === 0) {
     return (
       <Box sx={{ mb: 4 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
-          Recent groups
+          Recent Teams
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          No groups yet. Create your first group to get started.
+          No teams yet. Create your first team to get started.
         </Typography>
       </Box>
     );
@@ -34,30 +34,30 @@ export function RecentGroups({ workspaceId }: RecentGroupsProps) {
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
-        Recent groups
+        Recent Teams
       </Typography>
       
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        {groups.map((group: { id: string; title: string; pages: { id: string; title: string; type: string }[] }) => {
-          // Count pages in this group
-          const pageCount = group.pages.length;
+        {teams.map((team: { id: string; title: string; pages: { id: string; title: string; type: string }[] }) => {
+          // Count pages in this team
+          const pageCount = team.pages.length;
           
           // Count tasks for different page types
-          const boardPages = group.pages.filter((p: { type: string }) => p.type === 'board').length;
-          const tablePages = group.pages.filter((p: { type: string }) => p.type === 'table').length;
-          const docPages = group.pages.filter((p: { type: string }) => p.type === 'document').length;
+          const boardPages = team.pages.filter((p: { type: string }) => p.type === 'board').length;
+          const tablePages = team.pages.filter((p: { type: string }) => p.type === 'table').length;
+          const docPages = team.pages.filter((p: { type: string }) => p.type === 'document').length;
 
           return (
             <Box 
-              key={group.id}
+              key={team.id}
               sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 11px)' } }}
             >
               <Paper 
                 elevation={0}
                 onClick={() => {
                   // Navigate to first page in the group if it exists
-                  if (group.pages.length > 0) {
-                    const firstPage = group.pages[0];
+                  if (team.pages.length > 0) {
+                    const firstPage = team.pages[0];
                     router.push(`/${workspaceId}/${firstPage.id}`);
                   }
                 }}
@@ -79,11 +79,11 @@ export function RecentGroups({ workspaceId }: RecentGroupsProps) {
                     variant="rounded" 
                     sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
                   >
-                    {group.title.charAt(0)}
+                    {team.title.charAt(0)}
                   </Avatar>
                   <Box>
                     <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2}>
-                      {group.title}
+                      {team.title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {pageCount} {pageCount === 1 ? 'page' : 'pages'}

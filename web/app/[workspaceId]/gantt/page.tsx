@@ -64,7 +64,7 @@ export default function GanttChartPage({ params }: { params: Promise<{ workspace
 
     // Get tasks grouped by epic or sprint
     const getGroupedTasks = () => {
-        const groups: { [key: string]: any[] } = {};
+        const taskGroups: { [key: string]: any[] } = {};
 
         workspace.tasks.forEach(task => {
             let groupKey = 'Unassigned';
@@ -77,13 +77,13 @@ export default function GanttChartPage({ params }: { params: Promise<{ workspace
                 if (sprint) groupKey = sprint.name;
             }
 
-            if (!groups[groupKey]) {
-                groups[groupKey] = [];
+            if (!taskGroups[groupKey]) {
+                taskGroups[groupKey] = [];
             }
-            groups[groupKey].push(task);
+            taskGroups[groupKey].push(task);
         });
 
-        return groups;
+        return taskGroups;
     };
 
     const groupedTasks = getGroupedTasks();

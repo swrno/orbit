@@ -13,6 +13,7 @@ import { SprintsView } from "@/components/views/SprintsView";
 import { EpicsView } from "@/components/views/EpicsView";
 import { BugsView } from "@/components/views/BugsView";
 import { RetrospectivesView } from "@/components/views/RetrospectivesView";
+import { TeamAccessView } from "@/components/views/TeamAccessView";
 
 import { useParams } from "next/navigation";
 import { useAppStore, Page, PageType } from "@/lib/store";
@@ -93,8 +94,9 @@ export default function GenericPage() {
     }
   };
 
-  // Skip view tabs for document pages
+  // Skip view tabs for document pages and team-access page
   const isDocument = currentPage.type === 'document';
+  const isTeamAccess = currentPage.type === 'team-access';
   const activeViewType = pageViews[currentViewIndex];
 
   // Detect specialized view based on page title
@@ -104,7 +106,8 @@ export default function GenericPage() {
     pageTitle.includes('sprint') ||
     pageTitle.includes('epic') ||
     pageTitle.includes('bug') ||
-    pageTitle.includes('retro');
+    pageTitle.includes('retro') ||
+    isTeamAccess;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#f6f7fb' }}>
@@ -114,8 +117,8 @@ export default function GenericPage() {
         pageName={currentPage.title}
       />
 
-      {/* View Tabs - only for non-document and non-specialized pages */}
-      {!isDocument && !isSpecializedView && (
+      {/* View Tabs - show for specialized pages too, but not for documents or team-access */}
+      {!isDocument && !isTeamAccess && (
         <ViewTabs
           views={pageViews.map((viewType, index) => ({
             id: viewType + '-' + index, // Ensure unique ID
@@ -140,21 +143,26 @@ export default function GenericPage() {
 
       {/* View Content */}
       <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-        {/* Specialized Views - take priority */}
+        {/* Specialized Views - now accept viewType */}
         {pageTitle.includes('task') && (
-          <TasksView workspaceId={workspaceId} pageId={currentPage.id} />
+          <TasksView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('sprint') && !pageTitle.includes('retro') && (
-          <SprintsView workspaceId={workspaceId} pageId={currentPage.id} />
+          <SprintsView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('epic') && (
-          <EpicsView workspaceId={workspaceId} pageId={currentPage.id} />
+          <EpicsView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('bug') && (
-          <BugsView workspaceId={workspaceId} pageId={currentPage.id} />
+          <BugsView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('retro') && (
-          <RetrospectivesView workspaceId={workspaceId} pageId={currentPage.id} />
+          <RetrospectivesView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
+        )}
+
+        {/* Team Access View */}
+        {isTeamAccess && (
+          <TeamAccessView workspaceId={workspaceId} pageId={currentPage.id} />
         )}
 
         {/* Document View */}
@@ -162,8 +170,8 @@ export default function GenericPage() {
           <DocumentView workspaceId={workspaceId} pageId={currentPage.id} />
         )}
 
-        {/* Generic Views - only render if not specialized view or document */}
-        {!isDocument && !isSpecializedView && (
+        {/* Generic Views - only render if not specialized view, document, or team-access */}
+        {!isDocument && !isSpecializedView && !isTeamAccess && (
           <>
             {(activeViewType === 'table' || activeViewType === 'list') && (
               <DataGrid workspaceId={workspaceId} pageId={currentPage.id} />

@@ -2,6 +2,20 @@
 
 export type PageType = 'table' | 'board' | 'gantt' | 'chart' | 'calendar' | 'roadmap' | 'list' | 'document';
 
+// Access Control Types
+export type WorkspaceRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export type TeamRole = 'LEADER' | 'MEMBER' | 'VIEWER';
+
+// Workspace Member (with access control)
+export type WorkspaceMember = {
+  id: string; // Firebase UID or user ID
+  name: string;
+  avatar?: string;
+  email?: string;
+  role: WorkspaceRole;
+  addedAt?: Date | string;
+};
+
 // Team Member
 export type TeamMember = {
   id: string;
@@ -9,6 +23,7 @@ export type TeamMember = {
   avatar?: string;
   email?: string;
   role?: string;
+  teamRole?: TeamRole; // Team-specific role
 };
 
 // Bug Item
@@ -135,13 +150,22 @@ export type Team = {
   teams?: Team[]; // Nested sub-teams
   pages: Page[];
   members: TeamMember[]; // Members specific to this team
+  leaderId?: string; // User ID of team leader who can manage team members
 
-  // Data associated with this team
-  bugs: BugItem[];
-  tasks: TaskItem[];
-  epics: EpicItem[];
-  sprints: SprintItem[];
-  retrospectives: RetrospectiveItem[];
+  // Data is stored in separate MongoDB collections and fetched via references
+  // Use the following API endpoints to fetch:
+  // - GET /api/bugs?teamId={teamId}
+  // - GET /api/tasks?teamId={teamId}
+  // - GET /api/epics?teamId={teamId}
+  // - GET /api/sprints?teamId={teamId}
+  // - GET /api/retrospectives?teamId={teamId}
+  
+  // For backward compatibility with client-side store:
+  bugs?: BugItem[];
+  tasks?: TaskItem[];
+  epics?: EpicItem[];
+  sprints?: SprintItem[];
+  retrospectives?: RetrospectiveItem[];
 };
 
 // Workspace
@@ -153,14 +177,24 @@ export type Workspace = {
   key: string; // Project key for task IDs, e.g., "PROJ"
   plan: string;
   teams: Team[];
+  ownerId: string; // Firebase UID of the workspace owner (creator by default)
+  members: WorkspaceMember[]; // Workspace members with access control
 
-  // Page-specific data stores
-  bugs: Record<string, BugItem[]>; // pageId -> BugItem[]
-  tasks: Record<string, TaskItem[]>;
-  sprints: Record<string, SprintItem[]>;
-  epics: Record<string, EpicItem[]>;
-  retrospectives: Record<string, RetrospectiveItem[]>;
+  // Data is stored in separate MongoDB collections and fetched via references
+  // Use the following API endpoints to fetch:
+  // - GET /api/bugs?workspaceId={workspaceId}&pageId={pageId}
+  // - GET /api/tasks?workspaceId={workspaceId}&pageId={pageId}
+  // - GET /api/epics?workspaceId={workspaceId}&pageId={pageId}
+  // - GET /api/sprints?workspaceId={workspaceId}&pageId={pageId}
+  // - GET /api/retrospectives?workspaceId={workspaceId}&pageId={pageId}
+  
+  // For backward compatibility with client-side store (optional):
+  bugs?: Record<string, BugItem[]>; // pageId -> BugItem[]
+  tasks?: Record<string, TaskItem[]>;
+  sprints?: Record<string, SprintItem[]>;
+  epics?: Record<string, EpicItem[]>;
+  retrospectives?: Record<string, RetrospectiveItem[]>;
 
-  // Shared resources
+  // Shared resources (keeping for backward compatibility)
   teamMembers: TeamMember[];
 };

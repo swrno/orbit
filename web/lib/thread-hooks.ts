@@ -1,6 +1,15 @@
-import type { TamboThreadMessage } from "@tambo-ai/react";
 import * as React from "react";
 import { useEffect, useState } from "react";
+
+// Local type definition for message content to avoid external dependency
+type MessageContent = string | Array<{
+  type?: string;
+  text?: string;
+  resource?: {
+    uri?: string;
+    name?: string;
+  };
+}>;
 
 /**
  * Converts message content to markdown format for rendering with streamdown.
@@ -11,7 +20,7 @@ import { useEffect, useState } from "react";
  * @returns A markdown string ready for streamdown rendering
  */
 export function convertContentToMarkdown(
-  content: TamboThreadMessage["content"] | React.ReactNode | undefined | null,
+  content: MessageContent | React.ReactNode | undefined | null,
 ): string {
   if (!content) return "";
   if (typeof content === "string") return content;
@@ -195,7 +204,7 @@ export function usePositioning(
  * @returns A renderable string or React element.
  */
 export function getSafeContent(
-  content: TamboThreadMessage["content"] | React.ReactNode | undefined | null,
+  content: MessageContent | React.ReactNode | undefined | null,
 ): string | React.ReactElement {
   if (!content) return "";
   if (typeof content === "string") return content;
@@ -256,7 +265,7 @@ function hasContentInItem(item: unknown): boolean {
  * @returns True if there is content, false otherwise.
  */
 export function checkHasContent(
-  content: TamboThreadMessage["content"] | React.ReactNode | undefined | null,
+  content: MessageContent | React.ReactNode | undefined | null,
 ): boolean {
   if (!content) return false;
   if (typeof content === "string") return content.trim().length > 0;

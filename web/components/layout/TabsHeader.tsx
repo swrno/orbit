@@ -84,10 +84,10 @@ export default function TabsHeader({ workspaceId, currentPath }: TabsHeaderProps
         const isStatic = ['backlog', 'sprints', 'roadmap', 'reports', 'team', 'bugs', 'get-started'].includes(pageId);
 
         if (!isStatic) {
-            // Try to find the page in workspace groups
+            // Try to find the page in workspace teams
             let foundPage = null;
-            for (const group of workspace.groups) {
-                const page = group.pages.find(p => p.id === pageId);
+            for (const team of workspace.teams) {
+                const page = team.pages.find(p => p.id === pageId);
                 if (page) {
                     foundPage = page;
                     break;

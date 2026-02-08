@@ -20,16 +20,21 @@ import {
 import { Plus } from "lucide-react";
 
 import { SprintCreator } from "@/components/creators/SprintCreator";
+import { BoardView } from "./BoardView";
+import { GanttView } from "./GanttView";
+import { CalendarView } from "./CalendarView";
+import { ChartView } from "./ChartView";
 
 interface SprintsViewProps {
   workspaceId: string;
   pageId: string;
+  viewType?: string;
 }
 
 import { ViewTabs } from "@/components/ui/ViewTabs";
 import { ViewToolbar } from "@/components/ui/ViewToolbar";
 
-export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
+export function SprintsView({ workspaceId, pageId, viewType = 'table' }: SprintsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
@@ -423,6 +428,24 @@ export function SprintsView({ workspaceId, pageId }: SprintsViewProps) {
     }
   };
 
+  // Render different views based on viewType
+  if (viewType === 'board') {
+    return <BoardView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'gantt') {
+    return <GanttView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'calendar') {
+    return <CalendarView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'chart') {
+    return <ChartView workspaceId={workspaceId} />;
+  }
+
+  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
       <ViewTabs

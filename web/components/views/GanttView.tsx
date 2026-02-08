@@ -39,7 +39,7 @@ export function GanttView({ workspaceId }: GanttViewProps) {
     ];
 
     // Group tasks by epic or project
-    const groups = [
+    const teams = [
         {
             id: 'q1-2026',
             name: 'Q1 2026',
@@ -185,8 +185,8 @@ export function GanttView({ workspaceId }: GanttViewProps) {
                 </Box>
 
                 {/* Gantt Rows */}
-                {groups.map((group) => (
-                    <Box key={group.id}>
+                {teams.map((team) => (
+                    <Box key={team.id}>
                         {/* Group Header */}
                         <Box sx={{ 
                             display: 'flex', 
@@ -206,15 +206,15 @@ export function GanttView({ workspaceId }: GanttViewProps) {
                                 <IconButton size="small" sx={{ p: 0 }}>
                                     <ChevronDown size={14} color="#676879" />
                                 </IconButton>
-                                <Typography sx={{ fontWeight: 600, color: group.id === 'epics-backlog' ? '#e2445c' : '#323338', fontSize: '14px' }}>
-                                    {group.name}
+                                <Typography sx={{ fontWeight: 600, color: team.id === 'epics-backlog' ? '#e2445c' : '#323338', fontSize: '14px' }}>
+                                    {team.name}
                                 </Typography>
                             </Box>
                             <Box sx={{ flex: 1 }} />
                         </Box>
 
                         {/* Tasks */}
-                        {group.tasks.map((task, taskIdx) => (
+                        {team.tasks.map((task, taskIdx) => (
                             <Box 
                                 key={task.id}
                                 sx={{ 
