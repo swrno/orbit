@@ -14,9 +14,10 @@ interface ViewTabsProps {
   onViewChange: (viewId: string) => void;
   onAddView?: (viewType: string) => void;
   onRemoveView?: (viewId: string) => void;
+  allowedViews?: string[];
 }
 
-export function ViewTabs({ views, activeViewId, onViewChange, onAddView, onRemoveView }: ViewTabsProps) {
+export function ViewTabs({ views, activeViewId, onViewChange, onAddView, onRemoveView, allowedViews }: ViewTabsProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -42,6 +43,15 @@ export function ViewTabs({ views, activeViewId, onViewChange, onAddView, onRemov
     { type: 'calendar', label: 'Calendar', icon: <Calendar size={16} /> },
     { type: 'chart', label: 'Chart', icon: <BarChart2 size={16} /> },
   ];
+
+  const filteredOptions = onAddView && allowedViews 
+    ? VIEW_OPTIONS.filter(option => allowedViews.includes(option.type)) 
+    : VIEW_OPTIONS;
+
+  if (!onAddView || (allowedViews && allowedViews.length === 0)) {
+    // If no add handler or no allowed views, don't show the add button
+    // But wait, if views are passed, we show them. The + button is at the end.
+  }
 
   return (
     <Box sx={{ 
@@ -100,43 +110,48 @@ export function ViewTabs({ views, activeViewId, onViewChange, onAddView, onRemov
         </Box>
       ))}
       
-      <IconButton 
-        size="small" 
-        onClick={handleAddClick}
-        sx={{ 
-          ml: 1, 
-          mb: 0.5,
-          color: '#676879',
-          '&:hover': { bgcolor: '#f6f7fb', color: '#323338' } 
-        }}
-      >
-        <Plus size={16} />
-      </IconButton>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        PaperProps={{
-          sx: { width: 200, mt: 1 }
-        }}
-      >
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#676879' }}>
-            ADD VIEW
-          </Typography>
-        </Box>
-        {VIEW_OPTIONS.map((option) => (
-          <MenuItem 
-            key={option.type} 
-            onClick={() => handleSelectView(option.type)}
-            sx={{ fontSize: '14px', gap: 1.5 }}
+      {/* Show Add Button if there are options specific to this view context */}
+      {filteredOptions.length > 0 && (
+        <>
+          <IconButton 
+            size="small" 
+            onClick={handleAddClick}
+            sx={{ 
+              ml: 1, 
+              mb: 0.5,
+              color: '#676879',
+              '&:hover': { bgcolor: '#f6f7fb', color: '#323338' } 
+            }}
           >
-            {option.icon}
-            {option.label}
-          </MenuItem>
-        ))}
-      </Menu>
+            <Plus size={16} />
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            PaperProps={{
+              sx: { width: 200, mt: 1 }
+            }}
+          >
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#676879' }}>
+                ADD VIEW
+              </Typography>
+            </Box>
+            {filteredOptions.map((option) => (
+              <MenuItem 
+                key={option.type} 
+                onClick={() => handleSelectView(option.type)}
+                sx={{ fontSize: '14px', gap: 1.5 }}
+              >
+                {option.icon}
+                {option.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </>
+      )}
     </Box>
   );
 }

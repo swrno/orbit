@@ -16,7 +16,8 @@ import {
   Chip,
   Avatar,
   Button,
-  Collapse
+  Collapse,
+  TextField
 } from "@mui/material";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { BugCreator } from "@/components/creators/BugCreator";
@@ -24,7 +25,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
-import { ChartView } from "./ChartView";
+import { ChartView } from "@/components/views/ChartView";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface BugsViewProps {
@@ -277,6 +278,24 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
     }));
   };
 
+  const handleUpdateBug = async (bugId: string, updates: any) => {
+    const bug = bugs.find(b => b._id === bugId || b.id === bugId);
+    if (!bug) return;
+
+    const updatedBug = { ...bug, ...updates };
+
+    // Optimistic update
+    setBugs(prev => prev.map(b => (b._id === bugId || b.id === bugId ? updatedBug : b)));
+    groupBugsByStatus(bugs.map(b => (b._id === bugId || b.id === bugId ? updatedBug : b)));
+
+    try {
+      await handleCreateOrUpdateBug(updatedBug);
+    } catch (error) {
+      console.error('Failed to update bug:', error);
+      fetchBugs(); // Revert on error
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -287,6 +306,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
 
   const renderContent = () => {
     switch (activeView) {
+      case 'board':
       case 'kanban':
         return (
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -537,55 +557,8 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
         );
 
       case 'chart':
-        return (
-          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>Bug Statistics</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Priority</Typography>
-                {Object.keys(PRIORITY_COLORS).map(priority => {
-                  const count = bugs.filter(b => b.priority === priority).length;
-                  return (
-                    <Box key={priority} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{priority}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{
-                          height: '100%',
-                          width: `${(count / bugs.length) * 100}%`,
-                          bgcolor: PRIORITY_COLORS[priority].bg
-                        }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Status</Typography>
-                {Object.keys(groupedBugs).map(group => {
-                  const count = groupedBugs[group].length;
-                  return (
-                    <Box key={group} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{group}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{
-                          height: '100%',
-                          width: `${(count / bugs.length) * 100}%`,
-                          bgcolor: GROUP_COLORS[group]
-                        }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          </Box>
-        );
+      case 'chart':
+        return <ChartView workspaceId={workspaceId} pageId={pageId} viewType="chart" />;
 
       default:
         return (
@@ -593,13 +566,13 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-                  <TableCell width={40}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Bug</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Reporter</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Time until resolution</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Priority</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Connected tasks</TableCell>
+                  <TableCell width={40} sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Bug</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Reporter</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Time until resolution</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Priority</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Connected tasks</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Bug ID</TableCell>
                 </TableRow>
               </TableHead>
@@ -631,14 +604,24 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                         key={bug.id || index}
                         sx={{
                           '&:hover': { bgcolor: '#f6f7fb' },
-                          borderLeft: `4px solid ${GROUP_COLORS[groupName]}`
+                          borderLeft: `4px solid ${GROUP_COLORS[groupName]}`,
+                          cursor: 'pointer'
                         }}
+                        onClick={() => handleEditBug(bug)}
                       >
-                        <TableCell></TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: '14px' }}>{bug.bug}</Typography>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                          <TextField
+                            variant="standard"
+                            defaultValue={bug.bug}
+                            onClick={(e) => e.stopPropagation()}
+                            onBlur={(e) => handleUpdateBug(bug._id || bug.id, { bug: e.target.value })}
+                            sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
+                            fullWidth
+                            disabled={!canEdit}
+                          />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
                               {bug.reporter?.name?.[0] || 'U'}
@@ -646,12 +629,12 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                             <Typography sx={{ fontSize: '13px' }}>{bug.reporter?.name || 'Unknown'}</Typography>
                           </Box>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Typography sx={{ fontSize: '13px', color: '#676879' }}>
                             {bug.timeUntilResolution || (bug.dueDate ? new Date(bug.dueDate).toLocaleDateString() : '-')}
                           </Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Chip
                             label={bug.status}
                             size="small"
@@ -662,7 +645,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                             }}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Chip
                             label={bug.priority}
                             size="small"
@@ -675,7 +658,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                             }}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Typography sx={{ fontSize: '13px' }}>
                             {bug.connectedTasks?.length || 0} tasks
                           </Typography>
@@ -710,24 +693,6 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
     }
   };
 
-  // Render different views based on viewType
-  if (viewType === 'board') {
-    return <BoardView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'gantt') {
-    return <GanttView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'calendar') {
-    return <CalendarView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'chart') {
-    return <ChartView workspaceId={workspaceId} />;
-  }
-
-  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
 

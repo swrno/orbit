@@ -52,8 +52,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate a simple unique taskId
-    const count = await Task.countDocuments({ workspaceId: body.workspaceId });
-    const taskId = `${body.key || 'TASK'}-${count + 1}`;
+    const prefix = body.key || 'TASK';
+    // Find the last task with this prefix globally to ensure uniqueness
+    const lastTask = await Task.findOne({ 
+        taskId: { $regex: new RegExp(`^${prefix}-\\d+$`) } 
+    }).sort({ taskId: -1 }).collation({ locale: "en_US", numericOrdering: true });
+    
+    let nextId = 1;
+    if (lastTask && lastTask.taskId) {
+        const parts = lastTask.taskId.split('-');
+        if (parts.length > 1) {
+            nextId = parseInt(parts[parts.length - 1]) + 1;
+        }
+    }
+    
+    const taskId = `${prefix}-${nextId}`;
 
     if (!body.teamId) {
       return NextResponse.json(

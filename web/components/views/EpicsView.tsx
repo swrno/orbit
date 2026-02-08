@@ -22,7 +22,7 @@ import { EpicCreator } from "@/components/creators/EpicCreator";
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
-import { ChartView } from "./ChartView";
+import { ChartView } from "@/components/views/ChartView";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface EpicsViewProps {
@@ -200,6 +200,7 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
 
   const renderContent = () => {
     switch (activeView) {
+      case 'board':
       case 'kanban':
         return (
           <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
@@ -258,47 +259,7 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
           </Box>
         );
       case 'chart':
-        return (
-          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>Epic Statistics</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Phase</Typography>
-                {['Backlog', 'Product discovery', 'Dev WIP', 'Released'].map(phase => {
-                  const count = epics.filter(e => e.phase === phase).length;
-                  return (
-                    <Box key={phase} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{phase}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${epics.length ? (count / epics.length) * 100 : 0}%`, bgcolor: '#0073ea' }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Priority</Typography>
-                {['Critical', 'High', 'Medium', 'Low', 'Best Effort'].map(priority => {
-                  const count = epics.filter(e => e.priority === priority).length;
-                  return (
-                    <Box key={priority} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{priority}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${epics.length ? (count / epics.length) * 100 : 0}%`, bgcolor: '#579bfc' }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          </Box>
-        );
+        return <ChartView workspaceId={workspaceId} pageId={pageId} viewType="chart" />;
       default:
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
@@ -445,24 +406,6 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
     }
   };
 
-  // Render different views based on viewType
-  if (viewType === 'board') {
-    return <BoardView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'gantt') {
-    return <GanttView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'calendar') {
-    return <CalendarView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'chart') {
-    return <ChartView workspaceId={workspaceId} />;
-  }
-
-  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
 
@@ -486,145 +429,9 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
         initialData={editingEpic}
       />
 
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-              <TableCell width={40}></TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Epic</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Phase</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Priority</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {epics.map((epic, index) => (
-              <>
-                <TableRow
-                  key={epic.id || index}
-                  sx={{
-                    '&:hover': { bgcolor: '#f6f7fb' },
-                    cursor: 'pointer'
-                  }}
-                  onClick={(e) => {
-                    if ((e.target as HTMLElement).closest('.expand-icon')) {
-                      toggleEpic(epic.id);
-                      return;
-                    }
-                    handleEditEpic(epic);
-                  }}
-                >
-                  <TableCell className="expand-icon">
-                    {epic.children?.length > 0 && (
-                      expandedEpics[epic.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography
-                      sx={{
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        pl: (epic.hierarchy || 0) * 3
-                      }}
-                    >
-                      {epic.epic}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                        {epic.owner?.name?.[0] || 'U'}
-                      </Avatar>
-                      <Typography sx={{ fontSize: '13px' }}>{epic.owner?.name || 'Unassigned'}</Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={epic.phase}
-                      size="small"
-                      sx={{
-                        bgcolor: PHASE_COLORS[epic.phase]?.bg || '#c4c4c4',
-                        color: PHASE_COLORS[epic.phase]?.text || '#ffffff',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        height: '24px'
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={epic.priority}
-                      size="small"
-                      sx={{
-                        bgcolor: PRIORITY_COLORS[epic.priority]?.bg || '#c4c4c4',
-                        color: PRIORITY_COLORS[epic.priority]?.text || '#ffffff',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        height: '24px'
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-
-                {/* Nested Children */}
-                {epic.children?.length > 0 && expandedEpics[epic.id] && epic.children.map((child: any, childIndex: number) => (
-                  <TableRow
-                    key={`${epic.id}-child-${childIndex}`}
-                    sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
-                  >
-                    <TableCell></TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '13px', pl: 4, color: '#676879' }}>
-                        └ {child.epic}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 20, height: 20, fontSize: '10px' }}>
-                          {child.owner?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Typography sx={{ fontSize: '12px' }}>{child.owner?.name || 'Unassigned'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={child.phase}
-                        size="small"
-                        sx={{
-                          bgcolor: PHASE_COLORS[child.phase]?.bg || '#c4c4c4',
-                          color: PHASE_COLORS[child.phase]?.text || '#ffffff',
-                          fontSize: '11px',
-                          height: '20px'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={child.priority}
-                        size="small"
-                        sx={{
-                          bgcolor: PRIORITY_COLORS[child.priority]?.bg || '#c4c4c4',
-                          color: PRIORITY_COLORS[child.priority]?.text || '#ffffff',
-                          fontSize: '11px',
-                          height: '20px'
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </>
-            ))}
-
-            {epics.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <Typography sx={{ color: '#676879' }}>No epics yet. Create your first epic!</Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {renderContent()}
+      </Box>
     </Box>
   );
 }

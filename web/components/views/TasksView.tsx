@@ -32,7 +32,7 @@ import { TaskCreator } from "@/components/creators/TaskCreator";
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
-import { ChartView } from "./ChartView";
+import { ChartView } from "@/components/views/ChartView";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface TasksViewProps {
@@ -245,6 +245,8 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
   const renderContent = () => {
     switch (activeView) {
+      case 'board':
+        return <BoardView workspaceId={workspaceId} />;
       case 'kanban':
         return (
           <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
@@ -300,61 +302,23 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
           </Box>
         );
       case 'chart':
-        return (
-          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>Task Statistics</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Status</Typography>
-                {Object.keys(STATUS_COLORS).map(status => {
-                  const count = tasks.filter(t => t.status === status).length;
-                  return (
-                    <Box key={status} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{status}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${tasks.length ? (count / tasks.length) * 100 : 0}%`, bgcolor: STATUS_COLORS[status].bg }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Type</Typography>
-                {Object.keys(TYPE_COLORS).map(type => {
-                  const count = tasks.filter(t => t.type === type).length;
-                  return (
-                    <Box key={type} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{type}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${tasks.length ? (count / tasks.length) * 100 : 0}%`, bgcolor: TYPE_COLORS[type].bg }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          </Box>
-        );
+      case 'chart':
+        return <ChartView workspaceId={workspaceId} pageId={pageId} viewType="chart" />;
       default:
+        // Default table view
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-                  <TableCell width={40}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Type</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task ID</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Estimated SP</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Epic</TableCell>
+                  <TableCell width={40} sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Task</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Owner</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Type</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Task ID</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Estimated SP</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Epic</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>GitHub link</TableCell>
                 </TableRow>
               </TableHead>
@@ -395,8 +359,8 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                         }}
                         onClick={() => handleEditTask(task)}
                       >
-                        <TableCell></TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <TextField
                             variant="standard"
                             defaultValue={task.task}
@@ -406,7 +370,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                             disabled={!canEdit}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
                               {task.owner?.name?.[0] || 'U'}
@@ -414,7 +378,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                             <Typography sx={{ fontSize: '13px' }}>{task.owner?.name || 'Unassigned'}</Typography>
                           </Box>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Chip
                             label={task.status}
                             size="small"
@@ -427,7 +391,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                             }}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Chip
                             label={task.type}
                             size="small"
@@ -440,15 +404,15 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                             }}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879' }}>
                             {task.taskId}
                           </Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Typography sx={{ fontSize: '13px' }}>{task.estimatedSP || 0} SP</Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Chip
                             label={task.epic || 'No epic'}
                             size="small"
@@ -491,24 +455,6 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
     }
   };
 
-  // Render different views based on viewType
-  if (viewType === 'board') {
-    return <BoardView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'gantt') {
-    return <GanttView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'calendar') {
-    return <CalendarView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'chart') {
-    return <ChartView workspaceId={workspaceId} />;
-  }
-
-  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
 
@@ -535,148 +481,9 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
         initialData={editingTask}
       />
 
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-              <TableCell width={40}></TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Task ID</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Estimated SP</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Epic</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>GitHub link</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
-              <>
-                {/* Group Header */}
-                <TableRow
-                  key={`group-${groupName}`}
-                  sx={{
-                    bgcolor: groupName === 'Sprint 1' ? '#ffe5f0' : '#e6f7ff',
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: groupName === 'Sprint 1' ? '#ffd6e7' : '#d6f0ff' }
-                  }}
-                  onClick={() => toggleGroup(groupName)}
-                >
-                  <TableCell colSpan={9} sx={{ py: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                      <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
-                        {groupName}
-                      </Typography>
-                      <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
-                        {groupTasks.length} {groupTasks.length === 1 ? 'task' : 'tasks'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-
-                {/* Group Tasks */}
-                {!collapsedGroups[groupName] && groupTasks.map((task, index) => (
-                  <TableRow
-                    key={task.id || index}
-                    sx={{
-                      '&:hover': { bgcolor: '#f6f7fb' },
-                      borderLeft: groupName === 'Sprint 1' ? '4px solid #e2445c' : '4px solid #579bfc',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => handleEditTask(task)}
-                  >
-                    <TableCell></TableCell>
-                    <TableCell>
-                      <TextField
-                        variant="standard"
-                        defaultValue={task.task}
-                        onBlur={(e) => handleUpdateTask(task.id, { task: e.target.value })}
-                        sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
-                        fullWidth
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                          {task.owner?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Typography sx={{ fontSize: '13px' }}>{task.owner?.name || 'Unassigned'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={task.status}
-                        size="small"
-                        sx={{
-                          bgcolor: STATUS_COLORS[task.status]?.bg || '#c4c4c4',
-                          color: STATUS_COLORS[task.status]?.text || '#ffffff',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          height: '24px'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={task.type}
-                        size="small"
-                        sx={{
-                          bgcolor: TYPE_COLORS[task.type]?.bg || '#a25ddc',
-                          color: TYPE_COLORS[task.type]?.text || '#ffffff',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          height: '24px'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879' }}>
-                        {task.taskId}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '13px' }}>{task.estimatedSP || 0} SP</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={task.epic || 'No epic'}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '11px', height: '22px' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {task.githubLink ? (
-                        <a href={task.githubLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#0073ea' }}>
-                          View
-                        </a>
-                      ) : (
-                        <Typography sx={{ fontSize: '13px', color: '#c4c4c4' }}>-</Typography>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-                {/* Add Task Row */}
-                {!collapsedGroups[groupName] && (
-                  <TableRow sx={{ bgcolor: '#fafbfc' }}>
-                    <TableCell colSpan={9}>
-                      <Button
-                        startIcon={<Plus size={14} />}
-                        sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
-                      >
-                        Add task
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {renderContent()}
+      </Box>
     </Box>
   );
 }

@@ -101,13 +101,20 @@ export default function GenericPage() {
 
   // Detect specialized view based on page title
   const pageTitle = currentPage.title.toLowerCase();
+  console.log('DEBUG: Page Title:', pageTitle);
+  const isRetro = pageTitle.includes('retro');
   const isSpecializedView =
     pageTitle.includes('task') ||
     pageTitle.includes('sprint') ||
     pageTitle.includes('epic') ||
     pageTitle.includes('bug') ||
-    pageTitle.includes('retro') ||
+    isRetro ||
     isTeamAccess;
+
+  // Filter views for Retrospectives
+  const effectivePageViews = isRetro 
+    ? pageViews.filter(v => v === 'table') 
+    : pageViews;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#f6f7fb' }}>
@@ -120,7 +127,7 @@ export default function GenericPage() {
       {/* View Tabs - show for specialized pages too, but not for documents or team-access */}
       {!isDocument && !isTeamAccess && (
         <ViewTabs
-          views={pageViews.map((viewType, index) => ({
+          views={effectivePageViews.map((viewType, index) => ({
             id: viewType + '-' + index, // Ensure unique ID
             label: viewType.charAt(0).toUpperCase() + viewType.slice(1),
             type: viewType as any
@@ -138,6 +145,7 @@ export default function GenericPage() {
             const index = indexStr ? parseInt(indexStr) : -1;
             if (index !== -1 && !isNaN(index)) handleRemoveView(index);
           }}
+          allowedViews={isRetro ? ['table'] : undefined}
         />
       )}
 

@@ -322,7 +322,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                     <LayoutGrid size={18} color="white" />
                                 </Box>
                                 <Typography variant="h6" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                    Orbit AI Workspace
+                                    {workspace.name || workspace.title}
                                 </Typography>
                             </Box>
                         </Link>
@@ -699,13 +699,6 @@ export default function Sidebar({ className }: { className?: string }) {
                                 <Typography variant="body2" fontWeight={500}>Workspace Settings</Typography>
                             </Box>
                         </Link>
-
-                        <Typography variant="caption" sx={{ color: '#6B778C', display: 'block', textAlign: 'center' }}>
-                            Orbit AI Workspace v1.0
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: '#6B778C', display: 'block', textAlign: 'center', mt: 0.5 }}>
-                            {workspace.name || workspace.title}
-                        </Typography>
                     </Box>
                 </Box>
 

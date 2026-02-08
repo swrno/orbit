@@ -23,7 +23,7 @@ import { RetrospectiveCreator } from "@/components/creators/RetrospectiveCreator
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
-import { ChartView } from "./ChartView";
+import { ChartView } from "@/components/views/ChartView";
 
 interface RetrospectivesViewProps {
   workspaceId: string;
@@ -67,12 +67,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
   const [editingRetro, setEditingRetro] = useState<any>(null);
 
-  // Initialize view state from page or defaults
-  const views = (page?.views || ['table']).map((v: string) => ({
-    id: v,
-    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
-    type: v
-  }));
+  // Initialize view state - Retrospectives only support Table view for now
+  const views = [{ id: 'table', label: 'Main table', type: 'table' }];
 
   const activeView = page?.type || 'table';
 
@@ -223,16 +219,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
   const renderContent = () => {
     switch (activeView) {
-      case 'gantt':
-      case 'kanban':
-      case 'calendar':
-        return (
-          <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography color="text.secondary">
-              {activeView.charAt(0).toUpperCase() + activeView.slice(1)} view is coming soon
-            </Typography>
-          </Box>
-        );
+      case 'chart':
+        return <ChartView workspaceId={workspaceId} pageId={pageId} viewType="chart" />;
       default:
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
@@ -366,24 +354,6 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     }
   };
 
-  // Render different views based on viewType
-  if (viewType === 'board') {
-    return <BoardView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'gantt') {
-    return <GanttView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'calendar') {
-    return <CalendarView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'chart') {
-    return <ChartView workspaceId={workspaceId} />;
-  }
-
-  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
 
@@ -406,140 +376,9 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
         initialData={editingRetro}
       />
 
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-              <TableCell width={40}></TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Feedback</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Submitter</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Repeating?</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Vote</TableCell>
-              <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {Object.entries(groupedRetros).map(([groupName, groupRetros]) => (
-              <>
-                <TableRow
-                  key={`group-${groupName}`}
-                  sx={{
-                    bgcolor: '#e6f7ff',
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: '#d6f0ff' }
-                  }}
-                  onClick={() => toggleGroup(groupName)}
-                >
-                  <TableCell colSpan={7} sx={{ py: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                      <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
-                        {groupName}
-                      </Typography>
-                      <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
-                        {groupRetros.length} {groupRetros.length === 1 ? 'item' : 'items'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-
-                {!collapsedGroups[groupName] && groupRetros.map((retro, index) => (
-                  <TableRow
-                    key={retro.id || index}
-                    sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
-                  >
-                    <TableCell></TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '14px' }}>{retro.feedback}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                          {retro.submitter?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Typography sx={{ fontSize: '13px' }}>{retro.submitter?.name || 'Anonymous'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={retro.type}
-                        size="small"
-                        sx={{
-                          bgcolor: TYPE_COLORS[retro.type]?.bg || '#c4c4c4',
-                          color: TYPE_COLORS[retro.type]?.text || '#ffffff',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          height: '24px'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={retro.repeating ? 'Yes' : 'No'}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          fontSize: '11px',
-                          height: '22px',
-                          borderColor: retro.repeating ? '#e2445c' : '#c4c4c4',
-                          color: retro.repeating ? '#e2445c' : '#676879'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleVote(retro.id)}
-                          sx={{
-                            color: '#0073ea',
-                            '&:hover': { bgcolor: '#e6f2ff' }
-                          }}
-                        >
-                          <ThumbsUp size={16} />
-                        </IconButton>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#0073ea' }}>
-                          {retro.vote || 0}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                          {retro.owner?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Typography sx={{ fontSize: '13px' }}>{retro.owner?.name || 'Unassigned'}</Typography>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-                {!collapsedGroups[groupName] && (
-                  <TableRow sx={{ bgcolor: '#fafbfc' }}>
-                    <TableCell colSpan={7}>
-                      <Button
-                        startIcon={<Plus size={14} />}
-                        sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
-                      >
-                        Add feedback
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </>
-            ))}
-
-            {retrospectives.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <Typography sx={{ color: '#676879' }}>No retrospective items yet. Add your first feedback!</Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {renderContent()}
+      </Box>
     </Box>
   );
 }

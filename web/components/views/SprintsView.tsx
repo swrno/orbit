@@ -23,7 +23,7 @@ import { SprintCreator } from "@/components/creators/SprintCreator";
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
-import { ChartView } from "./ChartView";
+import { ChartView } from "@/components/views/ChartView";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface SprintsViewProps {
@@ -228,6 +228,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
 
   const renderContent = () => {
     switch (activeView) {
+      case 'board':
       case 'kanban':
         return (
           <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
@@ -278,48 +279,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
           </Box>
         );
       case 'chart':
-        return (
-          <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>Sprint Statistics</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>By Status</Typography>
-                {['Planned', 'Active', 'Completed'].map(status => {
-                  const count = sprints.filter(s => s.activeSprintStatus === status).length;
-                  const colors: Record<string, string> = { Planned: '#fdab3d', Active: '#00c875', Completed: '#c4c4c4' };
-                  return (
-                    <Box key={status} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{status}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{count}</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${sprints.length ? (count / sprints.length) * 100 : 0}%`, bgcolor: colors[status] }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: '14px', fontWeight: 600, mb: 2 }}>Sprint Progress</Typography>
-                {sprints.slice(0, 5).map(sprint => {
-                  const progress = calculateProgress(sprint);
-                  return (
-                    <Box key={sprint._id} sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '13px' }}>{sprint.sprint}</Typography>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600 }}>{Math.round(progress)}%</Typography>
-                      </Box>
-                      <Box sx={{ height: 8, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${progress}%`, bgcolor: '#0073ea' }} />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          </Box>
-        );
+        return <ChartView workspaceId={workspaceId} pageId={pageId} viewType="chart" />;
       default:
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
@@ -429,23 +389,6 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
         );
     }
   };
-
-  // Render different views based on viewType
-  if (viewType === 'board') {
-    return <BoardView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'gantt') {
-    return <GanttView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'calendar') {
-    return <CalendarView workspaceId={workspaceId} />;
-  }
-  
-  if (viewType === 'chart') {
-    return <ChartView workspaceId={workspaceId} />;
-  }
 
   // Default table view
   return (
