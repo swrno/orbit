@@ -101,7 +101,10 @@ export default function AssignBugForm({
 
       const response = await fetch("/api/bugs", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-User-Id": user?.uid || ""
+        },
         body: JSON.stringify({
           id: selectedBugId,
           workspaceId: selectedWorkspaceId,
