@@ -17,7 +17,7 @@ import {
   Button,
   Collapse
 } from "@mui/material";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, CheckSquare } from "lucide-react";
 import { EpicCreator } from "@/components/creators/EpicCreator";
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
@@ -69,6 +69,7 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
   }
 
   const [epics, setEpics] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [expandedEpics, setExpandedEpics] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
@@ -123,20 +124,41 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
   const fetchEpics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
-      const data = await response.json();
+      const [epicsRes, tasksRes] = await Promise.all([
+        fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`),
+        fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`)
+      ]);
+      
+      const epicsData = await epicsRes.json();
+      const tasksData = await tasksRes.json();
 
-      if (data.success && Array.isArray(data.data)) {
-        setEpics(data.data);
+      if (epicsData.success && Array.isArray(epicsData.data)) {
+        setEpics(epicsData.data);
       } else {
-        console.error('Invalid epics data format:', data);
         setEpics([]);
       }
+
+      if (tasksData.success && Array.isArray(tasksData.data)) {
+        setTasks(tasksData.data);
+      } else {
+        setTasks([]);
+      }
     } catch (error) {
-      console.error('Error fetching epics:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getEpicTasks = (epic: any) => {
+    const epicId = epic.id || epic._id;
+    const epicName = epic.epic;
+    
+    return tasks.filter(t => 
+      (t.epicId && t.epicId === epicId) || // Match by explicit ID if available
+      (t.epic && t.epic === epicId) ||     // Match if 'epic' field somehow stores ID
+      (t.epic && t.epic === epicName)      // Match if 'epic' field stores Name (matches TaskCreator)
+    );
   };
 
   const handleCreateOrUpdateEpic = async (epicData: any) => {
@@ -274,7 +296,12 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                 </TableRow>
               </TableHead>
               <TableBody>
-                {epics.map((epic, index) => (
+                {epics.map((epic, index) => {
+                  const epicTasks = getEpicTasks(epic);
+                  const hasChildren = epic.children?.length > 0 || epicTasks.length > 0;
+                  const isExpanded = expandedEpics[epic.id || epic._id];
+
+                  return (
                   <>
                     <TableRow
                       key={epic.id || index}
@@ -285,15 +312,15 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                       onClick={(e) => {
                         // Prevent edit when clicking expand icon
                         if ((e.target as HTMLElement).closest('.expand-icon')) {
-                          toggleEpic(epic.id);
+                          toggleEpic(epic.id || epic._id);
                           return;
                         }
                         handleEditEpic(epic);
                       }}
                     >
                       <TableCell className="expand-icon">
-                        {epic.children?.length > 0 && (
-                          expandedEpics[epic.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                        {hasChildren && (
+                          isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
                         )}
                       </TableCell>
                       <TableCell>
@@ -343,8 +370,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                       </TableCell>
                     </TableRow>
 
-                    {/* Nested Children */}
-                    {epic.children?.length > 0 && expandedEpics[epic.id] && epic.children.map((child: any, childIndex: number) => (
+                    {/* Nested Sub-Epics */}
+                    {epic.children?.length > 0 && isExpanded && epic.children.map((child: any, childIndex: number) => (
                       <TableRow
                         key={`${epic.id}-child-${childIndex}`}
                         sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
@@ -389,8 +416,56 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                         </TableCell>
                       </TableRow>
                     ))}
+
+                    {/* Nested Tasks */}
+                    {epicTasks.length > 0 && isExpanded && epicTasks.map((task: any, taskIndex: number) => (
+                      <TableRow
+                        key={`task-${task._id || task.id}`}
+                        sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
+                      >
+                        <TableCell></TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 4 }}>
+                            <CheckSquare size={14} color="#3B82F6" />
+                            <Typography sx={{ fontSize: '13px', color: '#334155' }}>
+                              {task.title || task.task}
+                            </Typography>
+                            <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+                              {task.key || task.taskId}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Avatar sx={{ width: 20, height: 20, fontSize: '10px' }}>
+                              {task.owner?.name?.[0] || 'U'}
+                            </Avatar>
+                            <Typography sx={{ fontSize: '12px' }}>{task.owner?.name || 'Unassigned'}</Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={task.status}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              borderColor: '#E2E8F0',
+                              color: '#64748B',
+                              fontSize: '11px',
+                              height: '20px'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
+                            {task.priority || '-'}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </>
-                ))}
+                  );
+                })}
 
                 {epics.length === 0 && (
                   <TableRow>

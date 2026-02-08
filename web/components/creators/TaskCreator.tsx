@@ -138,6 +138,7 @@ export function TaskCreator({ open, onClose, onSubmit, workspaceId, pageId, team
 
     const submissionData: any = {
       ...formData,
+      group: formData.sprint || 'Backlog', // Sync group with sprint ensure standard view grouping
       owner: initialData ? formData.owner : (formData.owner.id ? formData.owner : ownerData)
     };
 

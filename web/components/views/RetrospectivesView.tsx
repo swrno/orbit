@@ -18,7 +18,7 @@ import {
   IconButton,
   Collapse
 } from "@mui/material";
-import { ChevronDown, ChevronRight, Plus, ThumbsUp } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, ThumbsUp, Trash2, Edit } from "lucide-react";
 import { RetrospectiveCreator } from "@/components/creators/RetrospectiveCreator";
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
@@ -60,6 +60,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   }
 
   const [retrospectives, setRetrospectives] = useState<any[]>([]);
+  const [sprints, setSprints] = useState<any[]>([]);
   const [groupedRetros, setGroupedRetros] = useState<Record<string, any[]>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -111,15 +112,27 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   const fetchRetrospectives = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/retrospectives?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`);
-      const data = await response.json();
+      const [retrosRes, sprintsRes] = await Promise.all([
+        fetch(`/api/retrospectives?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`),
+        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`)
+      ]);
+      
+      const retrosData = await retrosRes.json();
+      const sprintsData = await sprintsRes.json();
 
-      if (data.success && Array.isArray(data.data)) {
-        setRetrospectives(data.data);
-        groupRetrosBySprint(data.data);
+      let currentSprints = [];
+      if (sprintsData.success && Array.isArray(sprintsData.data)) {
+        setSprints(sprintsData.data);
+        currentSprints = sprintsData.data;
+      }
+
+      if (retrosData.success && Array.isArray(retrosData.data)) {
+        setRetrospectives(retrosData.data);
+        groupRetrosBySprint(retrosData.data, currentSprints);
       } else {
-        console.error('Invalid retrospectives data format:', data);
+        console.error('Invalid retrospectives data format:', retrosData);
         setRetrospectives([]);
+        groupRetrosBySprint([], currentSprints);
       }
     } catch (error) {
       console.error('Error fetching retrospectives:', error);
@@ -162,6 +175,22 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     }
   };
 
+  const handleDeleteRetro = async (retroId: string) => {
+    if (!confirm('Are you sure you want to delete this retrospective item?')) return;
+
+    try {
+      const response = await fetch(`/api/retrospectives?id=${retroId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchRetrospectives();
+      }
+    } catch (error) {
+      console.error('Error deleting retrospective:', error);
+    }
+  };
+
   const handleEditRetro = (retro: any) => {
     setEditingRetro(retro);
     setIsCreatorOpen(true);
@@ -172,8 +201,16 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     setEditingRetro(null);
   };
 
-  const groupRetrosBySprint = (retroList: any[]) => {
+  const groupRetrosBySprint = (retroList: any[], sprintList: any[]) => {
     const grouped: Record<string, any[]> = {};
+    
+    // Initialize with all sprints
+    sprintList.forEach(s => {
+        if (s.sprint) grouped[s.sprint] = [];
+    });
+    
+    // Default group
+    if (!grouped['General']) grouped['General'] = [];
 
     retroList.forEach(retro => {
       const sprint = retro.sprint || 'General';
@@ -234,6 +271,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Repeating?</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Vote</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', width: 100 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -248,7 +286,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                       }}
                       onClick={() => toggleGroup(groupName)}
                     >
-                      <TableCell colSpan={7} sx={{ py: 1 }}>
+                      <TableCell colSpan={8} sx={{ py: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                           <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
@@ -329,12 +367,36 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                             <Typography sx={{ fontSize: '13px' }}>{retro.owner?.name || 'Unassigned'}</Typography>
                           </Box>
                         </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditRetro(retro);
+                              }}
+                              sx={{ color: '#64748B', '&:hover': { color: '#3B82F6', bgcolor: '#EFF6FF' } }}
+                            >
+                              <Edit size={16} />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteRetro(retro._id || retro.id); 
+                              }}
+                              sx={{ color: '#64748B', '&:hover': { color: '#EF4444', bgcolor: '#FEF2F2' } }}
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
                       </TableRow>
                     ))}
 
                     {!collapsedGroups[groupName] && (
                       <TableRow sx={{ bgcolor: '#fafbfc' }}>
-                        <TableCell colSpan={7}>
+                        <TableCell colSpan={8}>
                           <Button
                             startIcon={<Plus size={14} />}
                             sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}

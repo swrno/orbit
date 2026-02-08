@@ -80,6 +80,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   }
 
   const [tasks, setTasks] = useState<any[]>([]);
+  const [sprints, setSprints] = useState<any[]>([]);
   const [groupedTasks, setGroupedTasks] = useState<Record<string, any[]>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -138,15 +139,27 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`);
-      const data = await response.json();
+      const [tasksRes, sprintsRes] = await Promise.all([
+        fetch(`/api/tasks?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${groupId}`),
+        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${groupId}`)
+      ]);
 
-      if (data.success && Array.isArray(data.data)) {
-        setTasks(data.data);
-        groupTasksBySprint(data.data);
+      const tasksData = await tasksRes.json();
+      const sprintsData = await sprintsRes.json();
+
+      let currentSprints = [];
+      if (sprintsData.success && Array.isArray(sprintsData.data)) {
+        setSprints(sprintsData.data);
+        currentSprints = sprintsData.data;
+      }
+
+      if (tasksData.success && Array.isArray(tasksData.data)) {
+        setTasks(tasksData.data);
+        groupTasksBySprint(tasksData.data, currentSprints);
       } else {
-        console.error('Invalid tasks data format:', data);
+        console.error('Invalid tasks data format:', tasksData);
         setTasks([]);
+        groupTasksBySprint([], currentSprints);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -198,8 +211,16 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
     setEditingTask(null);
   };
 
-  const groupTasksBySprint = (taskList: any[]) => {
+  const groupTasksBySprint = (taskList: any[], sprintList: any[]) => {
     const grouped: Record<string, any[]> = {};
+    
+    // Initialize with all sprints (to show empty ones)
+    sprintList.forEach(s => {
+        if (s.sprint) grouped[s.sprint] = [];
+    });
+    
+    // Always ensure Backlog exists
+    if (!grouped['Backlog']) grouped['Backlog'] = [];
 
     taskList.forEach(task => {
       const sprint = task.group || task.sprint || 'Backlog';
