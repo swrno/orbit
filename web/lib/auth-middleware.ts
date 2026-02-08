@@ -7,17 +7,6 @@ import { auth as firebaseAuth } from '@/lib/firebase';
  */
 export async function getAuthUser(request: NextRequest): Promise<{ uid: string; email: string | null } | null> {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    
-    // For server-side verification, we'd need Firebase Admin SDK
-    // For now, we'll use a simpler approach: extract user info from client
-    // In production, this should be replaced with proper token verification
-    
     // Try to get from custom header (passed from client)
     const userId = request.headers.get('X-User-Id');
     const userEmail = request.headers.get('X-User-Email');
@@ -29,6 +18,14 @@ export async function getAuthUser(request: NextRequest): Promise<{ uid: string; 
       };
     }
 
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    // const token = authHeader.substring(7);
+    // In production, verify token here
+    
     return null;
   } catch (error) {
     console.error('Error verifying auth token:', error);

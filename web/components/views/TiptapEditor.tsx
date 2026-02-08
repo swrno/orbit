@@ -2,7 +2,9 @@ import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useAppStore } from '@/lib/store';
-import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState, useRef } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { 
   Bold, Italic, Strikethrough, Code, 
   Heading1, Heading2, Heading3, 
@@ -146,15 +148,40 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
 export function TiptapEditor({ workspaceId, pageId }: TiptapEditorProps) {
   const { workspaces, updatePage } = useAppStore();
+  const { user } = useAuth();
   const workspace = workspaces.find((w) => w.id === workspaceId);
   
-  // Find page and group to verify existence and get initial content
+  // Computed values
   const group = workspace?.teams.find(g => g.pages.some(p => p.id === pageId));
   const page = group?.pages.find(p => p.id === pageId);
 
-  // Local state to handle initial load vs updates
-  // We use key on EditorContent or just restart editor if pageId changes? 
-  // Better to let useEditor handle it with dependencies or generic key
+  // Refs for stable access in callbacks
+  const userRef = useRef(user);
+  const workspacesRef = useRef(workspaces);
+  const updatePageRef = useRef(updatePage);
+
+  useEffect(() => {
+    userRef.current = user;
+    workspacesRef.current = workspaces;
+    updatePageRef.current = updatePage;
+  }, [user, workspaces, updatePage]);
+
+  // Debounced update function
+  const debouncedUpdate = useDebouncedCallback((html: string) => {
+    const currentUser = userRef.current;
+    const currentWorkspaces = workspacesRef.current;
+    const currentUpdatePage = updatePageRef.current;
+
+    if (!currentUser) return; // Don't save if not logged in
+
+    const ws = currentWorkspaces.find(w => w.id === workspaceId);
+    const grp = ws?.teams.find(g => g.pages.some(p => p.id === pageId));
+    const pg = grp?.pages.find(p => p.id === pageId);
+
+    if (ws && grp && pg) {
+       currentUpdatePage(workspaceId, grp.id, pg.id, { content: html }, currentUser.uid, currentUser.email);
+    }
+  }, 1000);
 
   const editor = useEditor({
     extensions: [
@@ -171,12 +198,7 @@ export function TiptapEditor({ workspaceId, pageId }: TiptapEditorProps) {
     content: page?.content || '', 
     immediatelyRender: false, 
     onUpdate: ({ editor }) => {
-       const html = editor.getHTML();
-       if (group && page) {
-           // Direct update might be too frequent, consider debounce in a real app
-           // For now, instant update is fine for local state
-           updatePage(workspaceId, group.id, page.id, { content: html });
-       }
+       debouncedUpdate(editor.getHTML());
     },
   });
 
