@@ -29,10 +29,15 @@ import {
   MoreHorizontal
 } from "lucide-react";
 import { TaskCreator } from "@/components/creators/TaskCreator";
+import { BoardView } from "./BoardView";
+import { GanttView } from "./GanttView";
+import { CalendarView } from "./CalendarView";
+import { ChartView } from "./ChartView";
 
 interface TasksViewProps {
   workspaceId: string;
   pageId: string;
+  viewType?: string;
 }
 
 // Monday.com-style colors
@@ -51,7 +56,7 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
 import { ViewTabs } from "@/components/ui/ViewTabs";
 import { ViewToolbar } from "@/components/ui/ViewToolbar";
 
-export function TasksView({ workspaceId, pageId }: TasksViewProps) {
+export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
@@ -483,6 +488,24 @@ export function TasksView({ workspaceId, pageId }: TasksViewProps) {
     }
   };
 
+  // Render different views based on viewType
+  if (viewType === 'board') {
+    return <BoardView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'gantt') {
+    return <GanttView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'calendar') {
+    return <CalendarView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'chart') {
+    return <ChartView workspaceId={workspaceId} />;
+  }
+
+  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
       <ViewTabs

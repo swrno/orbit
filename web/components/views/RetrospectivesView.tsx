@@ -20,10 +20,15 @@ import {
 } from "@mui/material";
 import { ChevronDown, ChevronRight, Plus, ThumbsUp } from "lucide-react";
 import { RetrospectiveCreator } from "@/components/creators/RetrospectiveCreator";
+import { BoardView } from "./BoardView";
+import { GanttView } from "./GanttView";
+import { CalendarView } from "./CalendarView";
+import { ChartView } from "./ChartView";
 
 interface RetrospectivesViewProps {
   workspaceId: string;
   pageId: string;
+  viewType?: string;
 }
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -35,7 +40,7 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
 import { ViewTabs } from "@/components/ui/ViewTabs";
 import { ViewToolbar } from "@/components/ui/ViewToolbar";
 
-export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewProps) {
+export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: RetrospectivesViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
 
@@ -361,6 +366,24 @@ export function RetrospectivesView({ workspaceId, pageId }: RetrospectivesViewPr
     }
   };
 
+  // Render different views based on viewType
+  if (viewType === 'board') {
+    return <BoardView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'gantt') {
+    return <GanttView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'calendar') {
+    return <CalendarView workspaceId={workspaceId} />;
+  }
+  
+  if (viewType === 'chart') {
+    return <ChartView workspaceId={workspaceId} />;
+  }
+
+  // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
       <ViewTabs

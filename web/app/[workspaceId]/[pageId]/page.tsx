@@ -114,8 +114,8 @@ export default function GenericPage() {
         pageName={currentPage.title}
       />
 
-      {/* View Tabs - only for non-document and non-specialized pages */}
-      {!isDocument && !isSpecializedView && (
+      {/* View Tabs - show for specialized pages too, but not for documents */}
+      {!isDocument && (
         <ViewTabs
           views={pageViews.map((viewType, index) => ({
             id: viewType + '-' + index, // Ensure unique ID
@@ -140,21 +140,21 @@ export default function GenericPage() {
 
       {/* View Content */}
       <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-        {/* Specialized Views - take priority */}
+        {/* Specialized Views - now accept viewType */}
         {pageTitle.includes('task') && (
-          <TasksView workspaceId={workspaceId} pageId={currentPage.id} />
+          <TasksView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('sprint') && !pageTitle.includes('retro') && (
-          <SprintsView workspaceId={workspaceId} pageId={currentPage.id} />
+          <SprintsView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('epic') && (
-          <EpicsView workspaceId={workspaceId} pageId={currentPage.id} />
+          <EpicsView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('bug') && (
-          <BugsView workspaceId={workspaceId} pageId={currentPage.id} />
+          <BugsView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
         {pageTitle.includes('retro') && (
-          <RetrospectivesView workspaceId={workspaceId} pageId={currentPage.id} />
+          <RetrospectivesView workspaceId={workspaceId} pageId={currentPage.id} viewType={activeViewType} />
         )}
 
         {/* Document View */}

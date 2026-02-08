@@ -350,11 +350,11 @@ export const useAppStore = create<AppState>()(
                 title,
                 icon,
                 pages: [
-                  { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table'], activeViewIndex: 0 },
-                  { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
+                  { id: `p-${Date.now()}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
                   {
                     id: `p-${Date.now()}-6`,
                     title: 'Getting Started',
