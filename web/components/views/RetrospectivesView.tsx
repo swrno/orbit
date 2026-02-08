@@ -386,13 +386,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
-      <ViewTabs
-        views={views}
-        activeViewId={activeView}
-        onViewChange={handleSetActiveView}
-        onAddView={handleAddView}
-        onRemoveView={handleRemoveView}
-      />
+
 
       <ViewToolbar
         onSearch={() => { }}

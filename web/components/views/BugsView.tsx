@@ -25,6 +25,7 @@ import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
 import { ChartView } from "./ChartView";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface BugsViewProps {
   workspaceId: string;
@@ -51,6 +52,7 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { canEdit } = usePermissions(workspaceId);
 
   // Find the page and team
   let page: any = null;
@@ -324,7 +326,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                         }}
                       >
                         {groupBugs.map((bug, idx) => (
-                          <Draggable key={bug._id || bug.id || idx} draggableId={bug._id || bug.id} index={idx}>
+                          <Draggable key={bug._id || bug.id || idx} draggableId={bug._id || bug.id} index={idx} isDragDisabled={!canEdit}>
                             {(provided, snapshot) => (
                               <Paper
                                 ref={provided.innerRef}
@@ -686,7 +688,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                       </TableRow>
                     ))}
 
-                    {!collapsedGroups[groupName] && (
+                    {!collapsedGroups[groupName] && canEdit && (
                       <TableRow sx={{ bgcolor: '#fafbfc', borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
                         <TableCell colSpan={8}>
                           <Button
@@ -728,13 +730,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
-      <ViewTabs
-        views={views}
-        activeViewId={activeView}
-        onViewChange={handleSetActiveView}
-        onAddView={handleAddView}
-        onRemoveView={handleRemoveView}
-      />
+
 
       <ViewToolbar
         onSearch={(query) => setSearchQuery(query)}
@@ -745,6 +741,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
         }}
         createButtonLabel="New bug"
         createButtonColor="#e2445c"
+        hideCreate={!canEdit}
       />
 
       <BugCreator

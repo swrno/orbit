@@ -12,6 +12,7 @@ import {
   DialogActions, Button, TextField, Select, FormControl,
   InputLabel, Divider, ListItemIcon, ListItemText
 } from "@mui/material";
+import { usePermissions } from "@/hooks/usePermissions";
 import { TaskDetailModal } from "@/components/modals/TaskDetailModal";
 
 interface BoardViewProps {
@@ -41,6 +42,7 @@ const STATUSES: TaskStatus[] = ['Todo', 'In Progress', 'In Review', 'Done', 'Blo
 export function BoardView({ workspaceId, sprintId }: BoardViewProps) {
   const { workspaces, addTask, deleteTask, moveTask } = useAppStore();
   const workspace = workspaces.find((w) => w.id === workspaceId);
+  const { canEdit } = usePermissions(workspaceId);
 
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
@@ -199,9 +201,19 @@ export function BoardView({ workspaceId, sprintId }: BoardViewProps) {
                     {tasksByStatus[status].length}
                   </Box>
                 </Box>
-                <IconButton size="small" sx={{ color: 'white', p: 0.5 }}>
-                  <Plus size={16} />
-                </IconButton>
+
+                {canEdit && (
+                  <IconButton 
+                    size="small" 
+                    sx={{ color: 'white', p: 0.5 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenCreateDialog(status);
+                    }}
+                  >
+                    <Plus size={16} />
+                  </IconButton>
+                )}
               </Box>
 
               {/* Task Cards */}
@@ -219,8 +231,9 @@ export function BoardView({ workspaceId, sprintId }: BoardViewProps) {
                   <Paper
                     key={task.id}
                     elevation={0}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, task)}
+                    draggable={canEdit}
+                    onDragStart={(e) => canEdit && handleDragStart(e, task)}
+
                     onDragEnd={handleDragEnd}
                     onClick={() => setTaskDetailOpen(task)}
                     sx={{
@@ -319,42 +332,46 @@ export function BoardView({ workspaceId, sprintId }: BoardViewProps) {
                           </Tooltip>
                         )}
                       </Box>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleTaskMenuOpen(e, task)}
-                        sx={{ p: 0.5 }}
-                      >
-                        <MoreHorizontal size={14} color="#676879" />
-                      </IconButton>
+                      {canEdit && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleTaskMenuOpen(e, task)}
+                          sx={{ p: 0.5 }}
+                        >
+                          <MoreHorizontal size={14} color="#676879" />
+                        </IconButton>
+                      )}
                     </Box>
                   </Paper>
                 ))}
 
                 {/* Add Card Button */}
-                <Box
-                  onClick={() => handleOpenCreateDialog(status)}
-                  sx={{
-                    p: 2,
-                    border: '2px dashed #c7c7d1',
-                    borderRadius: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 1,
-                    cursor: 'pointer',
-                    color: '#676879',
-                    bgcolor: 'white',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      borderColor: '#0073ea',
-                      color: '#0073ea',
-                      bgcolor: '#f6f7fb'
-                    }
-                  }}
-                >
-                  <Plus size={16} />
-                  <Typography variant="body2" fontSize="13px">Add epic</Typography>
-                </Box>
+                {canEdit && (
+                  <Box
+                    onClick={() => handleOpenCreateDialog(status)}
+                    sx={{
+                      p: 2,
+                      border: '2px dashed #c7c7d1',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 1,
+                      cursor: 'pointer',
+                      color: '#676879',
+                      bgcolor: 'white',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: '#0073ea',
+                        color: '#0073ea',
+                        bgcolor: '#f6f7fb'
+                      }
+                    }}
+                  >
+                    <Plus size={16} />
+                    <Typography variant="body2" fontSize="13px">Add epic</Typography>
+                  </Box>
+                )}
               </Box>
             </Box>
           );

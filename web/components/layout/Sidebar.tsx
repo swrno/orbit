@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
     BarChart3, ListTodo, ChevronDown, FileText, Plus, Kanban,
     LayoutGrid, Search, Layers, Calendar, Users, Bug, TrendingUp, Table, List as ListIcon,
-    MoreHorizontal, Trash2, Edit, RotateCcw, CheckSquare, Zap, Target
+    MoreHorizontal, Trash2, Edit, RotateCcw, CheckSquare, Zap, Target, Shield
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import { SearchModal } from "@/components/search/SearchModal";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Sidebar({ className }: { className?: string }) {
     const params = useParams();
@@ -36,6 +38,7 @@ export default function Sidebar({ className }: { className?: string }) {
     // Fallback to first workspace if ID is invalid, preventing sidebar crash
     const workspace = workspaces.find(w => w.id === paramId) || workspaces[0];
     const workspaceId = workspace?.id || paramId;
+    const { canEdit, canManageAccess } = usePermissions(workspaceId);
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedWorkspace, setSelectedWorkspace] = useState(workspaceId || 'ws-1');
@@ -172,9 +175,17 @@ export default function Sidebar({ className }: { className?: string }) {
     const [renameTeamValue, setRenameTeamValue] = useState('');
     const [deleteTeamOpen, setDeleteTeamOpen] = useState(false);
 
-    const handleCreateTeam = () => {
+    const { user } = useAuth(); // Get auth user
+    const handleCreateTeam = async () => {
         if (newTeamName.trim() && workspaceId) {
-            addTeam(workspaceId, newTeamName.trim());
+            await addTeam(
+                workspaceId, 
+                newTeamName.trim(), 
+                undefined, 
+                user?.uid, 
+                user?.email || undefined, 
+                user?.displayName || undefined
+            );
             setNewTeamName('');
             setCreateTeamOpen(false);
         }
@@ -430,26 +441,28 @@ export default function Sidebar({ className }: { className?: string }) {
                         <Typography variant="caption" sx={{ fontWeight: 600, color: '#6B778C' }}>
                             TEAMS
                         </Typography>
-                        <Box
-                            onClick={() => setCreateTeamOpen(true)}
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 24,
-                                height: 24,
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                color: '#6B778C',
-                                '&:hover': {
-                                    bgcolor: '#DEEBFF',
-                                    color: '#0052CC'
-                                }
-                            }}
-                            title="Add Team"
-                        >
-                            <Plus size={16} />
-                        </Box>
+                        {canManageAccess && (
+                            <Box
+                                onClick={() => setCreateTeamOpen(true)}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '3px',
+                                    cursor: 'pointer',
+                                    color: '#6B778C',
+                                    '&:hover': {
+                                        bgcolor: '#DEEBFF',
+                                        color: '#0052CC'
+                                    }
+                                }}
+                                title="Add Team"
+                            >
+                                <Plus size={16} />
+                            </Box>
+                        )}
                     </Box>
 
                     <Divider sx={{ borderColor: '#DFE1E6' }} />
@@ -502,47 +515,51 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                                    <Box
-                                                        className="team-actions"
-                                                        onClick={(e) => handleTeamAddClick(e, team.id)}
-                                                        sx={{
-                                                            opacity: 0,
-                                                            transition: 'opacity 0.2s',
-                                                            cursor: 'pointer',
-                                                            p: 0.5,
-                                                            borderRadius: '3px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            color: '#6B778C',
-                                                            '&:hover': {
-                                                                bgcolor: 'rgba(9, 30, 66, 0.08)',
-                                                                color: '#0052CC'
-                                                            }
-                                                        }}
-                                                        title="Add View to Team"
-                                                    >
-                                                        <Plus size={14} />
-                                                    </Box>
-                                                    <Box
-                                                        className="team-actions"
-                                                        onClick={(e) => handleTeamContextMenuOpen(e, team.id, team.title)}
-                                                        sx={{
-                                                            opacity: 0,
-                                                            transition: 'opacity 0.2s',
-                                                            cursor: 'pointer',
-                                                            p: 0.5,
-                                                            borderRadius: '3px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            color: '#6B778C',
-                                                            '&:hover': {
-                                                                bgcolor: 'rgba(9, 30, 66, 0.08)',
-                                                                color: '#172B4D'
-                                                            }
-                                                        }}
-                                                    >
-                                                        <MoreHorizontal size={14} />
-                                                    </Box>
+                                                    {canEdit && (
+                                                        <Box
+                                                            className="team-actions"
+                                                            onClick={(e) => handleTeamAddClick(e, team.id)}
+                                                            sx={{
+                                                                opacity: 0,
+                                                                transition: 'opacity 0.2s',
+                                                                cursor: 'pointer',
+                                                                p: 0.5,
+                                                                borderRadius: '3px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                color: '#6B778C',
+                                                                '&:hover': {
+                                                                    bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                                                    color: '#0052CC'
+                                                                }
+                                                            }}
+                                                            title="Add View to Team"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </Box>
+                                                    )}
+                                                    {canManageAccess && (
+                                                        <Box
+                                                            className="team-actions"
+                                                            onClick={(e) => handleTeamContextMenuOpen(e, team.id, team.title)}
+                                                            sx={{
+                                                                opacity: 0,
+                                                                transition: 'opacity 0.2s',
+                                                                cursor: 'pointer',
+                                                                p: 0.5,
+                                                                borderRadius: '3px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                color: '#6B778C',
+                                                                '&:hover': {
+                                                                    bgcolor: 'rgba(9, 30, 66, 0.08)',
+                                                                    color: '#172B4D'
+                                                                }
+                                                            }}
+                                                        >
+                                                            <MoreHorizontal size={14} />
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             </Box>
                                             {!collapsedTeams[team.id] && (
@@ -563,6 +580,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                                                     else if (page.icon === 'Layers') PageIcon = Layers;
                                                                     else if (page.icon === 'FileText') PageIcon = FileText;
                                                                     else if (page.icon === 'Target') PageIcon = Target;
+                                                                    else if (page.icon === 'Shield') PageIcon = Users;
                                                                 } else {
                                                                     if (page.type === 'board') PageIcon = Kanban;
                                                                     if (page.type === 'table') PageIcon = ListTodo;

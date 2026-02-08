@@ -7,6 +7,7 @@ interface ViewToolbarProps {
   onCreate: () => void;
   createButtonLabel: string;
   createButtonColor?: string;
+  hideCreate?: boolean;
 }
 
 export function ViewToolbar({ 
@@ -14,7 +15,8 @@ export function ViewToolbar({
   onFilter, 
   onCreate, 
   createButtonLabel, 
-  createButtonColor = '#0073ea' 
+  createButtonColor = '#0073ea',
+  hideCreate = false
 }: ViewToolbarProps) {
   return (
     <Box sx={{ 
@@ -30,13 +32,16 @@ export function ViewToolbar({
         variant="contained"
         startIcon={<Plus size={16} />}
         onClick={onCreate}
+        disabled={hideCreate}
         sx={{
           bgcolor: createButtonColor,
           '&:hover': { bgcolor: createButtonColor, filter: 'brightness(0.9)' },
           textTransform: 'none',
           borderRadius: '4px',
           boxShadow: 'none',
-          height: '32px'
+          height: '32px',
+          opacity: hideCreate ? 0.5 : 1,
+          pointerEvents: hideCreate ? 'none' : 'auto'
         }}
       >
         {createButtonLabel}

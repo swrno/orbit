@@ -33,7 +33,7 @@ export function Navbar() {
                 letterSpacing: '-0.5px'
               }}
             >
-              Orbit
+              Orbit AI Workspace
             </Typography>
           </Box>
         </Link>

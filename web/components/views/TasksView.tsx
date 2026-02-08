@@ -33,6 +33,7 @@ import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
 import { ChartView } from "./ChartView";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface TasksViewProps {
   workspaceId: string;
@@ -59,6 +60,7 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { canEdit } = usePermissions(workspaceId);
 
   // Find the page and group
   let page: any = null;
@@ -401,6 +403,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                             onBlur={(e) => handleUpdateTask(task.id, { task: e.target.value })}
                             sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
                             fullWidth
+                            disabled={!canEdit}
                           />
                         </TableCell>
                         <TableCell>
@@ -466,7 +469,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                     ))}
 
                     {/* Add Task Row */}
-                    {!collapsedGroups[groupName] && (
+                    {!collapsedGroups[groupName] && canEdit && (
                       <TableRow sx={{ bgcolor: '#fafbfc' }}>
                         <TableCell colSpan={9}>
                           <Button
@@ -508,13 +511,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
-      <ViewTabs
-        views={views}
-        activeViewId={activeView}
-        onViewChange={handleSetActiveView}
-        onAddView={handleAddView}
-        onRemoveView={handleRemoveView}
-      />
+
 
       <ViewToolbar
         onSearch={() => { }}
@@ -525,6 +522,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
         }}
         createButtonLabel="New task"
         createButtonColor="#579bfc"
+        hideCreate={!canEdit}
       />
 
       <TaskCreator

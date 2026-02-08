@@ -7,12 +7,13 @@ import { canEditWorkspace } from '@/lib/permissions';
 /**
  * Create a new team in a workspace
  */
+// Create a new team in a workspace
 export async function POST(request: NextRequest) {
     try {
         await connectDB();
 
         const body = await request.json();
-        const { workspaceId, title, icon = 'Users', leaderId } = body;
+        const { workspaceId, title, icon = 'Users', leaderId, leaderEmail, leaderName } = body;
 
         if (!workspaceId || !title) {
             return NextResponse.json(
@@ -51,14 +52,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Create initial member (Leader)
+        const initialMember = {
+            id: leaderId || currentUserId,
+            name: leaderName || 'Team Leader',
+            email: leaderEmail || '',
+            role: 'LEADER',
+            addedAt: new Date()
+        };
+
         // Create new team
         const timestamp = Date.now();
         const newTeam = {
             id: `team-${timestamp}`,
             title,
             icon,
-            leaderId: leaderId || currentUserId, // Creator becomes leader by default
-            members: [],
+            leaderId: initialMember.id,
+            members: [initialMember],
             bugs: [],
             tasks: [],
             epics: [],
@@ -76,6 +86,13 @@ export async function POST(request: NextRequest) {
                     type: 'document',
                     icon: 'FileText',
                     content: `<h1>Welcome to ${title}! 🎉</h1><p>This is your team's workspace.</p>`
+                },
+                {
+                    id: `p-${timestamp}-7`,
+                    title: 'Team Access',
+                    type: 'team-access',
+                    icon: 'Shield',
+                    content: `<h1>Team Access Management</h1><p>Manage team member access and permissions.</p>`
                 },
             ]
         };

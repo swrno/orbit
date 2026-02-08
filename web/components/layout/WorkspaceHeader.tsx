@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useAppStore, TaskStatus } from "@/lib/store";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function WorkspaceHeader() {
     const params = useParams();
     const workspaceId = params.workspaceId as string;
     const { workspaces, addTask } = useAppStore();
     const workspace = workspaces.find(w => w.id === workspaceId);
+    const { canEdit } = usePermissions(workspaceId);
 
     const [createTaskOpen, setCreateTaskOpen] = useState(false);
     const [taskTitle, setTaskTitle] = useState('');
@@ -114,6 +116,7 @@ export default function WorkspaceHeader() {
                         variant="contained"
                         startIcon={<Plus size={18} />}
                         onClick={() => setCreateTaskOpen(true)}
+                        disabled={!canEdit}
                         sx={{
                             bgcolor: '#0052CC',
                             color: 'white',

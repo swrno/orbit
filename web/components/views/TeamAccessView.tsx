@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
     Box, Paper, Typography, Button, IconButton, Chip, Avatar,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField,
@@ -51,7 +52,7 @@ interface TeamAccessViewProps {
 
 export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
     const { user } = useAuth();
-    const { workspaces } = useAppStore();
+    const { workspaces, updateWorkspace } = useAppStore();
     
     const workspace = workspaces.find(w => w.id === workspaceId);
     
@@ -59,13 +60,15 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
     let currentTeam: any = null;
     if (workspace && workspace.teams) {
         for (const team of workspace.teams) {
-            const page = team.pages.find(p => p.id === pageId);
+            const page = team.pages.find((p: any) => p.id === pageId);
             if (page) {
                 currentTeam = team;
                 break;
             }
         }
     }
+
+    const { canManageAccess, isReadOnly, role } = usePermissions(workspaceId, currentTeam?.id);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [memberName, setMemberName] = useState('');
@@ -91,13 +94,8 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
         );
     }
 
-    // Check if current user is team leader or workspace owner
-    const isTeamLeader = currentTeam.leaderId === user?.uid;
-    const isWorkspaceOwner = workspace.ownerId === user?.uid;
-    const canManageTeam = isTeamLeader || isWorkspaceOwner;
-
     // Get team members (for now using teamMembers field, will integrate with backend)
-    const teamMembers: TeamMember[] = currentTeam.teamMembers || [];
+    const teamMembers: TeamMember[] = currentTeam.members || [];
 
     const handleAddMember = async () => {
         if (!memberEmail.trim() || !memberName.trim()) {
@@ -123,7 +121,8 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                     userId: memberEmail, // Using email as temporary ID
                     name: memberName,
                     email: memberEmail,
-                    role: memberRole
+                    teamRole: memberRole,
+                    currentUserId: user?.uid
                 })
             });
 
@@ -133,13 +132,17 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                 throw new Error(data.error || 'Failed to add member');
             }
 
+            // Refresh workspace data
+            if (data.data) {
+                updateWorkspace(workspaceId, data.data);
+            }
+
             setSuccess('Member added successfully');
             setDialogOpen(false);
             setMemberName('');
             setMemberEmail('');
             setMemberRole('VIEWER');
             
-            // TODO: Refresh team data
         } catch (err: any) {
             setError(err.message || 'Failed to add member');
         } finally {
@@ -157,19 +160,17 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
         setSuccess('');
 
         try {
-            const response = await fetch('/api/teams/members', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-Id': user?.uid || '',
-                    'X-User-Email': user?.email || ''
-                },
-                body: JSON.stringify({
-                    workspaceId: workspace.id,
-                    teamId: currentTeam.id,
-                    userId: memberId
-                })
-            });
+            const response = await fetch(
+                `/api/teams/members?workspaceId=${workspace.id}&teamId=${currentTeam.id}&userId=${memberId}&currentUserId=${user?.uid}`, 
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': user?.uid || '',
+                        'X-User-Email': user?.email || ''
+                    }
+                }
+            );
 
             const data = await response.json();
 
@@ -177,9 +178,13 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                 throw new Error(data.error || 'Failed to remove member');
             }
 
+            // Refresh workspace data
+            if (data.data) {
+                updateWorkspace(workspaceId, data.data);
+            }
+
             setSuccess('Member removed successfully');
             
-            // TODO: Refresh team data
         } catch (err: any) {
             setError(err.message || 'Failed to remove member');
         } finally {
@@ -204,7 +209,8 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                     workspaceId: workspace.id,
                     teamId: currentTeam.id,
                     userId: memberId,
-                    role: newRole
+                    teamRole: newRole,
+                    currentUserId: user?.uid
                 })
             });
 
@@ -214,9 +220,13 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                 throw new Error(data.error || 'Failed to update role');
             }
 
+            // Refresh workspace data
+            if (data.data) {
+                updateWorkspace(workspaceId, data.data);
+            }
+
             setSuccess('Role updated successfully');
             
-            // TODO: Refresh team data
         } catch (err: any) {
             setError(err.message || 'Failed to update role');
         } finally {
@@ -225,25 +235,15 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
     };
 
     const getRoleIcon = (role: TeamRole) => {
-        const Icon = ROLE_ICONS[role];
-        return <Icon size={16} color={ROLE_COLORS[role]} />;
+        const Icon = ROLE_ICONS[role] || ROLE_ICONS.VIEWER;
+        return <Icon size={16} color={ROLE_COLORS[role] || ROLE_COLORS.VIEWER} />;
     };
 
     return (
         <Box sx={{ height: '100%', bgcolor: '#f6f7fb', p: 3 }}>
-            <Paper sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Shield size={28} style={{ marginRight: 12 }} />
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                            Team Access Control
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Manage team member access for {currentTeam.name}
-                        </Typography>
-                    </Box>
-                    {canManageTeam && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 3 }}>
+                    {canManageAccess && (
                         <Button
                             variant="contained"
                             startIcon={<Plus size={16} />}
@@ -270,32 +270,20 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                 )}
 
                 {/* Permission Notice */}
-                {!canManageTeam && (
+                {!canManageAccess && (
                     <Alert severity="info" sx={{ mb: 3 }}>
                         Only team leaders and workspace owners can manage team access.
-                        {isWorkspaceOwner ? ' You are the workspace owner.' : ' You do not have permission to modify team access.'}
+                        You are currently a <strong>{role}</strong>.
                     </Alert>
                 )}
 
-                {/* Team Info */}
-                <Box sx={{ mb: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Team Leader
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Crown size={18} color={ROLE_COLORS.LEADER} />
-                        <Typography variant="body1">
-                            {currentTeam.leaderId === user?.uid ? 'You' : currentTeam.leaderId || 'Not set'}
-                        </Typography>
-                    </Box>
-                </Box>
 
                 {/* Members Table */}
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Team Members ({teamMembers.length})
                 </Typography>
 
-                <TableContainer>
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e2e8f0' }}>
                     <Table>
                         <TableHead>
                             <TableRow>
@@ -303,13 +291,13 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                 <TableCell>Email</TableCell>
                                 <TableCell>Role</TableCell>
                                 <TableCell>Added</TableCell>
-                                {canManageTeam && <TableCell align="right">Actions</TableCell>}
+                                {canManageAccess && <TableCell align="right">Actions</TableCell>}
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {teamMembers.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={canManageTeam ? 5 : 4} align="center">
+                                    <TableCell colSpan={canManageAccess ? 5 : 4} align="center">
                                         <Typography color="text.secondary" sx={{ py: 3 }}>
                                             No team members yet. Add members to collaborate.
                                         </Typography>
@@ -328,10 +316,10 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                         </TableCell>
                                         <TableCell>{member.email}</TableCell>
                                         <TableCell>
-                                            {canManageTeam && member.role !== 'LEADER' ? (
+                                            {canManageAccess && member.role !== 'LEADER' ? (
                                                 <FormControl size="small" sx={{ minWidth: 120 }}>
                                                     <Select
-                                                        value={member.role}
+                                                        value={member.role || 'VIEWER'}
                                                         onChange={(e) => handleUpdateRole(member.id, e.target.value as TeamRole)}
                                                         disabled={loading}
                                                     >
@@ -351,12 +339,12 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                                 </FormControl>
                                             ) : (
                                                 <Chip
-                                                    icon={getRoleIcon(member.role)}
-                                                    label={member.role}
+                                                    icon={getRoleIcon(member.role || 'VIEWER')}
+                                                    label={member.role || 'VIEWER'}
                                                     size="small"
                                                     sx={{
-                                                        bgcolor: ROLE_COLORS[member.role] + '20',
-                                                        color: ROLE_COLORS[member.role],
+                                                        bgcolor: (ROLE_COLORS[member.role] || ROLE_COLORS.VIEWER) + '20',
+                                                        color: ROLE_COLORS[member.role] || ROLE_COLORS.VIEWER,
                                                         fontWeight: 500
                                                     }}
                                                 />
@@ -364,10 +352,10 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                                         </TableCell>
                                         <TableCell>
                                             <Typography variant="body2" color="text.secondary">
-                                                {new Date(member.addedAt).toLocaleDateString()}
+                                                {member.addedAt ? new Date(member.addedAt).toLocaleDateString() : 'N/A'}
                                             </Typography>
                                         </TableCell>
-                                        {canManageTeam && (
+                                        {canManageAccess && (
                                             <TableCell align="right">
                                                 {member.role !== 'LEADER' && (
                                                     <IconButton
@@ -407,7 +395,6 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
                         </Box>
                     ))}
                 </Box>
-            </Paper>
 
             {/* Add Member Dialog */}
             <Dialog open={dialogOpen} onClose={() => !loading && setDialogOpen(false)} maxWidth="sm" fullWidth>

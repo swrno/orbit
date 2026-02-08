@@ -24,6 +24,7 @@ import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
 import { ChartView } from "./ChartView";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface SprintsViewProps {
   workspaceId: string;
@@ -37,6 +38,7 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function SprintsView({ workspaceId, pageId, viewType = 'table' }: SprintsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { canEdit } = usePermissions(workspaceId);
 
   // Find the page and team
   let page: any = null;
@@ -448,13 +450,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
   // Default table view
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
-      <ViewTabs
-        views={views}
-        activeViewId={activeView}
-        onViewChange={handleSetActiveView}
-        onAddView={handleAddView}
-        onRemoveView={handleRemoveView}
-      />
+
 
       <ViewToolbar
         onSearch={() => { }}
@@ -464,6 +460,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
           setIsCreatorOpen(true);
         }}
         createButtonLabel="New sprint"
+        hideCreate={!canEdit}
       />
 
       <SprintCreator

@@ -96,7 +96,7 @@ export default function GenericPage() {
 
   // Skip view tabs for document pages and team-access page
   const isDocument = currentPage.type === 'document';
-  const isTeamAccess = currentPage.type === 'team-access';
+  const isTeamAccess = currentPage.type === 'team-access' || currentPage.title.toLowerCase() === 'team access' || currentPage.title.toLowerCase() === 'team settings';
   const activeViewType = pageViews[currentViewIndex];
 
   // Detect specialized view based on page title

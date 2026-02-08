@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
     Box, Paper, Typography, Button, IconButton, Chip, Avatar,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField,
@@ -54,8 +55,10 @@ export default function WorkspaceSettingsPage() {
     const { user } = useAuth();
     const workspaceId = params.workspaceId as string;
 
-    const { workspaces } = useAppStore();
+    const { workspaces, updateWorkspace } = useAppStore();
     const workspace = workspaces.find(w => w.id === workspaceId);
+
+    const { canManageAccess, isOwner, role } = usePermissions(workspaceId);
 
     const [tabValue, setTabValue] = useState(0);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -73,7 +76,6 @@ export default function WorkspaceSettingsPage() {
         );
     }
 
-    const isOwner = workspace.ownerId === user?.uid;
     const members = workspace.members || [];
 
     const handleAddMember = async () => {
@@ -109,8 +111,11 @@ export default function WorkspaceSettingsPage() {
                 throw new Error(data.error || 'Failed to add member');
             }
 
-            // Update local state
-            // TODO: Refresh workspace data
+            // Update local state by refreshing workspace data
+            if (data.data) {
+                updateWorkspace(workspaceId, data.data);
+            }
+
             setDialogOpen(false);
             setMemberName('');
             setMemberEmail('');
@@ -145,7 +150,10 @@ export default function WorkspaceSettingsPage() {
                 throw new Error(data.error || 'Failed to remove member');
             }
 
-            // TODO: Refresh workspace data
+            // Refresh workspace data
+            if (data.data) {
+                updateWorkspace(workspaceId, data.data);
+            }
         } catch (err: any) {
             alert(err.message);
         }
@@ -174,7 +182,10 @@ export default function WorkspaceSettingsPage() {
                 throw new Error(data.error || 'Failed to update member role');
             }
 
-            // TODO: Refresh workspace data
+            // Refresh workspace data
+            if (data.data) {
+                updateWorkspace(workspaceId, data.data);
+            }
         } catch (err: any) {
             alert(err.message);
         }
@@ -215,7 +226,7 @@ export default function WorkspaceSettingsPage() {
                     <Box sx={{ p: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                             <Typography variant="h6">Workspace Members</Typography>
-                            {isOwner && (
+                            {canManageAccess && (
                                 <Button
                                     variant="contained"
                                     startIcon={<Plus size={18} />}
@@ -226,9 +237,10 @@ export default function WorkspaceSettingsPage() {
                             )}
                         </Box>
 
-                        {!isOwner && (
+                        {!canManageAccess && (
                             <Alert severity="info" sx={{ mb: 2 }}>
                                 Only the workspace owner can manage member access.
+                                You are currently a <strong>{role}</strong>.
                             </Alert>
                         )}
 
@@ -240,12 +252,13 @@ export default function WorkspaceSettingsPage() {
                                         <TableCell>Email</TableCell>
                                         <TableCell>Role</TableCell>
                                         <TableCell>Added</TableCell>
-                                        {isOwner && <TableCell>Actions</TableCell>}
+                                        {canManageAccess && <TableCell>Actions</TableCell>}
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {members.map((member: WorkspaceMember) => {
-                                        const RoleIcon = ROLE_ICONS[member.role];
+                                        const roleColor = ROLE_COLORS[member.role] || ROLE_COLORS.VIEWER;
+                                        const RoleIcon = ROLE_ICONS[member.role] || ROLE_ICONS.VIEWER;
                                         const isCurrentOwner = member.id === workspace.ownerId;
 
                                         return (
@@ -261,7 +274,7 @@ export default function WorkspaceSettingsPage() {
                                                 </TableCell>
                                                 <TableCell>{member.email}</TableCell>
                                                 <TableCell>
-                                                    {isOwner && !isCurrentOwner ? (
+                                                    {canManageAccess && !isCurrentOwner ? (
                                                         <FormControl size="small" sx={{ minWidth: 120 }}>
                                                             <Select
                                                                 value={member.role}
@@ -278,8 +291,8 @@ export default function WorkspaceSettingsPage() {
                                                             label={member.role}
                                                             size="small"
                                                             sx={{
-                                                                backgroundColor: ROLE_COLORS[member.role] + '20',
-                                                                color: ROLE_COLORS[member.role]
+                                                                backgroundColor: roleColor + '20',
+                                                                color: roleColor
                                                             }}
                                                         />
                                                     )}
@@ -287,7 +300,7 @@ export default function WorkspaceSettingsPage() {
                                                 <TableCell>
                                                     {member.addedAt ? new Date(member.addedAt).toLocaleDateString() : 'N/A'}
                                                 </TableCell>
-                                                {isOwner && (
+                                                {canManageAccess && (
                                                     <TableCell>
                                                         {!isCurrentOwner && (
                                                             <IconButton

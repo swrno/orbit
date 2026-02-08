@@ -10,6 +10,8 @@ import {
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore, TaskPriority, TaskStatus } from "@/lib/store";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Chip } from "@mui/material";
 
 export function Header() {
   const params = useParams();
@@ -17,6 +19,7 @@ export function Header() {
 
   const { workspaces, addTask } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { role, canEdit } = usePermissions(workspaceId);
 
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -111,6 +114,22 @@ export function Header() {
               )}
             </AvatarGroup>
 
+            <Tooltip title={`Current Role: ${role}`}>
+              <Chip
+                label={role}
+                size="small"
+                variant="outlined"
+                sx={{
+                  height: 24,
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  borderColor: role === 'OWNER' ? 'primary.main' : 'divider',
+                  color: role === 'OWNER' ? 'primary.main' : 'text.secondary',
+                  ml: 1
+                }}
+              />
+            </Tooltip>
+
             <Divider orientation="vertical" flexItem variant="middle" sx={{ height: 24, mx: 0.5 }} />
 
             <IconButton size="small">
@@ -125,6 +144,7 @@ export function Header() {
               size="small"
               startIcon={<Plus size={16} />}
               onClick={() => setCreateTaskOpen(true)}
+              disabled={!canEdit}
               sx={{ textTransform: 'none', boxShadow: 2, ml: 1 }}
             >
               New Task
