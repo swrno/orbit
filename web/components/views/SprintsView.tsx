@@ -15,9 +15,15 @@ import {
   Chip,
   Button,
   Checkbox,
-  LinearProgress
+  LinearProgress,
+  Popover,
+  FormControl,
+  Select,
+  MenuItem,
+  ListItemText
 } from "@mui/material";
 import { Plus } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 import { SprintCreator } from "@/components/creators/SprintCreator";
 import { BoardView } from "./BoardView";
@@ -60,6 +66,9 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
   const [groupedTasks, setGroupedTasks] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const [editingSprint, setEditingSprint] = useState<any>(null);
 
@@ -144,6 +153,17 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     }
   };
 
+  const filteredSprints = sprints.filter(s => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      s.sprint.toLowerCase().includes(q) ||
+      (s.sprintGoals && s.sprintGoals.toLowerCase().includes(q)) ||
+      (s.activeSprintStatus && s.activeSprintStatus.toLowerCase().includes(q));
+
+    const matchesStatus = filterStatus.length === 0 || filterStatus.includes(s.activeSprintStatus);
+    return matchesSearch && matchesStatus;
+  });
+
   const groupTasksBySprint = (taskList: any[]) => {
     const grouped: Record<string, any[]> = {};
     taskList.forEach(task => {
@@ -203,23 +223,23 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     if (!sprint.sprintTimeline && !sprint.sprintStartDate) return 0;
 
     const parseDate = (d: any) => {
-        if (!d) return null;
-        
-        // Handle DD/MM/YYYY format (allow 1 or 2 digits)
-        if (typeof d === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) {
-            const [day, month, year] = d.split('/').map(num => parseInt(num, 10));
-            // Month is 0-indexed in Date constructor
-            const date = new Date(year, month - 1, day);
-            date.setHours(0, 0, 0, 0);
-            return date;
-        }
+      if (!d) return null;
 
-        const date = new Date(d);
-        if (isNaN(date.getTime())) return null; // Invalid date check
-        
-        // Reset to midnight to calculate pure day difference
+      // Handle DD/MM/YYYY format (allow 1 or 2 digits)
+      if (typeof d === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) {
+        const [day, month, year] = d.split('/').map(num => parseInt(num, 10));
+        // Month is 0-indexed in Date constructor
+        const date = new Date(year, month - 1, day);
         date.setHours(0, 0, 0, 0);
         return date;
+      }
+
+      const date = new Date(d);
+      if (isNaN(date.getTime())) return null; // Invalid date check
+
+      // Reset to midnight to calculate pure day difference
+      date.setHours(0, 0, 0, 0);
+      return date;
     };
 
     const now = new Date();
@@ -255,43 +275,113 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
     );
   }
 
+  const onDragEnd = async (result: any) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const startStatus = source.droppableId;
+    const finishStatus = destination.droppableId;
+
+    if (startStatus === finishStatus) {
+      return;
+    }
+
+    // Moving to another status
+    const sprint = sprints.find(s => (s._id || s.id) === draggableId);
+    if (sprint) {
+      // Optimistic update
+      const newSprints = sprints.map(s =>
+        (s._id || s.id) === draggableId ? { ...s, activeSprintStatus: finishStatus } : s
+      );
+      setSprints(newSprints);
+
+      // API Update
+      await handleCreateOrUpdateSprint({
+        _id: draggableId,
+        activeSprintStatus: finishStatus
+      });
+    }
+  };
+
   const renderContent = () => {
     switch (activeView) {
       case 'board':
       case 'kanban':
         return (
-          <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
-            {['Planned', 'Active', 'Completed'].map(status => {
-              const statusSprints = sprints.filter(s => s.activeSprintStatus === status);
-              return (
-                <Box key={status} sx={{ minWidth: 320, maxWidth: 320 }}>
-                  <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{status}</Typography>
-                    <Typography sx={{ fontSize: '12px', color: '#676879' }}>{statusSprints.length} sprints</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {statusSprints.map((sprint, idx) => {
-                      const progress = calculateProgress(sprint);
-                      return (
-                        <Paper key={sprint._id || idx} onClick={() => handleEditSprint(sprint)} sx={{ p: 2, cursor: 'pointer', '&:hover': { boxShadow: 2 } }}>
-                          <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{sprint.sprint}</Typography>
-                          <Box sx={{ mb: 1 }}>
-                            <Typography sx={{ fontSize: '11px', color: '#676879', mb: 0.5 }}>{Math.round(progress)}%</Typography>
-                            <Box sx={{ height: 6, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
-                              <Box sx={{ height: '100%', width: `${progress}%`, bgcolor: '#0073ea' }} />
-                            </Box>
-                          </Box>
-                          <Typography sx={{ fontSize: '11px', color: '#676879' }}>
-                            {new Date(sprint.sprintStartDate).toLocaleDateString()} - {new Date(sprint.sprintEndDate).toLocaleDateString()}
-                          </Typography>
-                        </Paper>
-                      );
-                    })}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
+              {['Planned', 'Active', 'Completed'].map(status => {
+                const statusSprints = sprints.filter(s => s.activeSprintStatus === status);
+                return (
+                  <Droppable key={status} droppableId={status}>
+                    {(provided, snapshot) => (
+                      <Box
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        sx={{
+                          minWidth: 320,
+                          maxWidth: 320,
+                          bgcolor: snapshot.isDraggingOver ? '#f0f0f0' : 'transparent',
+                          transition: 'background-color 0.2s',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
+                          <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{status}</Typography>
+                          <Typography sx={{ fontSize: '12px', color: '#676879' }}>{statusSprints.length} sprints</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 100 }}>
+                          {statusSprints.map((sprint, idx) => {
+                            const progress = calculateProgress(sprint);
+                            return (
+                              <Draggable key={sprint._id || sprint.id} draggableId={sprint._id || sprint.id} index={idx}>
+                                {(provided, snapshot) => (
+                                  <Paper
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    onClick={() => handleEditSprint(sprint)}
+                                    sx={{
+                                      p: 2,
+                                      cursor: 'pointer',
+                                      '&:hover': { boxShadow: 2 },
+                                      ...provided.draggableProps.style,
+                                      bgcolor: snapshot.isDragging ? '#f8f9fa' : 'white'
+                                    }}
+                                  >
+                                    <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{sprint.sprint}</Typography>
+                                    <Box sx={{ mb: 1 }}>
+                                      <Typography sx={{ fontSize: '11px', color: '#676879', mb: 0.5 }}>{Math.round(progress)}%</Typography>
+                                      <Box sx={{ height: 6, bgcolor: '#e6e9ef', borderRadius: 1, overflow: 'hidden' }}>
+                                        <Box sx={{ height: '100%', width: `${progress}%`, bgcolor: '#0073ea' }} />
+                                      </Box>
+                                    </Box>
+                                    <Typography sx={{ fontSize: '11px', color: '#676879' }}>
+                                      {sprint.sprintStartDate ? new Date(sprint.sprintStartDate).toLocaleDateString() : '-'} - {sprint.sprintEndDate ? new Date(sprint.sprintEndDate).toLocaleDateString() : '-'}
+                                    </Typography>
+                                  </Paper>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
+                        </Box>
+                      </Box>
+                    )}
+                  </Droppable>
+                );
+              })}
+            </Box>
+          </DragDropContext>
         );
       case 'calendar':
         return (
@@ -327,7 +417,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sprints.map((sprint, index) => {
+                {filteredSprints.map((sprint, index) => {
                   const progress = calculateProgress(sprint);
                   return (
                     <TableRow
@@ -359,24 +449,24 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
                         />
                       </TableCell>
                       <TableCell>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                            <Typography sx={{ fontSize: '11px', color: '#676879' }}>
-                              {Math.round(progress)}%
-                            </Typography>
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={progress}
-                            sx={{
-                              height: 8,
-                              borderRadius: 1,
-                              bgcolor: '#e6e9ef',
-                              '& .MuiLinearProgress-bar': {
-                                bgcolor: '#0073ea',
-                                borderRadius: 1
-                              }
-                            }}
-                          />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Typography sx={{ fontSize: '11px', color: '#676879' }}>
+                            {Math.round(progress)}%
+                          </Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={progress}
+                          sx={{
+                            height: 8,
+                            borderRadius: 1,
+                            bgcolor: '#e6e9ef',
+                            '& .MuiLinearProgress-bar': {
+                              bgcolor: '#0073ea',
+                              borderRadius: 1
+                            }
+                          }}
+                        />
 
                       </TableCell>
                       <TableCell>
@@ -424,8 +514,8 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
 
 
       <ViewToolbar
-        onSearch={() => { }}
-        onFilter={() => { }}
+        onSearch={(query) => setSearchQuery(query)}
+        onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {
           setEditingSprint(null);
           setIsCreatorOpen(true);
@@ -440,6 +530,37 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
         onSubmit={handleCreateOrUpdateSprint}
         initialData={editingSprint}
       />
+
+      <Popover
+        open={Boolean(filterAnchorEl)}
+        anchorEl={filterAnchorEl}
+        onClose={() => setFilterAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, minWidth: 250 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Filter Sprints</Typography>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Status</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' statuses'}
+                displayEmpty
+              >
+                {['Active', 'Planned', 'Completed'].map((status) => (
+                  <MenuItem key={status} value={status}>
+                    <Checkbox checked={filterStatus.indexOf(status) > -1} size="small" />
+                    <ListItemText primary={status} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Popover>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {renderContent()}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import {
   Box,
@@ -15,8 +15,16 @@ import {
   Chip,
   Avatar,
   Button,
-  Collapse
+  Collapse,
+  Popover,
+  FormControl,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  IconButton
 } from "@mui/material";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { ChevronDown, ChevronRight, Plus, CheckSquare } from "lucide-react";
 import { EpicCreator } from "@/components/creators/EpicCreator";
 import { BoardView } from "./BoardView";
@@ -73,6 +81,10 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
   const [expandedEpics, setExpandedEpics] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPhase, setFilterPhase] = useState<string[]>([]);
+  const [filterPriority, setFilterPriority] = useState<string[]>([]);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const [editingEpic, setEditingEpic] = useState<any>(null);
 
@@ -121,6 +133,19 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
     fetchEpics();
   }, [workspaceId, pageId]);
 
+  const filteredEpics = epics.filter(e => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      e.epic.toLowerCase().includes(q) ||
+      (e.description && e.description.toLowerCase().includes(q)) ||
+      (e.phase && e.phase.toLowerCase().includes(q)) ||
+      (e.priority && e.priority.toLowerCase().includes(q));
+
+    const matchesPhase = filterPhase.length === 0 || filterPhase.includes(e.phase);
+    const matchesPriority = filterPriority.length === 0 || filterPriority.includes(e.priority);
+    return matchesSearch && matchesPhase && matchesPriority;
+  });
+
   const fetchEpics = async () => {
     try {
       setLoading(true);
@@ -128,7 +153,7 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
         fetch(`/api/epics?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`),
         fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`)
       ]);
-      
+
       const epicsData = await epicsRes.json();
       const tasksData = await tasksRes.json();
 
@@ -153,8 +178,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
   const getEpicTasks = (epic: any) => {
     const epicId = epic.id || epic._id;
     const epicName = epic.epic;
-    
-    return tasks.filter(t => 
+
+    return tasks.filter(t =>
       (t.epicId && t.epicId === epicId) || // Match by explicit ID if available
       (t.epic && t.epic === epicId) ||     // Match if 'epic' field somehow stores ID
       (t.epic && t.epic === epicName)      // Match if 'epic' field stores Name (matches TaskCreator)
@@ -220,35 +245,122 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
     );
   }
 
+  const onDragEnd = async (result: any) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const startPhase = source.droppableId;
+    const finishPhase = destination.droppableId;
+
+    if (startPhase === finishPhase) {
+      // Reordering within same column - optimistic only for now as order field might not exist
+      return;
+    }
+
+    // Moving to another phase
+    const epic = epics.find(e => (e._id || e.id) === draggableId);
+    if (epic) {
+      // Optimistic update
+      const newEpics = epics.map(e =>
+        (e._id || e.id) === draggableId ? { ...e, phase: finishPhase } : e
+      );
+      setEpics(newEpics);
+
+      // API Update
+      await handleCreateOrUpdateEpic({
+        _id: draggableId,
+        phase: finishPhase
+      });
+    }
+  };
+
   const renderContent = () => {
     switch (activeView) {
       case 'board':
       case 'kanban':
         return (
-          <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
-            {['Backlog', 'Product discovery', 'Dev WIP', 'Released'].map(phase => {
-              const phaseEpics = epics.filter(e => e.phase === phase);
-              return (
-                <Box key={phase} sx={{ minWidth: 320, maxWidth: 320 }}>
-                  <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{phase}</Typography>
-                    <Typography sx={{ fontSize: '12px', color: '#676879' }}>{phaseEpics.length} epics</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {phaseEpics.map((epic, idx) => (
-                      <Paper key={epic._id || idx} onClick={() => handleEditEpic(epic)} sx={{ p: 2, cursor: 'pointer', '&:hover': { boxShadow: 2 } }}>
-                        <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{epic.epic}</Typography>
-                        <Chip label={epic.priority} size="small" sx={{ fontSize: '11px', mb: 1 }} />
-                        <Typography sx={{ fontSize: '11px', color: '#676879' }}>
-                          {epic.connectedTasks?.length || 0} connected tasks
-                        </Typography>
-                      </Paper>
-                    ))}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
+              {['Backlog', 'Product discovery', 'Dev WIP', 'Nice to Have', 'Best Effort'].map(phase => {
+                const phaseEpics = epics.filter(e => e.phase === phase);
+                return (
+                  <Droppable key={phase} droppableId={phase}>
+                    {(provided, snapshot) => (
+                      <Box
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        sx={{
+                          minWidth: 320,
+                          maxWidth: 320,
+                          bgcolor: snapshot.isDraggingOver ? '#f0f0f0' : 'transparent',
+                          transition: 'background-color 0.2s',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
+                          <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{phase}</Typography>
+                          <Typography sx={{ fontSize: '12px', color: '#676879' }}>{phaseEpics.length} epics</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 100 }}>
+                          {phaseEpics.map((epic, idx) => (
+                            <Draggable key={epic._id || epic.id} draggableId={epic._id || epic.id} index={idx}>
+                              {(provided, snapshot) => (
+                                <Paper
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  onClick={() => handleEditEpic(epic)}
+                                  sx={{
+                                    p: 2,
+                                    cursor: 'pointer',
+                                    '&:hover': { boxShadow: 2 },
+                                    ...provided.draggableProps.style,
+                                    bgcolor: snapshot.isDragging ? '#f8f9fa' : 'white'
+                                  }}
+                                >
+                                  <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{epic.epic}</Typography>
+                                  <Chip
+                                    label={epic.priority}
+                                    size="small"
+                                    sx={{
+                                      fontSize: '11px',
+                                      mb: 1,
+                                      bgcolor: PRIORITY_COLORS[epic.priority]?.bg,
+                                      color: PRIORITY_COLORS[epic.priority]?.text
+                                    }}
+                                  />
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                                    <Typography sx={{ fontSize: '11px', color: '#676879' }}>
+                                      {epic.connectedTasks?.length || 0} connected tasks
+                                    </Typography>
+                                    {epic.owner && (
+                                      <Avatar sx={{ width: 24, height: 24, fontSize: '10px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                        {epic.owner.name?.[0] || 'U'}
+                                      </Avatar>
+                                    )}
+                                  </Box>
+                                </Paper>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </Box>
+                      </Box>
+                    )}
+                  </Droppable>
+                );
+              })}
+            </Box>
+          </DragDropContext>
         );
       case 'calendar':
         return (
@@ -296,176 +408,183 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                 </TableRow>
               </TableHead>
               <TableBody>
-                {epics.map((epic, index) => {
+                {filteredEpics.map((epic, index) => {
                   const epicTasks = getEpicTasks(epic);
                   const hasChildren = epic.children?.length > 0 || epicTasks.length > 0;
                   const isExpanded = expandedEpics[epic.id || epic._id];
 
                   return (
-                  <>
-                    <TableRow
-                      key={epic.id || index}
-                      sx={{
-                        '&:hover': { bgcolor: '#f6f7fb' },
-                        cursor: 'pointer'
-                      }}
-                      onClick={(e) => {
-                        // Prevent edit when clicking expand icon
-                        if ((e.target as HTMLElement).closest('.expand-icon')) {
-                          toggleEpic(epic.id || epic._id);
-                          return;
-                        }
-                        handleEditEpic(epic);
-                      }}
-                    >
-                      <TableCell className="expand-icon" sx={{ borderRight: '1px solid #e6e9ef' }}>
-                        {hasChildren && (
-                          isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            pl: (epic.hierarchy || 0) * 3
-                          }}
-                        >
-                          {epic.epic}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                            {epic.owner?.name?.[0] || 'U'}
-                          </Avatar>
-                          <Typography sx={{ fontSize: '13px' }}>{epic.owner?.name || 'Unassigned'}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={epic.phase}
-                          size="small"
-                          sx={{
-                            bgcolor: PHASE_COLORS[epic.phase]?.bg || '#c4c4c4',
-                            color: PHASE_COLORS[epic.phase]?.text || '#ffffff',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            height: '24px'
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={epic.priority}
-                          size="small"
-                          sx={{
-                            bgcolor: PRIORITY_COLORS[epic.priority]?.bg || '#c4c4c4',
-                            color: PRIORITY_COLORS[epic.priority]?.text || '#ffffff',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            height: '24px'
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Nested Sub-Epics */}
-                    {epic.children?.length > 0 && isExpanded && epic.children.map((child: any, childIndex: number) => (
+                    // ... rest of row rendering logic ...
+                    <React.Fragment key={epic.id || index}>
                       <TableRow
-                        key={`${epic.id}-child-${childIndex}`}
-                        sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
+                        key={epic.id || index}
+                        sx={{
+                          '&:hover': { bgcolor: '#f6f7fb' },
+                          cursor: 'pointer'
+                        }}
+                        onClick={(e) => {
+                          // Prevent edit when clicking expand icon
+                          if ((e.target as HTMLElement).closest('.expand-icon')) {
+                            toggleEpic(epic.id || epic._id);
+                            return;
+                          }
+                          handleEditEpic(epic);
+                        }}
                       >
-                        <TableCell></TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: '13px', pl: 4, color: '#676879' }}>
-                            └ {child.epic}
-                          </Typography>
+                        <TableCell className="expand-icon" sx={{ borderRight: '1px solid #e6e9ef', pr: 0 }}>
+                          {hasChildren && (
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleEpic(epic.id || epic._id); }}>
+                              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </IconButton>
+                          )}
                         </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 20, height: 20, fontSize: '10px' }}>
-                              {child.owner?.name?.[0] || 'U'}
-                            </Avatar>
-                            <Typography sx={{ fontSize: '12px' }}>{child.owner?.name || 'Unassigned'}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={child.phase}
-                            size="small"
-                            sx={{
-                              bgcolor: PHASE_COLORS[child.phase]?.bg || '#c4c4c4',
-                              color: PHASE_COLORS[child.phase]?.text || '#ffffff',
-                              fontSize: '11px',
-                              height: '20px'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={child.priority}
-                            size="small"
-                            sx={{
-                              bgcolor: PRIORITY_COLORS[child.priority]?.bg || '#c4c4c4',
-                              color: PRIORITY_COLORS[child.priority]?.text || '#ffffff',
-                              fontSize: '11px',
-                              height: '20px'
-                            }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-
-                    {/* Nested Tasks */}
-                    {epicTasks.length > 0 && isExpanded && epicTasks.map((task: any, taskIndex: number) => (
-                      <TableRow
-                        key={`task-${task._id || task.id}`}
-                        sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
-                      >
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
                         <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 4 }}>
-                            <CheckSquare size={14} color="#3B82F6" />
-                            <Typography sx={{ fontSize: '13px', color: '#334155' }}>
-                              {task.title || task.task}
-                            </Typography>
-                            <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
-                              {task.key || task.taskId}
-                            </Typography>
-                          </Box>
+                          <Typography
+                            sx={{
+                              fontSize: '14px',
+                              fontWeight: 500,
+                              pl: (epic.hierarchy || 0) * 3
+                            }}
+                          >
+                            {epic.epic}
+                          </Typography>
+                          {epic.description && (
+                            <Typography sx={{ fontSize: '11px', color: '#676879', mt: 0.5, pl: (epic.hierarchy || 0) * 3 }}>{epic.description}</Typography>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 20, height: 20, fontSize: '10px' }}>
-                              {task.owner?.name?.[0] || 'U'}
+                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                              {epic.owner?.name?.[0] || 'U'}
                             </Avatar>
-                            <Typography sx={{ fontSize: '12px' }}>{task.owner?.name || 'Unassigned'}</Typography>
+                            <Typography sx={{ fontSize: '13px' }}>{epic.owner?.name || 'Unassigned'}</Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={task.status}
+                            label={epic.phase}
                             size="small"
-                            variant="outlined"
                             sx={{
-                              borderColor: '#E2E8F0',
-                              color: '#64748B',
-                              fontSize: '11px',
-                              height: '20px'
+                              bgcolor: PHASE_COLORS[epic.phase]?.bg || '#c4c4c4',
+                              color: PHASE_COLORS[epic.phase]?.text || '#ffffff',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              height: '24px'
                             }}
                           />
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
-                            {task.priority || '-'}
-                          </Typography>
+                          <Chip
+                            label={epic.priority}
+                            size="small"
+                            sx={{
+                              bgcolor: PRIORITY_COLORS[epic.priority]?.bg || '#c4c4c4',
+                              color: PRIORITY_COLORS[epic.priority]?.text || '#ffffff',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              height: '24px'
+                            }}
+                          />
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </>
+
+                      {/* Nested Sub-Epics */}
+                      {epic.children?.length > 0 && isExpanded && epic.children.map((child: any, childIndex: number) => (
+                        <TableRow
+                          key={`${epic.id}-child-${childIndex}`}
+                          sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
+                        >
+                          <TableCell></TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: '13px', pl: 4, color: '#676879' }}>
+                              └ {child.epic}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Avatar sx={{ width: 20, height: 20, fontSize: '10px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                {child.owner?.name?.[0] || 'U'}
+                              </Avatar>
+                              <Typography sx={{ fontSize: '12px' }}>{child.owner?.name || 'Unassigned'}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={child.phase}
+                              size="small"
+                              sx={{
+                                bgcolor: PHASE_COLORS[child.phase]?.bg || '#c4c4c4',
+                                color: PHASE_COLORS[child.phase]?.text || '#ffffff',
+                                fontSize: '11px',
+                                height: '20px'
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={child.priority}
+                              size="small"
+                              sx={{
+                                bgcolor: PRIORITY_COLORS[child.priority]?.bg || '#c4c4c4',
+                                color: PRIORITY_COLORS[child.priority]?.text || '#ffffff',
+                                fontSize: '11px',
+                                height: '20px'
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+
+                      {/* Nested Tasks */}
+                      {epicTasks.length > 0 && isExpanded && epicTasks.map((task: any, taskIndex: number) => (
+                        <TableRow
+                          key={`task-${task._id || task.id}`}
+                          sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
+                        >
+                          <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                          <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 4 }}>
+                              <CheckSquare size={14} color="#3B82F6" />
+                              <Typography sx={{ fontSize: '13px', color: '#334155' }}>
+                                {task.title || task.task}
+                              </Typography>
+                              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+                                {task.key || task.taskId}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Avatar sx={{ width: 20, height: 20, fontSize: '10px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                {task.owner?.name?.[0] || 'U'}
+                              </Avatar>
+                              <Typography sx={{ fontSize: '12px' }}>{task.owner?.name || 'Unassigned'}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={task.status}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                borderColor: '#E2E8F0',
+                                color: '#64748B',
+                                fontSize: '11px',
+                                height: '20px'
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
+                              {task.priority || '-'}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </React.Fragment>
                   );
                 })}
+
 
                 {epics.length === 0 && (
                   <TableRow>
@@ -486,8 +605,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
 
 
       <ViewToolbar
-        onSearch={() => { }}
-        onFilter={() => { }}
+        onSearch={(query) => setSearchQuery(query)}
+        onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {
           setEditingEpic(null);
           setIsCreatorOpen(true);
@@ -503,6 +622,57 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
         onSubmit={handleCreateOrUpdateEpic}
         initialData={editingEpic}
       />
+
+      <Popover
+        open={Boolean(filterAnchorEl)}
+        anchorEl={filterAnchorEl}
+        onClose={() => setFilterAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, minWidth: 250 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Filter Epics</Typography>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Phase</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterPhase}
+                onChange={(e) => setFilterPhase(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' phases'}
+                displayEmpty
+              >
+                {Object.keys(PHASE_COLORS).map((phase) => (
+                  <MenuItem key={phase} value={phase}>
+                    <Checkbox checked={filterPhase.indexOf(phase) > -1} size="small" />
+                    <ListItemText primary={phase} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Priority</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterPriority}
+                onChange={(e) => setFilterPriority(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' priorities'}
+                displayEmpty
+              >
+                {Object.keys(PRIORITY_COLORS).map((priority) => (
+                  <MenuItem key={priority} value={priority}>
+                    <Checkbox checked={filterPriority.indexOf(priority) > -1} size="small" />
+                    <ListItemText primary={priority} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Popover>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {renderContent()}

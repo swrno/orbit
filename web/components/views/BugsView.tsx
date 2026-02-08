@@ -86,10 +86,15 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   const [columnMenuAnchorEl, setColumnMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const filteredBugs = React.useMemo(() => bugs.filter(b => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      b.bug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      b.bugId.toLowerCase().includes(searchQuery.toLowerCase());
+      b.bug.toLowerCase().includes(q) ||
+      (b.description && b.description.toLowerCase().includes(q)) ||
+      (b.bugId && b.bugId.toLowerCase().includes(q)) ||
+      (b.status && b.status.toLowerCase().includes(q)) ||
+      (b.priority && b.priority.toLowerCase().includes(q)) ||
+      (b.reporter?.name && b.reporter.name.toLowerCase().includes(q)) ||
+      (b.assignee?.name && b.assignee.name.toLowerCase().includes(q));
 
     const matchesStatus = filterStatus.length === 0 || filterStatus.includes(b.status);
     const matchesPriority = filterPriority.length === 0 || filterPriority.includes(b.priority);
@@ -392,9 +397,16 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                                     />
                                   )}
                                 </Box>
-                                <Typography sx={{ fontSize: '11px', color: '#676879', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                                  {bug.bugId}
-                                </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                                  <Typography sx={{ fontSize: '11px', color: '#676879', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                    {bug.bugId}
+                                  </Typography>
+                                  {bug.assignee && (
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '10px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                      {bug.assignee.name?.[0] || 'U'}
+                                    </Avatar>
+                                  )}
+                                </Box>
                               </Paper>
                             )}
                           </Draggable>
@@ -644,7 +656,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                           {visibleColumns.reporter && (
                             <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                                <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
                                   {bug.reporter?.name?.[0] || 'U'}
                                 </Avatar>
                                 <Typography sx={{ fontSize: '13px' }}>{bug.reporter?.name || 'Unknown'}</Typography>
@@ -652,19 +664,47 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                             </TableCell>
                           )}
                           {visibleColumns.assignee && (
-                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {bug.assignee?.name ? (
-                                  <>
-                                    <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main' }}>
-                                      {bug.assignee.name[0]}
-                                    </Avatar>
-                                    <Typography sx={{ fontSize: '13px' }}>{bug.assignee.name}</Typography>
-                                  </>
-                                ) : (
-                                  <Typography sx={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>Unassigned</Typography>
-                                )}
-                              </Box>
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }} onClick={(e) => e.stopPropagation()}>
+                              <Select
+                                variant="standard"
+                                value={bug.assignee?.id || ''}
+                                onChange={(e) => {
+                                  const member = [...(workspace?.members || []), ...(workspace?.teamMembers || [])].find(m => m.id === e.target.value);
+                                  handleUpdateBug(bug._id || bug.id, {
+                                    assignee: member ? { id: member.id, name: member.name, email: member.email || '' } : null
+                                  });
+                                }}
+                                disableUnderline
+                                disabled={!canEdit}
+                                displayEmpty
+                                sx={{ fontSize: '13px', width: '100%' }}
+                                renderValue={(selected) => {
+                                  if (!selected) return <Typography sx={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>Unassigned</Typography>;
+                                  const member = [...(workspace?.members || []), ...(workspace?.teamMembers || [])].find(m => m.id === selected);
+                                  return (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                        {member?.name?.[0] || 'U'}
+                                      </Avatar>
+                                      <Typography sx={{ fontSize: '13px' }}>{member?.name || 'Unknown'}</Typography>
+                                    </Box>
+                                  );
+                                }}
+                              >
+                                <MenuItem value="">Unassigned</MenuItem>
+                                {[...(workspace?.members || []), ...(workspace?.teamMembers || [])]
+                                  .filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)
+                                  .map((member) => (
+                                    <MenuItem key={member.id} value={member.id}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                          {member.name[0]}
+                                        </Avatar>
+                                        <Typography sx={{ fontSize: '13px' }}>{member.name}</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                  ))}
+                              </Select>
                             </TableCell>
                           )}
                           {visibleColumns.timeUntilResolution && (
@@ -675,31 +715,59 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                             </TableCell>
                           )}
                           {visibleColumns.status && (
-                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                              <Chip
-                                label={bug.status}
-                                size="small"
-                                sx={{
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  height: '24px'
-                                }}
-                              />
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }} onClick={(e) => e.stopPropagation()}>
+                              <Select
+                                variant="standard"
+                                value={bug.status}
+                                onChange={(e) => handleUpdateBug(bug._id || bug.id, { status: e.target.value })}
+                                disableUnderline
+                                disabled={!canEdit}
+                                sx={{ fontSize: '12px', height: '24px' }}
+                                renderValue={(selected) => (
+                                  <Chip
+                                    label={selected}
+                                    size="small"
+                                    sx={{
+                                      fontSize: '11px',
+                                      fontWeight: 500,
+                                      height: '22px'
+                                    }}
+                                  />
+                                )}
+                              >
+                                {['Awaiting Review', 'Pending Review', 'Ready for Dev', 'Fixed', 'Done'].map(s => (
+                                  <MenuItem key={s} value={s}>{s}</MenuItem>
+                                ))}
+                              </Select>
                             </TableCell>
                           )}
                           {visibleColumns.priority && (
-                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                              <Chip
-                                label={bug.priority}
-                                size="small"
-                                sx={{
-                                  bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#c4c4c4',
-                                  color: PRIORITY_COLORS[bug.priority]?.text || '#ffffff',
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  height: '24px'
-                                }}
-                              />
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }} onClick={(e) => e.stopPropagation()}>
+                              <Select
+                                variant="standard"
+                                value={bug.priority}
+                                onChange={(e) => handleUpdateBug(bug._id || bug.id, { priority: e.target.value })}
+                                disableUnderline
+                                disabled={!canEdit}
+                                sx={{ fontSize: '12px', height: '24px' }}
+                                renderValue={(selected) => (
+                                  <Chip
+                                    label={selected}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: PRIORITY_COLORS[selected as keyof typeof PRIORITY_COLORS]?.bg || '#c4c4c4',
+                                      color: PRIORITY_COLORS[selected as keyof typeof PRIORITY_COLORS]?.text || '#ffffff',
+                                      fontSize: '11px',
+                                      fontWeight: 500,
+                                      height: '22px'
+                                    }}
+                                  />
+                                )}
+                              >
+                                {['Critical', 'High', 'Medium', 'Low'].map(p => (
+                                  <MenuItem key={p} value={p}>{p}</MenuItem>
+                                ))}
+                              </Select>
                             </TableCell>
                           )}
                           {visibleColumns.connectedTasks && (
@@ -774,7 +842,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
         onClose={handleCloseCreator}
         onSubmit={handleCreateOrUpdateBug}
         initialData={editingBug}
-        members={workspace?.teamMembers || []}
+        members={[...(workspace?.members || []), ...(workspace?.teamMembers || [])].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)}
       />
 
       {/* Filter Popover */}

@@ -10,6 +10,13 @@ const BugSchema = new Schema<BugItem>({
     email: String,
     role: String
   },
+  assignee: {
+    id: String,
+    name: String,
+    avatar: String,
+    email: String,
+    role: String
+  },
   timeUntilResolution: { type: String, default: '' },
   description: { type: String, default: '' },
   dueDate: { type: Date },

@@ -3,11 +3,12 @@ import { Search, Filter, Eye, MoreHorizontal, Plus } from "lucide-react";
 
 interface ViewToolbarProps {
   onSearch: (query: string) => void;
-  onFilter: () => void;
-  onCreate: () => void;
+  onFilter: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onCreate: (e: React.MouseEvent<HTMLButtonElement>) => void;
   createButtonLabel: string;
   createButtonColor?: string;
   hideCreate?: boolean;
+  extraActions?: React.ReactNode;
 }
 
 export function ViewToolbar({
@@ -16,7 +17,8 @@ export function ViewToolbar({
   onCreate,
   createButtonLabel,
   createButtonColor = '#0073ea',
-  hideCreate = false
+  hideCreate = false,
+  extraActions
 }: ViewToolbarProps) {
   return (
     <Box sx={{
@@ -48,7 +50,7 @@ export function ViewToolbar({
       </Button>
 
       <TextField
-        placeholder="Search"
+        placeholder="Search (Name, ID, Desc...)"
         size="small"
         onChange={(e) => onSearch(e.target.value)}
         sx={{
@@ -83,18 +85,9 @@ export function ViewToolbar({
         Filter
       </Button>
 
-      <Button
-        startIcon={<Eye size={16} />}
-        sx={{
-          textTransform: 'none',
-          color: '#676879',
-          fontSize: '14px',
-          fontWeight: 400,
-          '&:hover': { bgcolor: '#f6f7fb', color: '#323338' }
-        }}
-      >
-        Hide
-      </Button>
+
+
+      {extraActions}
 
       <IconButton size="small" sx={{ color: '#676879', ml: 'auto' }}>
         <MoreHorizontal size={18} />

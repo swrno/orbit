@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore, Task, TaskStatus, TaskPriority } from "@/lib/store";
 import {
   Box,
@@ -19,8 +19,13 @@ import {
   MenuItem,
   TextField,
   Button,
-  Collapse
+  Collapse,
+  Popover,
+  FormControl,
+  Checkbox,
+  ListItemText
 } from "@mui/material";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   ChevronDown,
   ChevronRight,
@@ -85,6 +90,10 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -136,6 +145,23 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
     fetchTasks();
   }, [workspaceId, pageId]);
 
+  useEffect(() => {
+    const filteredTasks = tasks.filter(t => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        t.task.toLowerCase().includes(q) ||
+        (t.taskId && t.taskId.toLowerCase().includes(q)) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
+        (t.status && t.status.toLowerCase().includes(q)) ||
+        (t.type && t.type.toLowerCase().includes(q));
+
+      const matchesStatus = filterStatus.length === 0 || filterStatus.includes(t.status);
+      const matchesType = filterType.length === 0 || filterType.includes(t.type);
+      return matchesSearch && matchesStatus && matchesType;
+    });
+    groupTasksBySprint(filteredTasks, sprints);
+  }, [tasks, searchQuery, filterStatus, filterType, sprints]);
+
   const fetchTasks = async () => {
     try {
       setLoading(true);
@@ -155,11 +181,9 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
       if (tasksData.success && Array.isArray(tasksData.data)) {
         setTasks(tasksData.data);
-        groupTasksBySprint(tasksData.data, currentSprints);
       } else {
         console.error('Invalid tasks data format:', tasksData);
         setTasks([]);
-        groupTasksBySprint([], currentSprints);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -213,12 +237,12 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
   const groupTasksBySprint = (taskList: any[], sprintList: any[]) => {
     const grouped: Record<string, any[]> = {};
-    
+
     // Initialize with all sprints (to show empty ones)
     sprintList.forEach(s => {
-        if (s.sprint) grouped[s.sprint] = [];
+      if (s.sprint) grouped[s.sprint] = [];
     });
-    
+
     // Always ensure Backlog exists
     if (!grouped['Backlog']) grouped['Backlog'] = [];
 
@@ -256,6 +280,65 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
     }
   };
 
+  const onDragEnd = async (result: any) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const startSprint = source.droppableId;
+    const finishSprint = destination.droppableId;
+
+    // Moving within same list (reorder) - not supported by API yet for sprint order, but visual update
+    if (startSprint === finishSprint) {
+      // optimistically update?
+      return;
+    }
+
+    // Moving to another sprint
+    const task = tasks.find(t => (t._id || t.id) === draggableId);
+    if (task) {
+      // Optimistic update
+      const sourceGroup = [...groupedTasks[startSprint]];
+      const destGroup = [...groupedTasks[finishSprint]];
+      const [movedTask] = sourceGroup.splice(source.index, 1);
+      destGroup.splice(destination.index, 0, movedTask);
+
+      setGroupedTasks({
+        ...groupedTasks,
+        [startSprint]: sourceGroup,
+        [finishSprint]: destGroup
+      });
+
+      // API Update
+      // Check if sprint exists in sprints list to get ID?
+      // Actually the group name IS the sprint name usually.
+      // We need to find the sprint object to get its ID if the API expects sprintId.
+      // However, `groupTasksBySprint` uses `task.sprint` (name) as key.
+      // And `handleUpdateTask` sends updates.
+      // If we update `sprint` field (name), does it handle it?
+      // Ideally we should update `sprintId`.
+      // Let's find the sprint by name from `sprints` state.
+
+      // Note: `sprints` state is available in `TasksView`.
+      const targetSprintObj = sprints.find(s => s.sprint === finishSprint);
+
+      await handleUpdateTask(draggableId, {
+        sprint: finishSprint,
+        sprintId: targetSprintObj ? (targetSprintObj.id || targetSprintObj._id) : undefined
+      });
+
+      // Refresh to ensure consistency
+      fetchTasks();
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -270,28 +353,88 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
         return <BoardView workspaceId={workspaceId} teamId={groupId || undefined} />;
       case 'kanban':
         return (
-          <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
-            {Object.entries(groupedTasks).map(([sprintName, sprintTasks]) => (
-              <Box key={sprintName} sx={{ minWidth: 320, maxWidth: 320 }}>
-                <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{sprintName}</Typography>
-                  <Typography sx={{ fontSize: '12px', color: '#676879' }}>{sprintTasks.length} tasks</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {sprintTasks.map((task, idx) => (
-                    <Paper key={task._id || idx} onClick={() => handleEditTask(task)} sx={{ p: 2, cursor: 'pointer', '&:hover': { boxShadow: 2 } }}>
-                      <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{task.task}</Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Chip label={task.status} size="small" sx={{ bgcolor: STATUS_COLORS[task.status]?.bg, color: STATUS_COLORS[task.status]?.text, fontSize: '11px' }} />
-                        <Chip label={task.type} size="small" sx={{ bgcolor: TYPE_COLORS[task.type]?.bg, color: TYPE_COLORS[task.type]?.text, fontSize: '11px' }} />
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Box sx={{ display: 'flex', gap: 2, p: 2, overflow: 'auto', height: '100%' }}>
+              {Object.entries(groupedTasks).map(([sprintName, sprintTasks]) => (
+                <Droppable key={sprintName} droppableId={sprintName}>
+                  {(provided, snapshot) => (
+                    <Box
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      sx={{
+                        minWidth: 320,
+                        maxWidth: 320,
+                        bgcolor: snapshot.isDraggingOver ? '#f0f0f0' : 'transparent',
+                        transition: 'background-color 0.2s',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      <Box sx={{ bgcolor: 'white', borderRadius: 1, border: '1px solid #e6e9ef', p: 2, mb: 1 }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>{sprintName}</Typography>
+                        <Typography sx={{ fontSize: '12px', color: '#676879' }}>{sprintTasks.length} tasks</Typography>
                       </Box>
-                    </Paper>
-                  ))}
-                </Box>
-              </Box>
-            ))}
-          </Box>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 100 }}>
+                        {sprintTasks.map((task, idx) => (
+                          <Draggable key={task._id || task.id} draggableId={task._id || task.id} index={idx}>
+                            {(provided, snapshot) => (
+                              <Paper
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                onClick={() => handleEditTask(task)}
+                                sx={{
+                                  p: 2,
+                                  cursor: 'pointer',
+                                  '&:hover': { boxShadow: 2 },
+                                  ...provided.draggableProps.style,
+                                  bgcolor: snapshot.isDragging ? '#f8f9fa' : 'white'
+                                }}
+                              >
+                                <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>{task.task}</Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Chip
+                                      label={task.status}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: STATUS_COLORS[task.status]?.bg || '#c4c4c4',
+                                        color: STATUS_COLORS[task.status]?.text || '#ffffff',
+                                        fontSize: '11px',
+                                        height: '20px'
+                                      }}
+                                    />
+                                    <Chip
+                                      label={task.type}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: TYPE_COLORS[task.type]?.bg || '#a25ddc',
+                                        color: TYPE_COLORS[task.type]?.text || '#ffffff',
+                                        fontSize: '11px',
+                                        height: '20px'
+                                      }}
+                                    />
+                                  </Box>
+                                  {task.owner && (
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '10px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                      {task.owner.name?.[0] || 'U'}
+                                    </Avatar>
+                                  )}
+                                </Box>
+                              </Paper>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </Box>
+                    </Box>
+                  )}
+                </Droppable>
+              ))}
+            </Box>
+          </DragDropContext>
         );
+
       case 'calendar':
         return (
           <Box sx={{ p: 3, bgcolor: 'white', m: 2, borderRadius: 1, border: '1px solid #e6e9ef' }}>
@@ -345,10 +488,9 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
               </TableHead>
               <TableBody>
                 {Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
-                  <>
+                  <React.Fragment key={groupName}>
                     {/* Group Header */}
                     <TableRow
-                      key={`group-${groupName}`}
                       sx={{
                         bgcolor: groupName === 'Sprint 1' ? '#ffe5f0' : '#e6f7ff',
                         cursor: 'pointer',
@@ -393,7 +535,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                         </TableCell>
                         <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
                               {task.owner?.name?.[0] || 'U'}
                             </Avatar>
                             <Typography sx={{ fontSize: '13px' }}>{task.owner?.name || 'Unassigned'}</Typography>
@@ -467,7 +609,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
@@ -481,8 +623,8 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
 
       <ViewToolbar
-        onSearch={() => { }}
-        onFilter={() => { }}
+        onSearch={(query) => setSearchQuery(query)}
+        onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {
           setEditingTask(null);
           setIsCreatorOpen(true);
@@ -501,6 +643,57 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
         teamId={groupId}
         initialData={editingTask}
       />
+
+      <Popover
+        open={Boolean(filterAnchorEl)}
+        anchorEl={filterAnchorEl}
+        onClose={() => setFilterAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, minWidth: 250 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Filter Tasks</Typography>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Status</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' statuses'}
+                displayEmpty
+              >
+                {Object.keys(STATUS_COLORS).map((status) => (
+                  <MenuItem key={status} value={status}>
+                    <Checkbox checked={filterStatus.indexOf(status) > -1} size="small" />
+                    <ListItemText primary={status} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Type</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterType}
+                onChange={(e) => setFilterType(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' types'}
+                displayEmpty
+              >
+                {Object.keys(TYPE_COLORS).map((type) => (
+                  <MenuItem key={type} value={type}>
+                    <Checkbox checked={filterType.indexOf(type) > -1} size="small" />
+                    <ListItemText primary={type} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Popover>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {renderContent()}

@@ -26,6 +26,9 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
 
   const [formData, setFormData] = useState({
     epic: '',
+    description: '',
+    startDate: '',
+    dueDate: '',
     owner: {
       id: '',
       name: '',
@@ -36,11 +39,21 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
     hierarchy: 0
   });
 
+  // Format dates for input type="date" (YYYY-MM-DD)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  };
+
   // Load initial data when available
   useEffect(() => {
     if (open && initialData) {
       setFormData({
         epic: initialData.epic || '',
+        description: initialData.description || '',
+        startDate: formatDate(initialData.startDate),
+        dueDate: formatDate(initialData.dueDate),
         owner: initialData.owner || { id: '', name: '', email: '' },
         phase: initialData.phase || 'Backlog',
         priority: initialData.priority || 'Nice to Have',
@@ -81,6 +94,9 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
 
     setFormData({
       epic: '',
+      description: '',
+      startDate: '',
+      dueDate: '',
       owner: {
         id: '',
         name: '',
@@ -107,6 +123,36 @@ export function EpicCreator({ open, onClose, onSubmit, initialData }: EpicCreato
               fullWidth
               placeholder="e.g., User Authentication System"
             />
+
+            <TextField
+              label="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="Detailed description of the epic..."
+            />
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Start Date"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                label="Due Date"
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
 
             <TextField
               select

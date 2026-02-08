@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import {
   Box,
@@ -16,14 +16,21 @@ import {
   Avatar,
   Button,
   IconButton,
-  Collapse
+  Collapse,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText,
+  Popover, List, ListItem, Switch
 } from "@mui/material";
 import { ChevronDown, ChevronRight, Plus, ThumbsUp, Trash2, Edit } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { RetrospectiveCreator } from "@/components/creators/RetrospectiveCreator";
 import { BoardView } from "./BoardView";
 import { GanttView } from "./GanttView";
 import { CalendarView } from "./CalendarView";
 import { ChartView } from "@/components/views/ChartView";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ViewTabs } from "@/components/ui/ViewTabs";
+import { ViewToolbar } from "@/components/ui/ViewToolbar";
 
 interface RetrospectivesViewProps {
   workspaceId: string;
@@ -37,12 +44,10 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   "Keep": { bg: "#00c875", text: "#ffffff" }
 };
 
-import { ViewTabs } from "@/components/ui/ViewTabs";
-import { ViewToolbar } from "@/components/ui/ViewToolbar";
-
 export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: RetrospectivesViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { canEdit } = usePermissions(workspaceId);
 
   // Find the page and team
   let page: any = null;
@@ -65,11 +70,19 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const [editingRetro, setEditingRetro] = useState<any>(null);
 
-  // Initialize view state - Retrospectives only support Table view for now
-  const views = [{ id: 'table', label: 'Main table', type: 'table' }];
+  // Initialize view state
+  // Initialize view state
+  const views = (page?.views || ['table', 'board']).map((v: string) => ({
+    id: v,
+    label: v === 'table' ? 'Main table' : v.charAt(0).toUpperCase() + v.slice(1),
+    type: v
+  }));
 
   const activeView = page?.type || 'table';
 
@@ -105,6 +118,42 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     }
   };
 
+  const filteredRetros = retrospectives.filter(r => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      r.feedback.toLowerCase().includes(q) ||
+      (r.submitter?.name && r.submitter.name.toLowerCase().includes(q)) ||
+      (r.owner?.name && r.owner.name.toLowerCase().includes(q)) ||
+      (r.type && r.type.toLowerCase().includes(q));
+
+    const matchesType = filterType.length === 0 || filterType.includes(r.type);
+    return matchesSearch && matchesType;
+  });
+
+  const [groupedRetrosByType, setGroupedRetrosByType] = useState<Record<string, any[]>>({});
+
+  useEffect(() => {
+    groupRetrosBySprint(filteredRetros, sprints);
+    groupRetrosByType(filteredRetros);
+  }, [retrospectives, searchQuery, filterType, sprints]);
+
+  const groupRetrosByType = (retroList: any[]) => {
+    const grouped: Record<string, any[]> = {
+      "Keep": [],
+      "Improve": [],
+      "Discussion": []
+    };
+
+    retroList.forEach(retro => {
+      if (grouped[retro.type]) {
+        grouped[retro.type].push(retro);
+      } else {
+        grouped["Discussion"].push(retro);
+      }
+    });
+    setGroupedRetrosByType(grouped);
+  };
+
   useEffect(() => {
     fetchRetrospectives();
   }, [workspaceId, pageId]);
@@ -116,7 +165,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
         fetch(`/api/retrospectives?workspaceId=${workspaceId}&pageId=${pageId}&teamId=${teamId}`),
         fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`)
       ]);
-      
+
       const retrosData = await retrosRes.json();
       const sprintsData = await sprintsRes.json();
 
@@ -128,11 +177,9 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
       if (retrosData.success && Array.isArray(retrosData.data)) {
         setRetrospectives(retrosData.data);
-        groupRetrosBySprint(retrosData.data, currentSprints);
       } else {
         console.error('Invalid retrospectives data format:', retrosData);
         setRetrospectives([]);
-        groupRetrosBySprint([], currentSprints);
       }
     } catch (error) {
       console.error('Error fetching retrospectives:', error);
@@ -203,12 +250,12 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
   const groupRetrosBySprint = (retroList: any[], sprintList: any[]) => {
     const grouped: Record<string, any[]> = {};
-    
+
     // Initialize with all sprints
     sprintList.forEach(s => {
-        if (s.sprint) grouped[s.sprint] = [];
+      if (s.sprint) grouped[s.sprint] = [];
     });
-    
+
     // Default group
     if (!grouped['General']) grouped['General'] = [];
 
@@ -246,6 +293,42 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     }
   };
 
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    const { source, destination, draggableId } = result;
+
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    // Find retro
+    const retro = retrospectives.find(r => r._id === draggableId || r.id === draggableId);
+    if (!retro) return;
+
+    const newType = destination.droppableId;
+
+    // Optimistic update
+    const updatedRetros = retrospectives.map(r => {
+      if (r._id === draggableId || r.id === draggableId) {
+        return { ...r, type: newType };
+      }
+      return r;
+    });
+
+    setRetrospectives(updatedRetros);
+
+    // API Update
+    try {
+      const response = await fetch('/api/retrospectives', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: retro._id || retro.id, type: newType })
+      });
+      if (!response.ok) fetchRetrospectives();
+    } catch (e) {
+      console.error("Failed to move retro", e);
+      fetchRetrospectives();
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -258,6 +341,102 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     switch (activeView) {
       case 'chart':
         return <ChartView workspaceId={workspaceId} pageId={pageId} viewType="chart" />;
+      case 'board':
+      case 'kanban':
+        return (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Box sx={{ display: 'flex', gap: 2, p: 2, overflowX: 'auto', height: '100%' }}>
+              {Object.entries(groupedRetrosByType).map(([groupName, groupRetros]) => (
+                <Box key={groupName} sx={{ minWidth: 320, maxWidth: 320, display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{
+                    bgcolor: 'white',
+                    borderRadius: 1,
+                    border: '1px solid #e6e9ef',
+                    p: 2,
+                    mb: 1,
+                    borderTop: `3px solid ${TYPE_COLORS[groupName]?.bg || '#ccc'}`
+                  }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>
+                      {groupName}
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#676879' }}>
+                      {groupRetros.length} items
+                    </Typography>
+                  </Box>
+
+                  <Droppable droppableId={groupName}>
+                    {(provided, snapshot) => (
+                      <Box
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        sx={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                          bgcolor: snapshot.isDraggingOver ? 'rgba(0, 82, 204, 0.04)' : 'transparent',
+                          transition: 'background-color 0.2s',
+                          borderRadius: 1,
+                          minHeight: 100
+                        }}
+                      >
+                        {groupRetros.map((retro, idx) => (
+                          <Draggable key={retro._id || retro.id || idx} draggableId={retro._id || retro.id} index={idx} isDragDisabled={!canEdit}>
+                            {(provided, snapshot) => (
+                              <Paper
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                onClick={() => handleEditRetro(retro)}
+                                sx={{
+                                  p: 2,
+                                  cursor: 'pointer',
+                                  '&:hover': { boxShadow: 2 },
+                                  ...provided.draggableProps.style,
+                                  opacity: snapshot.isDragging ? 0.8 : 1
+                                }}
+                              >
+                                <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 1 }}>
+                                  {retro.feedback}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                                  <Avatar sx={{ width: 24, height: 24, fontSize: '10px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
+                                    {retro.submitter?.name?.[0] || 'U'}
+                                  </Avatar>
+                                  <Typography sx={{ fontSize: '12px', color: '#666' }}>
+                                    {retro.submitter?.name || 'Unknown'}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <ThumbsUp size={12} color="#666" />
+                                    <Typography sx={{ fontSize: '12px', color: '#666' }}>{retro.vote || 0}</Typography>
+                                  </Box>
+                                  {retro.repeating && <Chip label="Repeating" size="small" variant="outlined" sx={{ height: 18, fontSize: '10px' }} />}
+                                </Box>
+                              </Paper>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </Box>
+                    )}
+                  </Droppable>
+                  <Button
+                    startIcon={<Plus size={14} />}
+                    sx={{ mt: 1, textTransform: 'none', color: '#676879', fontSize: '13px', justifyContent: 'flex-start' }}
+                    onClick={() => {
+                      setEditingRetro(null);
+                      setIsCreatorOpen(true);
+                    }}
+                  >
+                    Add card
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          </DragDropContext>
+        );
       default:
         return (
           <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
@@ -276,9 +455,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
               </TableHead>
               <TableBody>
                 {Object.entries(groupedRetros).map(([groupName, groupRetros]) => (
-                  <>
+                  <React.Fragment key={`group-${groupName}`}>
                     <TableRow
-                      key={`group-${groupName}`}
                       sx={{
                         bgcolor: '#e6f7ff',
                         cursor: 'pointer',
@@ -310,7 +488,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
                               {retro.submitter?.name?.[0] || 'U'}
                             </Avatar>
                             <Typography sx={{ fontSize: '13px' }}>{retro.submitter?.name || 'Anonymous'}</Typography>
@@ -361,7 +539,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main', border: '2px solid white', boxShadow: '0 0 0 1px #e6e9ef' }}>
                               {retro.owner?.name?.[0] || 'U'}
                             </Avatar>
                             <Typography sx={{ fontSize: '13px' }}>{retro.owner?.name || 'Unassigned'}</Typography>
@@ -383,7 +561,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                               size="small"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteRetro(retro._id || retro.id); 
+                                handleDeleteRetro(retro._id || retro.id);
                               }}
                               sx={{ color: '#64748B', '&:hover': { color: '#EF4444', bgcolor: '#FEF2F2' } }}
                             >
@@ -407,7 +585,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
@@ -419,10 +597,9 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   return (
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
 
-
       <ViewToolbar
-        onSearch={() => { }}
-        onFilter={() => { }}
+        onSearch={(query) => setSearchQuery(query)}
+        onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {
           setEditingRetro(null);
           setIsCreatorOpen(true);
@@ -437,6 +614,36 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
         onSubmit={handleCreateOrUpdateRetro}
         initialData={editingRetro}
       />
+
+      <Popover
+        open={Boolean(filterAnchorEl)}
+        anchorEl={filterAnchorEl}
+        onClose={() => setFilterAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, minWidth: 250 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Filter Feedback</Typography>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Type</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterType}
+                onChange={(e) => setFilterType(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' types'}
+                displayEmpty
+              >
+                {Object.keys(TYPE_COLORS).map((type) => (
+                  <MenuItem key={type} value={type}>
+                    <Checkbox checked={filterType.indexOf(type) > -1} size="small" />
+                    <ListItemText primary={type} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Popover>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {renderContent()}

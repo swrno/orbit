@@ -111,10 +111,8 @@ export default function GenericPage() {
     isRetro ||
     isTeamAccess;
 
-  // Filter views for Retrospectives
-  const effectivePageViews = isRetro 
-    ? pageViews.filter(v => v === 'table') 
-    : pageViews;
+  // Filter views for Retrospectives - Allow all views now
+  const effectivePageViews = pageViews;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#f6f7fb' }}>
@@ -145,7 +143,6 @@ export default function GenericPage() {
             const index = indexStr ? parseInt(indexStr) : -1;
             if (index !== -1 && !isNaN(index)) handleRemoveView(index);
           }}
-          allowedViews={isRetro ? ['table'] : undefined}
         />
       )}
 

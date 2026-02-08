@@ -11,8 +11,14 @@ import {
   MenuItem,
   Box,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+  Chip
 } from '@mui/material';
+import { CheckCircle2, AlertTriangle, MessageSquare, RefreshCw } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RetrospectiveCreatorProps {
   open: boolean;
@@ -21,7 +27,11 @@ interface RetrospectiveCreatorProps {
   initialData?: any;
 }
 
-import { useAuth } from '@/contexts/AuthContext';
+const TYPE_CONFIG: Record<string, { icon: any, color: string, label: string, desc: string }> = {
+  "Keep": { icon: CheckCircle2, color: "#00c875", label: "Keep", desc: "What went right?" },
+  "Improve": { icon: AlertTriangle, color: "#ff6b00", label: "Improve", desc: "What needs work?" },
+  "Discussion": { icon: MessageSquare, color: "#fdab3d", label: "Discuss", desc: "Topics to discuss" }
+};
 
 export function RetrospectiveCreator({ open, onClose, onSubmit, initialData }: RetrospectiveCreatorProps) {
   const { user } = useAuth();
@@ -83,72 +93,147 @@ export function RetrospectiveCreator({ open, onClose, onSubmit, initialData }: R
     }
 
     onSubmit(submissionData);
+    resetForm();
+    onClose();
+  };
 
+  const resetForm = () => {
     setFormData({
       feedback: '',
       type: 'Keep',
       repeating: false,
       sprint: 'Sprint 1',
-      owner: {
-        id: '',
-        name: '',
-        email: ''
-      }
+      owner: { id: '', name: '', email: '' }
     });
-    onClose();
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 3, padding: 1 }
+      }}
+    >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{initialData ? 'Edit Retrospective Feedback' : 'Add Retrospective Feedback'}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Feedback"
-              value={formData.feedback}
-              onChange={(e) => setFormData({ ...formData, feedback: e.target.value })}
-              required
-              fullWidth
-              multiline
-              rows={3}
-              placeholder="What went well? What didn't?"
-            />
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '20px', pb: 1 }}>
+          {initialData ? 'Edit Feedback' : 'New Retrospective Feedback'}
+        </DialogTitle>
+        <DialogContent sx={{ overflowY: 'visible' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
 
-            <TextField
-              select
-              label="Type"
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              fullWidth
-            >
-              <MenuItem value="Keep">Keep (Went Well)</MenuItem>
-              <MenuItem value="Improve">Improve (Needs Work)</MenuItem>
-              <MenuItem value="Discussion">Discussion</MenuItem>
-            </TextField>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#676879' }}>What kind of feedback is this?</Typography>
+              <ToggleButtonGroup
+                value={formData.type}
+                exclusive
+                onChange={(e, newType) => newType && setFormData({ ...formData, type: newType })}
+                fullWidth
+                sx={{ gap: 2 }}
+              >
+                {Object.entries(TYPE_CONFIG).map(([key, config]) => {
+                  const Icon = config.icon;
+                  const isSelected = formData.type === key;
+                  return (
+                    <ToggleButton
+                      key={key}
+                      value={key}
+                      sx={{
+                        borderRadius: '8px !important',
+                        border: `1px solid ${isSelected ? config.color : '#e6e9ef'} !important`,
+                        bgcolor: isSelected ? `${config.color}15 !important` : 'white',
+                        py: 2,
+                        flexDirection: 'column',
+                        gap: 1,
+                        textTransform: 'none',
+                        flex: 1
+                      }}
+                    >
+                      <Icon size={24} color={isSelected ? config.color : '#676879'} />
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: '14px', color: isSelected ? config.color : '#323338' }}>{config.label}</Typography>
+                        <Typography sx={{ fontSize: '11px', color: '#676879' }}>{config.desc}</Typography>
+                      </Box>
+                    </ToggleButton>
+                  );
+                })}
+              </ToggleButtonGroup>
+            </Box>
 
-            <TextField
-              label="Sprint"
-              value={formData.sprint}
-              onChange={(e) => setFormData({ ...formData, sprint: e.target.value })}
-              fullWidth
-              placeholder="e.g., Sprint 1"
-            />
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: '#676879' }}>Your Feedback</Typography>
+              <TextField
+                value={formData.feedback}
+                onChange={(e) => setFormData({ ...formData, feedback: e.target.value })}
+                required
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Share your thoughts..."
+                variant="outlined"
+                sx={{
+                  bgcolor: '#f9f9fb',
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: 'transparent' },
+                    '&:hover fieldset': { borderColor: '#e6e9ef' },
+                    '&.Mui-focused fieldset': { borderColor: '#0073ea' },
+                  }
+                }}
+              />
+            </Box>
 
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.repeating}
-                  onChange={(e) => setFormData({ ...formData, repeating: e.target.checked })}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 600, color: '#676879', display: 'block' }}>Sprint</Typography>
+                <TextField
+                  size="small"
+                  value={formData.sprint}
+                  onChange={(e) => setFormData({ ...formData, sprint: e.target.value })}
+                  fullWidth
+                  placeholder="Sprint 1"
+                  sx={{ bgcolor: '#f9f9fb', '& fieldset': { borderColor: '#e6e9ef' } }}
                 />
-              }
-              label="Repeating Item?"
-            />
+              </Box>
+
+              <Box sx={{ display: 'flex', alignItems: 'flex-end', pb: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.repeating}
+                      onChange={(e) => setFormData({ ...formData, repeating: e.target.checked })}
+                      icon={<RefreshCw size={20} color="#9aa0a6" />}
+                      checkedIcon={<RefreshCw size={20} color="#0073ea" />}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontSize: '14px', color: formData.repeating ? '#0073ea' : '#676879', fontWeight: 500 }}>
+                      Repeating Item
+                    </Typography>
+                  }
+                />
+              </Box>
+            </Box>
+
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained">{initialData ? 'Update Feedback' : 'Add Feedback'}</Button>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button onClick={onClose} sx={{ color: '#676879', textTransform: 'none', fontWeight: 600 }}>Cancel</Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disableElevation
+            sx={{
+              bgcolor: TYPE_CONFIG[formData.type]?.color || '#0073ea',
+              '&:hover': { bgcolor: TYPE_CONFIG[formData.type]?.color || '#0062c6', opacity: 0.9 },
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3
+            }}
+          >
+            {initialData ? 'Update Feedback' : 'Add Feedback'}
+          </Button>
         </DialogActions>
       </form>
     </Dialog>

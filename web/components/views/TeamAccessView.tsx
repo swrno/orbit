@@ -54,9 +54,9 @@ interface TeamAccessViewProps {
 export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
     const { user } = useAuth();
     const { workspaces, updateWorkspace } = useAppStore();
-    
+
     const workspace = workspaces.find(w => w.id === workspaceId);
-    
+
     // Find the current team
     let currentTeam: any = null;
     if (workspace && workspace.teams) {
@@ -143,7 +143,7 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
             setMemberName('');
             setMemberEmail('');
             setMemberRole('VIEWER');
-            
+
         } catch (err: any) {
             setError(err.message || 'Failed to add member');
         } finally {
@@ -162,7 +162,7 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
 
         try {
             const response = await fetch(
-                `/api/teams/members?workspaceId=${workspace.id}&teamId=${currentTeam.id}&userId=${memberId}&currentUserId=${user?.uid}`, 
+                `/api/teams/members?workspaceId=${workspace.id}&teamId=${currentTeam.id}&userId=${memberId}&currentUserId=${user?.uid}`,
                 {
                     method: 'DELETE',
                     headers: {
@@ -185,7 +185,7 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
             }
 
             setSuccess('Member removed successfully');
-            
+
         } catch (err: any) {
             setError(err.message || 'Failed to remove member');
         } finally {
@@ -227,7 +227,7 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
             }
 
             setSuccess('Role updated successfully');
-            
+
         } catch (err: any) {
             setError(err.message || 'Failed to update role');
         } finally {
@@ -241,161 +241,161 @@ export function TeamAccessView({ workspaceId, pageId }: TeamAccessViewProps) {
     };
 
     return (
-        <Box sx={{ height: '100%', bgcolor: '#f6f7fb', p: 3 }}>
-                {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 3 }}>
-                    {canManageAccess && (
-                        <Button
-                            variant="contained"
-                            startIcon={<Plus size={16} />}
-                            onClick={() => setDialogOpen(true)}
-                            disabled={loading}
-                        >
-                            Add Member
-                        </Button>
-                    )}
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* Alerts */}
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-                        {error}
-                    </Alert>
+        <Box sx={{ minHeight: '100%', bgcolor: '#f6f7fb', p: 3 }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 3 }}>
+                {canManageAccess && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Plus size={16} />}
+                        onClick={() => setDialogOpen(true)}
+                        disabled={loading}
+                    >
+                        Add Member
+                    </Button>
                 )}
-                {success && (
-                    <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
-                        {success}
-                    </Alert>
-                )}
+            </Box>
 
-                {/* Permission Notice */}
-                {!canManageAccess && (
-                    <Alert severity="info" sx={{ mb: 3 }}>
-                        Only team leaders and workspace owners can manage team access.
-                        You are currently a <strong>{role}</strong>.
-                    </Alert>
-                )}
+            <Divider sx={{ my: 3 }} />
+
+            {/* Alerts */}
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+                    {error}
+                </Alert>
+            )}
+            {success && (
+                <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+                    {success}
+                </Alert>
+            )}
+
+            {/* Permission Notice */}
+            {!canManageAccess && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    Only team leaders and workspace owners can manage team access.
+                    You are currently a <strong>{role}</strong>.
+                </Alert>
+            )}
 
 
-                {/* Members Table */}
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                    Team Members ({teamMembers.length})
-                </Typography>
+            {/* Members Table */}
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                Team Members ({teamMembers.length})
+            </Typography>
 
-                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e2e8f0' }}>
-                    <Table>
-                        <TableHead>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e2e8f0' }}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Member</TableCell>
+                            <TableCell>Email</TableCell>
+                            <TableCell>Role</TableCell>
+                            <TableCell>Added</TableCell>
+                            {canManageAccess && <TableCell align="right">Actions</TableCell>}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {teamMembers.length === 0 ? (
                             <TableRow>
-                                <TableCell>Member</TableCell>
-                                <TableCell>Email</TableCell>
-                                <TableCell>Role</TableCell>
-                                <TableCell>Added</TableCell>
-                                {canManageAccess && <TableCell align="right">Actions</TableCell>}
+                                <TableCell colSpan={canManageAccess ? 5 : 4} align="center">
+                                    <Typography color="text.secondary" sx={{ py: 3 }}>
+                                        No team members yet. Add members to collaborate.
+                                    </Typography>
+                                </TableCell>
                             </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {teamMembers.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={canManageAccess ? 5 : 4} align="center">
-                                        <Typography color="text.secondary" sx={{ py: 3 }}>
-                                            No team members yet. Add members to collaborate.
+                        ) : (
+                            teamMembers.map((member) => (
+                                <TableRow key={member.id}>
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Avatar sx={{ width: 32, height: 32, bgcolor: '#3b82f6' }}>
+                                                {member.name.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                            <Typography variant="body2">{member.name}</Typography>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>{member.email}</TableCell>
+                                    <TableCell>
+                                        {canManageAccess && member.teamRole !== 'LEADER' ? (
+                                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                                <Select
+                                                    value={member.teamRole || 'VIEWER'}
+                                                    onChange={(e) => handleUpdateRole(member.id, e.target.value as TeamRole)}
+                                                    disabled={loading}
+                                                >
+                                                    <MenuItem value="EDITOR">
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            {getRoleIcon('EDITOR')}
+                                                            Editor
+                                                        </Box>
+                                                    </MenuItem>
+                                                    <MenuItem value="VIEWER">
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            {getRoleIcon('VIEWER')}
+                                                            Viewer
+                                                        </Box>
+                                                    </MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        ) : (
+                                            <Chip
+                                                icon={getRoleIcon(member.teamRole || 'VIEWER')}
+                                                label={member.teamRole || 'VIEWER'}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: (ROLE_COLORS[member.teamRole || 'VIEWER'] || ROLE_COLORS.VIEWER) + '20',
+                                                    color: ROLE_COLORS[member.teamRole || 'VIEWER'] || ROLE_COLORS.VIEWER,
+                                                    fontWeight: 500
+                                                }}
+                                            />
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {member.addedAt ? new Date(member.addedAt).toLocaleDateString() : 'N/A'}
                                         </Typography>
                                     </TableCell>
-                                </TableRow>
-                            ) : (
-                                teamMembers.map((member) => (
-                                    <TableRow key={member.id}>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Avatar sx={{ width: 32, height: 32, bgcolor: '#3b82f6' }}>
-                                                    {member.name.charAt(0).toUpperCase()}
-                                                </Avatar>
-                                                <Typography variant="body2">{member.name}</Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>{member.email}</TableCell>
-                                        <TableCell>
-                                            {canManageAccess && member.teamRole !== 'LEADER' ? (
-                                                <FormControl size="small" sx={{ minWidth: 120 }}>
-                                                    <Select
-                                                        value={member.teamRole || 'VIEWER'}
-                                                        onChange={(e) => handleUpdateRole(member.id, e.target.value as TeamRole)}
-                                                        disabled={loading}
-                                                    >
-                                                        <MenuItem value="EDITOR">
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                {getRoleIcon('EDITOR')}
-                                                                Editor
-                                                            </Box>
-                                                        </MenuItem>
-                                                        <MenuItem value="VIEWER">
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                {getRoleIcon('VIEWER')}
-                                                                Viewer
-                                                            </Box>
-                                                        </MenuItem>
-                                                    </Select>
-                                                </FormControl>
-                                            ) : (
-                                                <Chip
-                                                    icon={getRoleIcon(member.teamRole || 'VIEWER')}
-                                                    label={member.teamRole || 'VIEWER'}
+                                    {canManageAccess && (
+                                        <TableCell align="right">
+                                            {member.teamRole !== 'LEADER' && (
+                                                <IconButton
                                                     size="small"
-                                                    sx={{
-                                                        bgcolor: (ROLE_COLORS[member.teamRole || 'VIEWER'] || ROLE_COLORS.VIEWER) + '20',
-                                                        color: ROLE_COLORS[member.teamRole || 'VIEWER'] || ROLE_COLORS.VIEWER,
-                                                        fontWeight: 500
-                                                    }}
-                                                />
+                                                    onClick={() => handleRemoveMember(member.id)}
+                                                    disabled={loading}
+                                                    sx={{ color: '#ef4444' }}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </IconButton>
                                             )}
                                         </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {member.addedAt ? new Date(member.addedAt).toLocaleDateString() : 'N/A'}
-                                            </Typography>
-                                        </TableCell>
-                                        {canManageAccess && (
-                                            <TableCell align="right">
-                                                {member.teamRole !== 'LEADER' && (
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleRemoveMember(member.id)}
-                                                        disabled={loading}
-                                                        sx={{ color: '#ef4444' }}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </IconButton>
-                                                )}
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                    )}
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
 
-                {/* Role Descriptions */}
-                <Box sx={{ mt: 4, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                        Role Permissions
-                    </Typography>
-                    {Object.entries(ROLE_DESCRIPTIONS).map(([role, description]) => (
-                        <Box key={role} sx={{ display: 'flex', alignItems: 'start', gap: 1, mb: 1 }}>
-                            {getRoleIcon(role as TeamRole)}
-                            <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                    {role}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {description}
-                                </Typography>
-                            </Box>
+            {/* Role Descriptions */}
+            <Box sx={{ mt: 4, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                    Role Permissions
+                </Typography>
+                {Object.entries(ROLE_DESCRIPTIONS).map(([role, description]) => (
+                    <Box key={role} sx={{ display: 'flex', alignItems: 'start', gap: 1, mb: 1 }}>
+                        {getRoleIcon(role as TeamRole)}
+                        <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {role}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {description}
+                            </Typography>
                         </Box>
-                    ))}
-                </Box>
+                    </Box>
+                ))}
+            </Box>
 
             {/* Add Member Dialog */}
             <Dialog open={dialogOpen} onClose={() => !loading && setDialogOpen(false)} maxWidth="sm" fullWidth>
