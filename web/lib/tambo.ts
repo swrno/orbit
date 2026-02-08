@@ -11,42 +11,31 @@
  * Read more about Tambo at https://docs.tambo.co
  */
 
-import type { TamboComponent } from "@tambo-ai/react";
+import { z } from "zod";
+import type { TamboComponent, TamboTool } from "@tambo-ai/react";
 
+// Component Imports
+import Clock from "../components/tambo/clock";
+import BugList from "@/components/tambo/generative/BugList";
+import TaskList from "@/components/tambo/generative/TaskList";
+import EpicList from "@/components/tambo/generative/EpicList";
+import RetroList from "@/components/tambo/generative/RetroList";
+import TeamAccessList from "@/components/tambo/generative/TeamAccessList";
+
+// Tool Imports
+import { 
+  getBugsTool, createBugTool, updateBugTool,
+  getTasksTool, createTaskTool, updateTaskTool,
+  getEpicsTool, createEpicTool, updateEpicTool,
+  getRetrosTool, createRetroTool, voteRetroTool,
+  addTeamMemberTool, removeTeamMemberTool
+} from "./tools";
 
 /**
  * Components Array - A collection of Tambo components to register
  * 
  * Components represent UI elements that can be generated or controlled by AI.
  * Register your custom components here to make them available to the AI.
- * 
- * Example of adding a component:
- * 
- * ```typescript
- * import { z } from "zod/v4";
- * import { CustomChart } from "../components/ui/custom-chart";
- * 
- * // Define and add your component
- * export const components: TamboComponent[] = [
- *   {
- *     name: "CustomChart",
- *     description: "Renders a custom chart with the provided data",
- *     component: CustomChart,
- *     propsSchema: z.object({
- *       data: z.array(z.number()),
- *       title: z.string().optional(),
- *     })
- *   }
- * ];
- * ```
- */
-
-import { z } from "zod";
-import Clock from "../components/tambo/clock";
-import type { TamboTool } from "@tambo-ai/react";
-
-/**
- * Components Array - A collection of Tambo components to register
  */
 export const components: TamboComponent[] = [
   {
@@ -57,19 +46,122 @@ export const components: TamboComponent[] = [
       time: z.string().optional().describe("The current time to display, e.g. '10:00 AM'"),
     }),
   },
+  {
+    name: "BugList",
+    description: "Displays a list of bugs.",
+    component: BugList,
+    propsSchema: z.object({
+      bugs: z.array(z.object({
+        id: z.string().optional().nullable(),
+        _id: z.string().optional().nullable(),
+        bug: z.string().optional().nullable(),
+        status: z.string().optional().nullable(),
+        priority: z.string().optional().nullable(),
+        reporter: z.object({ name: z.string().optional().nullable() }).optional().nullable(),
+      })).describe("List of bugs to display"),
+    }),
+  },
+  {
+    name: "TaskList",
+    description: "Displays a list of tasks.",
+    component: TaskList,
+    propsSchema: z.object({
+        tasks: z.array(z.object({
+            id: z.string().optional().nullable(),
+            _id: z.string().optional().nullable(),
+            task: z.string().optional().nullable(),
+            status: z.string().optional().nullable(),
+            type: z.string().optional().nullable(),
+            estimatedSP: z.number().optional().nullable(),
+            sprint: z.string().optional().nullable(),
+        })).describe("List of tasks to display"),
+    }),
+  },
+  {
+      name: "EpicList",
+      description: "Displays a list of epics.",
+      component: EpicList,
+      propsSchema: z.object({
+          epics: z.array(z.object({
+              id: z.string().optional().nullable(),
+              _id: z.string().optional().nullable(),
+              epic: z.string().optional().nullable(),
+              status: z.string().optional().nullable(),
+              priority: z.string().optional().nullable(),
+              progress: z.number().optional().nullable(),
+              startDate: z.string().optional().nullable(),
+              endDate: z.string().optional().nullable(),
+          })).describe("List of epics to display"),
+      }),
+  },
+  {
+      name: "RetroList",
+      description: "Displays a list of retrospective items.",
+      component: RetroList,
+      propsSchema: z.object({
+          retros: z.array(z.object({
+              id: z.string().optional().nullable(),
+              _id: z.string().optional().nullable(),
+              feedback: z.string().optional().nullable(),
+              type: z.string().optional().nullable(),
+              repeating: z.boolean().optional().nullable(),
+              vote: z.number().optional().nullable(),
+              submitter: z.object({ name: z.string().optional().nullable() }).optional().nullable(),
+          })).describe("List of retrospective items to display"),
+      }),
+  },
+  {
+      name: "TeamAccessList",
+      description: "Displays a list of team members.",
+      component: TeamAccessList,
+      propsSchema: z.object({
+          members: z.array(z.object({
+              id: z.string().optional().nullable(),
+              name: z.string().optional().nullable(),
+              email: z.string().optional().nullable(),
+              role: z.string().optional().nullable(),
+              teamRole: z.string().optional().nullable(),
+              avatar: z.string().optional().nullable(),
+          })).describe("List of team members"),
+          teamName: z.string().optional().nullable(),
+          teamId: z.string().optional().nullable(),
+      }),
+  },
 ];
 
 /**
- * Tools Array - A collection of Tambo tools to register
+ * Tools Factory - A function to generate Tambo tools with context
  */
-export const tools: TamboTool[] = [
-  {
-    name: "get-time",
-    description: "Get the current time.",
-    tool: async () => {
-      return new Date().toString();
+export const createTools = (context: { workspaceId: string, userId: string }): TamboTool[] => {
+  const { workspaceId, userId } = context;
+  return [
+    {
+      name: "get-time",
+      description: "Get the current time.",
+      tool: async () => {
+        return new Date().toString();
+      },
+      inputSchema: z.object({}),
+      outputSchema: z.string(),
     },
-    inputSchema: z.object({}),
-    outputSchema: z.string(),
-  },
-];
+    // Bugs
+    getBugsTool(workspaceId, userId),
+    createBugTool(workspaceId, userId),
+    updateBugTool(workspaceId, userId),
+    // Tasks
+    getTasksTool(workspaceId, userId),
+    createTaskTool(workspaceId, userId),
+    updateTaskTool(workspaceId, userId),
+    // Epics
+    getEpicsTool(workspaceId, userId),
+    createEpicTool(workspaceId, userId),
+    updateEpicTool(workspaceId, userId),
+    // Retros
+    getRetrosTool(workspaceId, userId),
+    createRetroTool(workspaceId, userId),
+    voteRetroTool(workspaceId, userId),
+    // Teams
+    addTeamMemberTool(workspaceId, userId),
+    removeTeamMemberTool(workspaceId, userId),
+  ];
+};

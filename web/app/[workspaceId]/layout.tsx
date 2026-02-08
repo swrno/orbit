@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Shell } from "@/components/layout/Shell";
 import Sidebar from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,9 +8,10 @@ import { useAppStore } from "@/lib/store";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { TamboProvider } from "@tambo-ai/react";
-import { components, tools } from "@/lib/tambo";
+import { components, createTools } from "@/lib/tambo";
 import { MessageThreadCollapsible } from "@/components/tambo/message-thread-collapsible";
 import { useMcpServers } from "@/components/tambo/mcp-config-modal";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function WorkspaceLayout({
   children,
@@ -21,6 +23,14 @@ export default function WorkspaceLayout({
   const workspaceId = params.workspaceId as string;
   const { workspaces, selectWorkspace } = useAppStore();
   const mcpServers = useMcpServers();
+  const { user } = useAuth();
+  
+  const tools = React.useMemo(() => {
+    return createTools({ 
+      workspaceId, 
+      userId: user?.uid || 'anonymous' 
+    });
+  }, [workspaceId, user?.uid]);
 
   useEffect(() => {
     const workspace = workspaces.find((w) => w.id === workspaceId);

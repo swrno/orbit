@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
     if (workspaceId) query.workspaceId = workspaceId;
     if (pageId) query.pageId = pageId;
     if (teamId) query.teamId = teamId;
+    
+    // Add sprint and group filtering
+    const sprint = searchParams.get('sprint');
+    const group = searchParams.get('group');
+    if (sprint) query.sprint = sprint;
+    if (group) query.group = group;
 
     // Fetch filtered tasks
     const tasks = await Task.find(query).sort({ createdAt: -1 });
