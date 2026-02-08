@@ -56,7 +56,7 @@ export const components: TamboComponent[] = [
   // Create Bug Form - renders a form to create a new bug
   {
     name: "CreateBugForm",
-    description: "ALWAYS use this component when the user wants to create a bug. Display this form immediately. The user will select the workspace and team in the form.",
+    description: "Use this component when the user wants to create a bug. You usually should display this form immediately. If the user provides details (title, priority, etc.), PRE-FILL the form props with those values.",
     component: CreateBugForm,
     propsSchema: z.object({
       bug: z.string().optional().describe("Pre-filled bug title"),
@@ -73,7 +73,7 @@ export const components: TamboComponent[] = [
   // Create Task Form - renders a form to create a new task
   {
     name: "CreateTaskForm",
-    description: "ALWAYS use this component when the user wants to create a task. Display this form immediately. The user will select the workspace and team in the form.",
+    description: "Use this component when the user wants to create a task. You usually should display this form immediately. If the user provides details (task name, sprint, etc.), PRE-FILL the form props with those values.",
     component: CreateTaskForm,
     propsSchema: z.object({
       task: z.string().optional().describe("Pre-filled task name"),
@@ -91,7 +91,7 @@ export const components: TamboComponent[] = [
   // Create Epic Form - renders a form to create a new epic
   {
     name: "CreateEpicForm",
-    description: "ALWAYS use this component when the user wants to create an epic. Display this form immediately. The user will select the workspace and team in the form.",
+    description: "Use this component when the user wants to create an epic. You usually should display this form immediately. If the user provides details, PRE-FILL the form props with those values.",
     component: CreateEpicForm,
     propsSchema: z.object({
       epic: z.string().optional().describe("Pre-filled epic name"),
@@ -109,7 +109,7 @@ export const components: TamboComponent[] = [
   // Create Sprint Form - renders a form to create a new sprint
   {
     name: "CreateSprintForm",
-    description: "ALWAYS use this component when the user wants to create a sprint. Display this form immediately. The user will select the workspace and team in the form.",
+    description: "Use this component when the user wants to create a sprint. You usually should display this form immediately. If the user provides details, PRE-FILL the form props with those values.",
     component: CreateSprintForm,
     propsSchema: z.object({
       sprint: z.string().optional().describe("Pre-filled sprint name"),
@@ -125,7 +125,7 @@ export const components: TamboComponent[] = [
   // Create Retro Form - renders a form to create retrospective feedback
   {
     name: "CreateRetroForm",
-    description: "ALWAYS use this component when the user wants to add retrospective feedback. Display this form immediately. The user will select the workspace and team in the form.",
+    description: "Use this component when the user wants to add retrospective feedback. You usually should display this form immediately. If the user provides details, PRE-FILL the form props with those values.",
     component: CreateRetroForm,
     propsSchema: z.object({
       feedback: z.string().optional().describe("Pre-filled feedback text"),
@@ -142,6 +142,12 @@ export const components: TamboComponent[] = [
 /**
  * Tools Factory - A function to generate Tambo tools with context
  */
+import { getSearchActivitiesTool } from "../components/tambo/tools/search-activities";
+import { getFetchDataTool } from "../components/tambo/tools/fetch-data";
+
+/**
+ * Tools Factory - A function to generate Tambo tools with context
+ */
 export const createTools = (context: ToolContext): TamboTool[] => {
   return [
     getGetTimeTool(context),
@@ -153,5 +159,7 @@ export const createTools = (context: ToolContext): TamboTool[] => {
     getNavigateToViewTool(context),
     getGetCurrentPageInfoTool(context),
     getRefreshPageTool(context),
+    getSearchActivitiesTool(context),
+    getFetchDataTool(context),
   ];
 };

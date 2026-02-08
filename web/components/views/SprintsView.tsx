@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import {
@@ -61,12 +62,53 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
 
   const { canEdit } = usePermissions(workspaceId, teamId || undefined);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = searchParams.get("q") || "";
+
   const [sprints, setSprints] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [groupedTasks, setGroupedTasks] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialQuery);
+
+  // Debounce
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Sync URL -> State (Handle Back/Forward navigation)
+  useEffect(() => {
+    const currentQuery = searchParams.get("q") || "";
+    if (currentQuery !== searchQuery) {
+      setSearchQuery(currentQuery);
+    }
+  }, [searchParams]);
+
+  // Sync State -> URL (Debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentQueryInUrl = searchParams.get("q") || "";
+      if (searchQuery !== currentQueryInUrl) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchQuery) {
+          params.set("q", searchQuery);
+        } else {
+          params.delete("q");
+        }
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, router, pathname, searchParams]);
+
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
@@ -115,13 +157,19 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
 
   useEffect(() => {
     fetchSprints();
-  }, [workspaceId, pageId]);
+  }, [workspaceId, pageId, debouncedSearchQuery]);
 
   const fetchSprints = async () => {
     // ... existing fetch logic
     try {
       setLoading(true);
-      const response = await fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`, { cache: 'no-store' });
+      
+      const queryParams = [`workspaceId=${workspaceId}`];
+      if (!debouncedSearchQuery && teamId) {
+        queryParams.push(`teamId=${teamId}`);
+      }
+
+      const response = await fetch(`/api/sprints?${queryParams.join('&')}`, { cache: 'no-store' });
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -130,7 +178,6 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
         console.error('Invalid sprints data format:', data);
         setSprints([]);
       }
-      // After loading sprints, also load tasks for this workspace/page/team
       try {
         const tResp = await fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`, { cache: 'no-store' });
         const tData = await tResp.json();
@@ -154,7 +201,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
   };
 
   const filteredSprints = sprints.filter(s => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedSearchQuery.toLowerCase();
     const matchesSearch =
       s.sprint.toLowerCase().includes(q) ||
       (s.sprintGoals && s.sprintGoals.toLowerCase().includes(q)) ||
@@ -514,6 +561,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
 
 
       <ViewToolbar
+        searchQuery={searchQuery}
         onSearch={(query) => setSearchQuery(query)}
         onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {

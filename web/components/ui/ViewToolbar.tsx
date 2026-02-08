@@ -3,22 +3,24 @@ import { Search, Filter, Eye, MoreHorizontal, Plus } from "lucide-react";
 
 interface ViewToolbarProps {
   onSearch: (query: string) => void;
-  onFilter: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onCreate: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  createButtonLabel: string;
+  onFilter?: (e: React.MouseEvent<HTMLButtonElement>) => void; // Made optional as not all views might use it
+  onCreate?: (e: React.MouseEvent<HTMLButtonElement>) => void; // Made optional
+  createButtonLabel?: string;
   createButtonColor?: string;
   hideCreate?: boolean;
   extraActions?: React.ReactNode;
+  searchQuery?: string; // New prop
 }
 
 export function ViewToolbar({
   onSearch,
   onFilter,
   onCreate,
-  createButtonLabel,
+  createButtonLabel = "Create",
   createButtonColor = '#0073ea',
   hideCreate = false,
-  extraActions
+  extraActions,
+  searchQuery
 }: ViewToolbarProps) {
   return (
     <Box sx={{
@@ -52,6 +54,7 @@ export function ViewToolbar({
       <TextField
         placeholder="Search (Name, ID, Desc...)"
         size="small"
+        value={searchQuery} // Controlled input
         onChange={(e) => onSearch(e.target.value)}
         sx={{
           '& .MuiOutlinedInput-root': {

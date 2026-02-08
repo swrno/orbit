@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import {
@@ -64,13 +65,53 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     }
   }
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = searchParams.get("q") || "";
+
   const [retrospectives, setRetrospectives] = useState<any[]>([]);
   const [sprints, setSprints] = useState<any[]>([]);
   const [groupedRetros, setGroupedRetros] = useState<Record<string, any[]>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialQuery);
+
+  // Debounce
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Sync URL -> State (Handle Back/Forward navigation)
+  useEffect(() => {
+    const currentQuery = searchParams.get("q") || "";
+    if (currentQuery !== searchQuery) {
+      setSearchQuery(currentQuery);
+    }
+  }, [searchParams]);
+
+  // Sync State -> URL (Debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentQueryInUrl = searchParams.get("q") || "";
+      if (searchQuery !== currentQueryInUrl) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchQuery) {
+          params.set("q", searchQuery);
+        } else {
+          params.delete("q");
+        }
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, router, pathname, searchParams]);
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
@@ -119,7 +160,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   };
 
   const filteredRetros = retrospectives.filter(r => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedSearchQuery.toLowerCase();
     const matchesSearch =
       r.feedback.toLowerCase().includes(q) ||
       (r.submitter?.name && r.submitter.name.toLowerCase().includes(q)) ||
@@ -135,7 +176,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
   useEffect(() => {
     groupRetrosBySprint(filteredRetros, sprints);
     groupRetrosByType(filteredRetros);
-  }, [retrospectives, searchQuery, filterType, sprints]);
+  }, [retrospectives, debouncedSearchQuery, filterType, sprints]);
 
   const groupRetrosByType = (retroList: any[]) => {
     const grouped: Record<string, any[]> = {
@@ -156,14 +197,20 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
   useEffect(() => {
     fetchRetrospectives();
-  }, [workspaceId, pageId]);
+  }, [workspaceId, pageId, debouncedSearchQuery]);
 
   const fetchRetrospectives = async () => {
     try {
       setLoading(true);
+      
+      const queryParams = [`workspaceId=${workspaceId}`];
+      if (!debouncedSearchQuery && teamId) {
+        queryParams.push(`teamId=${teamId}`);
+      }
+
       const [retrosRes, sprintsRes] = await Promise.all([
-        fetch(`/api/retrospectives?workspaceId=${workspaceId}&teamId=${teamId}`),
-        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`)
+        fetch(`/api/retrospectives?${queryParams.join('&')}`),
+        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`) // Keep Sprints local?
       ]);
 
       const retrosData = await retrosRes.json();
@@ -598,6 +645,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     <Box sx={{ height: '100%', bgcolor: '#f6f7fb', display: 'flex', flexDirection: 'column' }}>
 
       <ViewToolbar
+        searchQuery={searchQuery}
         onSearch={(query) => setSearchQuery(query)}
         onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import {
@@ -76,12 +77,53 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
 
   const { canEdit } = usePermissions(workspaceId, teamId || undefined);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = searchParams.get("q") || "";
+
   const [epics, setEpics] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [expandedEpics, setExpandedEpics] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialQuery);
+
+  // Debounce
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Sync URL -> State (Handle Back/Forward navigation)
+  useEffect(() => {
+    const currentQuery = searchParams.get("q") || "";
+    if (currentQuery !== searchQuery) {
+      setSearchQuery(currentQuery);
+    }
+  }, [searchParams]);
+
+  // Sync State -> URL (Debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentQueryInUrl = searchParams.get("q") || "";
+      if (searchQuery !== currentQueryInUrl) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchQuery) {
+          params.set("q", searchQuery);
+        } else {
+          params.delete("q");
+        }
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, router, pathname, searchParams]);
+
   const [filterPhase, setFilterPhase] = useState<string[]>([]);
   const [filterPriority, setFilterPriority] = useState<string[]>([]);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -131,10 +173,10 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
 
   useEffect(() => {
     fetchEpics();
-  }, [workspaceId, pageId]);
+  }, [workspaceId, pageId, debouncedSearchQuery]);
 
   const filteredEpics = epics.filter(e => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedSearchQuery.toLowerCase();
     const matchesSearch =
       e.epic.toLowerCase().includes(q) ||
       (e.description && e.description.toLowerCase().includes(q)) ||
@@ -149,9 +191,15 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
   const fetchEpics = async () => {
     try {
       setLoading(true);
+      
+      const queryParams = [`workspaceId=${workspaceId}`];
+      if (!debouncedSearchQuery && teamId) {
+        queryParams.push(`teamId=${teamId}`);
+      }
+      
       const [epicsRes, tasksRes] = await Promise.all([
-        fetch(`/api/epics?workspaceId=${workspaceId}&teamId=${teamId}`),
-        fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`)
+        fetch(`/api/epics?${queryParams.join('&')}`),
+        fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`) // Tasks for connection
       ]);
 
       const epicsData = await epicsRes.json();
@@ -605,6 +653,7 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
 
 
       <ViewToolbar
+        searchQuery={searchQuery}
         onSearch={(query) => setSearchQuery(query)}
         onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {

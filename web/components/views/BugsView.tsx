@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
 import {
@@ -57,6 +58,13 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
 
   const { canEdit } = usePermissions(workspaceId, teamId || undefined);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  
+  const initialQuery = searchParams.get("q") || "";
+
   const [bugs, setBugs] = useState<any[]>([]);
   const [groupedBugs, setGroupedBugs] = useState<Record<string, any[]>>({
     "Incoming Bugs": [],
@@ -66,7 +74,45 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialQuery);
+
+  // Debounce the search query for fetching
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1000);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Sync URL -> State (Handle Back/Forward navigation)
+  useEffect(() => {
+    const currentQuery = searchParams.get("q") || "";
+    if (currentQuery !== searchQuery) {
+      setSearchQuery(currentQuery);
+    }
+  }, [searchParams]);
+
+  // Sync State -> URL (Debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentQueryInUrl = searchParams.get("q") || "";
+      if (searchQuery !== currentQueryInUrl) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchQuery) {
+          params.set("q", searchQuery);
+        } else {
+          params.delete("q");
+        }
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 1000); // Also sync URL after 1s to match fetch behavior or keep distinct? User said "refreshing".
+    // Keeping URL sync at 1s might be cleaner too.
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, router, pathname, searchParams]);
+
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterPriority, setFilterPriority] = useState<string[]>([]);
   const [filterAssignee, setFilterAssignee] = useState<string[]>([]);
@@ -86,7 +132,11 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   const [columnMenuAnchorEl, setColumnMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const filteredBugs = React.useMemo(() => bugs.filter(b => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedSearchQuery.toLowerCase(); // Use debounced for filtering too to avoid jumping?
+    // Actually, for client-side filtering, instant is usually better, but if we are fetching new data, 
+    // we should probably wait for new data.
+    // However, the `bugs` array is replaced by fetch.
+    // Let's use debouncedSearchQuery here too to be consistent with what's fetched.
     const matchesSearch =
       b.bug.toLowerCase().includes(q) ||
       (b.description && b.description.toLowerCase().includes(q)) ||
@@ -101,11 +151,11 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
     const matchesAssignee = filterAssignee.length === 0 || (b.assignee?.id && filterAssignee.includes(b.assignee.id));
 
     return matchesSearch && matchesStatus && matchesPriority && matchesAssignee;
-  }), [bugs, searchQuery, filterStatus, filterPriority, filterAssignee]);
+  }), [bugs, debouncedSearchQuery, filterStatus, filterPriority, filterAssignee]);
 
   useEffect(() => {
     groupBugsByStatus(filteredBugs);
-  }, [bugs, searchQuery, filterStatus, filterPriority, filterAssignee]); // Re-group when bugs or filters change
+  }, [bugs, debouncedSearchQuery, filterStatus, filterPriority, filterAssignee]); // Re-group when bugs or filters change
 
   const [editingBug, setEditingBug] = useState<any>(null);
 
@@ -150,14 +200,25 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
     }
   };
 
+  // Fetch bugs from API
   useEffect(() => {
     fetchBugs();
-  }, [workspaceId, pageId]);
+  }, [workspaceId, pageId, debouncedSearchQuery]);
+
+  // Use Memo for filtering to avoid unnecessary recalcs if bugs reference doesn't change
+  // BUT fetchBugs replaces `bugs`.
 
   const fetchBugs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/bugs?workspaceId=${workspaceId}&teamId=${teamId}`);
+      // If searchQuery is present, fetch globally (omit teamId)
+      // Otherwise fetch for specific team
+      const queryParams = [`workspaceId=${workspaceId}`];
+      if (!debouncedSearchQuery && teamId) {
+        queryParams.push(`teamId=${teamId}`);
+      }
+      
+      const response = await fetch(`/api/bugs?${queryParams.join('&')}`);
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -815,6 +876,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
 
 
       <ViewToolbar
+        searchQuery={searchQuery}
         onSearch={(query) => setSearchQuery(query)}
         onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {

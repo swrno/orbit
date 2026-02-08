@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore, Task, TaskStatus, TaskPriority } from "@/lib/store";
 import {
@@ -84,13 +85,54 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
   const { canEdit } = usePermissions(workspaceId, groupId || undefined);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = searchParams.get("q") || "";
+
   const [tasks, setTasks] = useState<any[]>([]);
   const [sprints, setSprints] = useState<any[]>([]);
   const [groupedTasks, setGroupedTasks] = useState<Record<string, any[]>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialQuery);
+
+  // Debounce
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Sync URL -> State (Handle Back/Forward navigation)
+  useEffect(() => {
+    const currentQuery = searchParams.get("q") || "";
+    if (currentQuery !== searchQuery) {
+      setSearchQuery(currentQuery);
+    }
+  }, [searchParams]);
+
+  // Sync State -> URL (Debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentQueryInUrl = searchParams.get("q") || "";
+      if (searchQuery !== currentQueryInUrl) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchQuery) {
+          params.set("q", searchQuery);
+        } else {
+          params.delete("q");
+        }
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, router, pathname, searchParams]);
+
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -143,11 +185,11 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   // Fetch tasks from API
   useEffect(() => {
     fetchTasks();
-  }, [workspaceId, pageId]);
+  }, [workspaceId, pageId, debouncedSearchQuery]);
 
   useEffect(() => {
     const filteredTasks = tasks.filter(t => {
-      const q = searchQuery.toLowerCase();
+      const q = debouncedSearchQuery.toLowerCase();
       const matchesSearch =
         t.task.toLowerCase().includes(q) ||
         (t.taskId && t.taskId.toLowerCase().includes(q)) ||
@@ -160,14 +202,20 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
       return matchesSearch && matchesStatus && matchesType;
     });
     groupTasksBySprint(filteredTasks, sprints);
-  }, [tasks, searchQuery, filterStatus, filterType, sprints]);
+  }, [tasks, debouncedSearchQuery, filterStatus, filterType, sprints]);
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
+      
+      const queryParams = [`workspaceId=${workspaceId}`];
+      if (!debouncedSearchQuery && groupId) {
+        queryParams.push(`teamId=${groupId}`);
+      }
+
       const [tasksRes, sprintsRes] = await Promise.all([
-        fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${groupId}`),
-        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${groupId}`)
+        fetch(`/api/tasks?${queryParams.join('&')}`),
+        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${groupId}`) // Sprints still team specific usually? Or should sprints also be global? Sprints are usually team specific.
       ]);
 
       const tasksData = await tasksRes.json();
@@ -623,6 +671,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
 
       <ViewToolbar
+        searchQuery={searchQuery}
         onSearch={(query) => setSearchQuery(query)}
         onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {
