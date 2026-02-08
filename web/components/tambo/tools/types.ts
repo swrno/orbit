@@ -8,4 +8,5 @@ export interface ToolContext {
   updatePage?: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>, userId?: string, userEmail?: string | null) => void;
   addPage?: (workspaceId: string, teamId: string, title: string, type: PageType) => string;
   router?: { push: (url: string) => void };
+  activePageId?: string;
 }

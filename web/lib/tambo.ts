@@ -33,6 +33,7 @@ import { getCreateDocumentTool } from "../components/tambo/tools/create-document
 import { getSwitchWorkspaceTool } from "../components/tambo/tools/switch-workspace";
 import { getNavigateToPageTool } from "../components/tambo/tools/navigate-to-page";
 import { getNavigateToViewTool } from "../components/tambo/tools/navigate-to-view";
+import { getGetCurrentPageInfoTool } from "../components/tambo/tools/get-current-page-info";
 import type { ToolContext } from "../components/tambo/tools/types";
 
 
@@ -149,5 +150,6 @@ export const createTools = (context: ToolContext): TamboTool[] => {
     getSwitchWorkspaceTool(context),
     getNavigateToPageTool(context),
     getNavigateToViewTool(context),
+    getGetCurrentPageInfoTool(context),
   ];
 };

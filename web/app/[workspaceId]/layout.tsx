@@ -33,9 +33,10 @@ export default function WorkspaceLayout({
       workspaces,
       updatePage,
       addPage,
+      activePageId: params.pageId as string,
       router
     });
-  }, [workspaceId, user?.uid, user?.email, workspaces, updatePage, addPage, router]);
+  }, [workspaceId, user?.uid, user?.email, workspaces, updatePage, addPage, router, params.pageId]);
 
   useEffect(() => {
     const workspace = workspaces.find((w) => w.id === workspaceId);
