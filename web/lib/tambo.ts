@@ -21,6 +21,11 @@ import TaskList from "@/components/tambo/generative/TaskList";
 import EpicList from "@/components/tambo/generative/EpicList";
 import RetroList from "@/components/tambo/generative/RetroList";
 import TeamAccessList from "@/components/tambo/generative/TeamAccessList";
+import CreateBugForm from "@/components/tambo/generative/CreateBugForm";
+import CreateTaskForm from "@/components/tambo/generative/CreateTaskForm";
+import CreateEpicForm from "@/components/tambo/generative/CreateEpicForm";
+import CreateRetroForm from "@/components/tambo/generative/CreateRetroForm";
+import CreateSprintForm from "@/components/tambo/generative/CreateSprintForm";
 
 // Tool Imports
 import { 
@@ -28,7 +33,8 @@ import {
   getTasksTool, createTaskTool, updateTaskTool,
   getEpicsTool, createEpicTool, updateEpicTool,
   getRetrosTool, createRetroTool, voteRetroTool,
-  addTeamMemberTool, removeTeamMemberTool
+  addTeamMemberTool, removeTeamMemberTool,
+  getSprintsTool, createSprintTool, updateSprintTool
 } from "./tools";
 
 /**
@@ -127,6 +133,53 @@ export const components: TamboComponent[] = [
           teamId: z.string().optional().nullable(),
       }),
   },
+  {
+      name: "CreateBugForm",
+      description: "Form to create a new bug.",
+      component: CreateBugForm,
+      propsSchema: z.object({
+          teamId: z.string().optional().describe("Team ID"),
+          pageId: z.string().optional().describe("Page ID"),
+      }),
+  },
+  {
+      name: "CreateTaskForm",
+      description: "Form to create a new task.",
+      component: CreateTaskForm,
+      propsSchema: z.object({
+          teamId: z.string().optional().describe("Team ID"),
+          pageId: z.string().optional().describe("Page ID"),
+          sprint: z.string().optional().describe("Default sprint (e.g., 'Sprint 1')"),
+      }),
+  },
+  {
+      name: "CreateEpicForm",
+      description: "Form to create a new epic.",
+      component: CreateEpicForm,
+      propsSchema: z.object({
+          teamId: z.string().optional().describe("Team ID"),
+          pageId: z.string().optional().describe("Page ID"),
+      }),
+  },
+  {
+      name: "CreateRetroForm",
+      description: "Form to capture retrospective feedback.",
+      component: CreateRetroForm,
+      propsSchema: z.object({
+          teamId: z.string().optional().describe("Team ID"),
+          pageId: z.string().optional().describe("Page ID"),
+          sprint: z.string().optional().describe("Default sprint"),
+      }),
+  },
+  {
+      name: "CreateSprintForm",
+      description: "Form to create a new sprint.",
+      component: CreateSprintForm,
+      propsSchema: z.object({
+          teamId: z.string().optional().describe("Team ID"),
+          pageId: z.string().optional().describe("Page ID"),
+      }),
+  },
 ];
 
 /**
@@ -163,5 +216,9 @@ export const createTools = (context: { workspaceId: string, userId: string }): T
     // Teams
     addTeamMemberTool(workspaceId, userId),
     removeTeamMemberTool(workspaceId, userId),
+    // Sprints
+    getSprintsTool(workspaceId, userId),
+    createSprintTool(workspaceId, userId),
+    updateSprintTool(workspaceId, userId),
   ];
 };
