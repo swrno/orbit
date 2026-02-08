@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type PageType = 'board' | 'table' | 'document' | 'gantt' | 'roadmap' | 'calendar' | 'chart' | 'list';
+export type PageType = 'board' | 'table' | 'document' | 'gantt' | 'roadmap' | 'calendar' | 'chart' | 'list' | 'team-access';
 export type TaskStatus = 'Todo' | 'In Progress' | 'In Review' | 'Done' | 'Blocked';
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
