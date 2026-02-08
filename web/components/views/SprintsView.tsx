@@ -287,13 +287,13 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
               {/* ... Table content ... */}
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Sprint</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Sprint goals</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Active sprint status</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', minWidth: 200 }}>Sprint timeline</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Connected tasks</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Completed?</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Sprint start date</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Sprint</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Sprint goals</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Active sprint status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', minWidth: 200, borderRight: '1px solid #e6e9ef' }}>Sprint timeline</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Connected tasks</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Completed?</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Sprint start date</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Sprint end date</TableCell>
                 </TableRow>
               </TableHead>
@@ -309,10 +309,10 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
                       }}
                       onClick={() => handleEditSprint(sprint)}
                     >
-                      <TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                         <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>{sprint.sprint}</Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                         <Typography sx={{ fontSize: '13px', color: '#676879' }}>{sprint.sprintGoals || '-'}</Typography>
                       </TableCell>
                       <TableCell>

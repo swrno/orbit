@@ -264,13 +264,13 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-                  <TableCell width={40}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Feedback</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Submitter</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Type</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Repeating?</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Vote</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
+                  <TableCell width={40} sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Feedback</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Submitter</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Type</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Repeating?</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Vote</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Owner</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', width: 100 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -304,8 +304,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
                         key={retro.id || index}
                         sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
                       >
-                        <TableCell></TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Typography sx={{ fontSize: '14px' }}>{retro.feedback}</Typography>
                         </TableCell>
                         <TableCell>

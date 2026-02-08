@@ -288,10 +288,10 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>
-                  <TableCell width={40}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Epic</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Owner</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Phase</TableCell>
+                  <TableCell width={40} sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Epic</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Owner</TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Phase</TableCell>
                   <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Priority</TableCell>
                 </TableRow>
               </TableHead>
@@ -318,12 +318,12 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                         handleEditEpic(epic);
                       }}
                     >
-                      <TableCell className="expand-icon">
+                      <TableCell className="expand-icon" sx={{ borderRight: '1px solid #e6e9ef' }}>
                         {hasChildren && (
                           isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                         <Typography
                           sx={{
                             fontSize: '14px',
@@ -423,8 +423,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
                         key={`task-${task._id || task.id}`}
                         sx={{ '&:hover': { bgcolor: '#f6f7fb' } }}
                       >
-                        <TableCell></TableCell>
-                        <TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 4 }}>
                             <CheckSquare size={14} color="#3B82F6" />
                             <Typography sx={{ fontSize: '13px', color: '#334155' }}>
