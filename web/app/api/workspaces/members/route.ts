@@ -95,11 +95,20 @@ export async function POST(request: NextRequest) {
             { new: true }
         );
 
+        // Check if user exists by ID or Email
+        let existingUser = await User.findOne({ 
+            $or: [{ id: userId }, { email: email }]
+        });
+
+        // Use existing user ID if found (prefer email match if ID mismatch)
+        // This handles cases where invite email matches existing user but new ID generated
+        const targetUserId = existingUser ? existingUser.id : userId;
+
         // Create or update user profile
         await User.findOneAndUpdate(
-            { id: userId },
+            { id: targetUserId },
             {
-                id: userId,
+                id: targetUserId,
                 email,
                 name,
                 avatar
@@ -215,6 +224,35 @@ export async function PUT(request: NextRequest) {
                 { success: false, error: 'Member not found in workspace' },
                 { status: 404 }
             );
+        }
+
+        // Propagate role change to all teams
+        if (updatedWorkspace.teams && updatedWorkspace.teams.length > 0) {
+            let teamsUpdated = false;
+            
+            updatedWorkspace.teams.forEach((team: any) => {
+                if (team.members) {
+                    const teamMember = team.members.find((m: any) => m.id === userId);
+                    if (teamMember) {
+                        // Map workspace role to team role
+                        // OWNER -> LEADER
+                        // EDITOR -> EDITOR
+                        // VIEWER -> VIEWER
+                        const newTeamRole = role === 'OWNER' ? 'LEADER' : role === 'EDITOR' ? 'EDITOR' : 'VIEWER';
+                        
+                        // Only update if changed
+                        if (teamMember.teamRole !== newTeamRole) {
+                            teamMember.teamRole = newTeamRole;
+                            teamsUpdated = true;
+                        }
+                    }
+                }
+            });
+
+            if (teamsUpdated) {
+                updatedWorkspace.markModified('teams');
+                await updatedWorkspace.save();
+            }
         }
 
         return NextResponse.json({
