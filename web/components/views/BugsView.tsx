@@ -40,8 +40,6 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
-  const { canEdit } = usePermissions(workspaceId);
-
   // Find the page and team
   let page: any = null;
   let teamId: string | null = null;
@@ -56,6 +54,8 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
       }
     }
   }
+
+  const { canEdit } = usePermissions(workspaceId, teamId || undefined);
 
   const [bugs, setBugs] = useState<any[]>([]);
   const [groupedBugs, setGroupedBugs] = useState<Record<string, any[]>>({

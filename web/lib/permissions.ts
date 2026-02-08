@@ -4,7 +4,7 @@ import { WorkspaceRole, TeamRole, WorkspaceMember } from './types';
  * Permission checking utilities for workspace and team access control
  */
 
-export type Permission = 
+export type Permission =
   | 'workspace:view'
   | 'workspace:edit'
   | 'workspace:manage_members'
@@ -12,7 +12,10 @@ export type Permission =
   | 'team:view'
   | 'team:edit'
   | 'team:manage_members'
-  | 'team:delete';
+  | 'team:delete'
+  | 'bug:create'
+  | 'bug:edit'
+  | 'bug:delete';
 
 /**
  * Permission matrix for workspace roles
@@ -26,13 +29,18 @@ const WORKSPACE_PERMISSIONS: Record<WorkspaceRole, Permission[]> = {
     'team:view',
     'team:edit',
     'team:manage_members',
-    'team:delete'
+    'team:delete',
+    'bug:create',
+    'bug:edit',
+    'bug:delete'
   ],
   EDITOR: [
     'workspace:view',
     'workspace:edit',
     'team:view',
-    'team:edit'
+    'team:edit',
+    'bug:create',
+    'bug:edit'
   ],
   VIEWER: [
     'workspace:view',
@@ -47,11 +55,16 @@ const TEAM_PERMISSIONS: Record<TeamRole, Permission[]> = {
   LEADER: [
     'team:view',
     'team:edit',
-    'team:manage_members'
+    'team:manage_members',
+    'bug:create',
+    'bug:edit',
+    'bug:delete'
   ],
   EDITOR: [
     'team:view',
-    'team:edit'
+    'team:edit',
+    'bug:create',
+    'bug:edit'
   ],
   VIEWER: [
     'team:view'
@@ -81,17 +94,17 @@ export function hasTeamPermission(
   if (workspaceRole === 'OWNER') {
     return true;
   }
-  
+
   // Check workspace-level permissions first
   if (workspaceRole && WORKSPACE_PERMISSIONS[workspaceRole]?.includes(permission)) {
     return true;
   }
-  
+
   // Check team-level permissions
   if (teamRole && TEAM_PERMISSIONS[teamRole]?.includes(permission)) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -104,10 +117,10 @@ export function getUserWorkspaceRole(
   ownerId: string | undefined
 ): WorkspaceRole | undefined {
   if (!userId) return undefined;
-  
+
   // Owner check
   if (ownerId === userId) return 'OWNER';
-  
+
   // Check members array
   const member = workspaceMembers?.find(m => m.id === userId);
   return member?.role;
@@ -155,4 +168,51 @@ export function canManageWorkspaceMembers(
   userId: string | undefined
 ): boolean {
   return isWorkspaceOwner(ownerId, userId);
+}
+
+/**
+ * Get user's role in a specific team
+ */
+export function getUserTeamRole(
+  workspace: any,
+  userId: string | undefined,
+  teamId: string | undefined
+): TeamRole | undefined {
+  if (!userId || !teamId || !workspace) return undefined;
+
+  const team = workspace.teams?.find((t: any) => t.id === teamId || t.teamId === teamId);
+  if (!team) return undefined;
+
+  const member = team.members?.find((m: any) => m.id === userId);
+  return member?.teamRole as TeamRole | undefined;
+}
+
+/**
+ * Check if a user can create bugs in a team
+ */
+export function canCreateBug(
+  workspaceRole: WorkspaceRole | undefined,
+  teamRole: TeamRole | undefined
+): boolean {
+  return hasTeamPermission(workspaceRole, teamRole, 'bug:create');
+}
+
+/**
+ * Check if a user can edit bugs in a team
+ */
+export function canEditBug(
+  workspaceRole: WorkspaceRole | undefined,
+  teamRole: TeamRole | undefined
+): boolean {
+  return hasTeamPermission(workspaceRole, teamRole, 'bug:edit');
+}
+
+/**
+ * Check if a user can delete bugs in a team
+ */
+export function canDeleteBug(
+  workspaceRole: WorkspaceRole | undefined,
+  teamRole: TeamRole | undefined
+): boolean {
+  return hasTeamPermission(workspaceRole, teamRole, 'bug:delete');
 }

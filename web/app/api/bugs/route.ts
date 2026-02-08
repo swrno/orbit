@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Bug from '@/lib/models/Bug';
+import Workspace from '@/lib/models/Workspace';
 import crypto from 'crypto';
+import {
+  getUserWorkspaceRole,
+  getUserTeamRole,
+  canCreateBug,
+  canEditBug,
+  canDeleteBug
+} from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,6 +83,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Permission check: Verify user can create bugs
+    const userId = request.headers.get('X-User-Id') || body.reporter?.id;
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Fetch workspace to check permissions
+    const workspace = await Workspace.findOne({ workspaceId: body.workspaceId });
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get user's workspace role
+    const workspaceRole = getUserWorkspaceRole(
+      workspace.members,
+      userId,
+      workspace.ownerId
+    );
+
+    // Get user's team role
+    const teamRole = getUserTeamRole(workspace, userId, body.teamId);
+
+    // Check if user has permission to create bugs
+    if (!canCreateBug(workspaceRole, teamRole)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You do not have permission to create bugs. Team Editors or higher permissions required.'
+        },
+        { status: 403 }
+      );
+    }
+
     const bug = await Bug.create(body);
 
     return NextResponse.json({
@@ -102,6 +149,54 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Bug ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Permission check: Verify user can edit bugs
+    const userId = request.headers.get('X-User-Id');
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get the existing bug to check permissions
+    const existingBug = await Bug.findById(id);
+    if (!existingBug) {
+      return NextResponse.json(
+        { success: false, error: 'Bug not found' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch workspace to check permissions
+    const workspace = await Workspace.findOne({ workspaceId: existingBug.workspaceId });
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get user's workspace role
+    const workspaceRole = getUserWorkspaceRole(
+      workspace.members,
+      userId,
+      workspace.ownerId
+    );
+
+    // Get user's team role
+    const teamRole = getUserTeamRole(workspace, userId, existingBug.teamId);
+
+    // Check if user has permission to edit bugs
+    if (!canEditBug(workspaceRole, teamRole)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You do not have permission to edit bugs. Team Editors or higher permissions required.'
+        },
+        { status: 403 }
       );
     }
 
@@ -143,6 +238,54 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Bug ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Permission check: Verify user can delete bugs
+    const userId = request.headers.get('X-User-Id');
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get the existing bug to check permissions
+    const existingBug = await Bug.findById(id);
+    if (!existingBug) {
+      return NextResponse.json(
+        { success: false, error: 'Bug not found' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch workspace to check permissions
+    const workspace = await Workspace.findOne({ workspaceId: existingBug.workspaceId });
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get user's workspace role
+    const workspaceRole = getUserWorkspaceRole(
+      workspace.members,
+      userId,
+      workspace.ownerId
+    );
+
+    // Get user's team role
+    const teamRole = getUserTeamRole(workspace, userId, existingBug.teamId);
+
+    // Check if user has permission to delete bugs
+    if (!canDeleteBug(workspaceRole, teamRole)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You do not have permission to delete bugs. Team Editors or higher permissions required.'
+        },
+        { status: 403 }
       );
     }
 
