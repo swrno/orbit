@@ -241,7 +241,7 @@ interface AppState {
   updateTeamIcon: (workspaceId: string, teamId: string, icon: string) => void;
 
   // Delete Actions
-  deleteTeam: (workspaceId: string, teamId: string, userId: string) => void;
+  deleteTeam: (workspaceId: string, teamId: string, userId: string) => Promise<void>;
   deletePage: (workspaceId: string, teamId: string, pageId: string) => void;
   reorderPage: (workspaceId: string, teamId: string, startIndex: number, endIndex: number) => void;
 }
@@ -951,16 +951,39 @@ export const useAppStore = create<AppState>()(
       })),
 
       // Delete Actions
-      deleteTeam: (workspaceId, teamId) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-              ...ws,
-              teams: ws.teams.filter(t => t.id !== teamId)
+      deleteTeam: async (workspaceId, teamId, userId) => {
+        try {
+          const response = await fetch(`/api/teams?workspaceId=${workspaceId}&teamId=${teamId}&currentUserId=${userId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userId}`,
+              'X-User-Id': userId || ''
             }
-            : ws
-        )
-      })),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            set((state) => ({
+              workspaces: state.workspaces.map(ws =>
+                ws.id === workspaceId
+                  ? {
+                    ...ws,
+                    teams: ws.teams.filter(t => t.id !== teamId)
+                  }
+                  : ws
+              )
+            }));
+          } else {
+            console.error('Failed to delete team:', data.error);
+            alert(`Failed to delete team: ${data.error}`);
+          }
+        } catch (error) {
+          console.error('Error deleting team:', error);
+          alert('Error deleting team. Please try again.');
+        }
+      },
 
       deletePage: (workspaceId, teamId, pageId) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
