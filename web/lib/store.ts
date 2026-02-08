@@ -184,7 +184,7 @@ interface AppState {
   deleteWorkspace: (id: string, userId: string) => void;
   selectWorkspace: (id: string) => void;
   addTeam: (workspaceId: string, title: string, icon?: string, leaderId?: string, leaderEmail?: string, leaderName?: string) => Promise<void>;
-  addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => void;
+  addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => string;
   updatePage: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>, userId?: string, userEmail?: string | null) => void;
 
   // Task Actions
@@ -428,20 +428,24 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      addPage: (workspaceId, teamId, title, type) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-              ...ws,
-              teams: ws.teams.map(g =>
-                g.id === teamId
-                  ? { ...g, pages: [...g.pages, { id: `p-${Date.now()}`, title, type }] }
-                  : g
-              )
-            }
-            : ws
-        )
-      })),
+      addPage: (workspaceId, teamId, title, type) => {
+        const newId = `p-${Date.now()}`;
+        set((state) => ({
+          workspaces: state.workspaces.map(ws =>
+            ws.id === workspaceId
+              ? {
+                ...ws,
+                teams: ws.teams.map(g =>
+                  g.id === teamId
+                    ? { ...g, pages: [...g.pages, { id: newId, title, type }] }
+                    : g
+                )
+              }
+              : ws
+          )
+        }));
+        return newId;
+      },
 
       updatePage: (workspaceId, teamId, pageId, updates, userId, userEmail) => {
         // Optimistic update

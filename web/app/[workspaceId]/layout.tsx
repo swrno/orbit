@@ -21,16 +21,21 @@ export default function WorkspaceLayout({
   const params = useParams();
   const router = useRouter();
   const workspaceId = params.workspaceId as string;
-  const { workspaces, selectWorkspace } = useAppStore();
+  const { workspaces, selectWorkspace, updatePage, addPage } = useAppStore();
   const mcpServers = useMcpServers();
   const { user } = useAuth();
   
   const tools = React.useMemo(() => {
     return createTools({ 
       workspaceId, 
-      userId: user?.uid || 'anonymous' 
+      userId: user?.uid || 'anonymous',
+      userEmail: user?.email,
+      workspaces,
+      updatePage,
+      addPage,
+      router
     });
-  }, [workspaceId, user?.uid]);
+  }, [workspaceId, user?.uid, user?.email, workspaces, updatePage, addPage, router]);
 
   useEffect(() => {
     const workspace = workspaces.find((w) => w.id === workspaceId);

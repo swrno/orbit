@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 import type { TamboComponent, TamboTool } from "@tambo-ai/react";
+import type { Workspace, Page, PageType } from "./store";
 
 // Component Imports
 import Clock from "../components/tambo/clock";
@@ -22,7 +23,17 @@ import {
   CreateEpicForm,
   CreateSprintForm,
   CreateRetroForm,
-} from "../components/tambo/NewTamboComponents";
+} from "../components/tambo/addedComponents";
+
+// Tool Imports
+import { getGetTimeTool } from "../components/tambo/tools/get-time";
+import { getReadPageTool } from "../components/tambo/tools/read-page";
+import { getUpdatePageTool } from "../components/tambo/tools/update-page";
+import { getCreateDocumentTool } from "../components/tambo/tools/create-document";
+import { getSwitchWorkspaceTool } from "../components/tambo/tools/switch-workspace";
+import { getNavigateToPageTool } from "../components/tambo/tools/navigate-to-page";
+import { getNavigateToViewTool } from "../components/tambo/tools/navigate-to-view";
+import type { ToolContext } from "../components/tambo/tools/types";
 
 
 /**
@@ -129,17 +140,14 @@ export const components: TamboComponent[] = [
 /**
  * Tools Factory - A function to generate Tambo tools with context
  */
-export const createTools = (context: { workspaceId: string, userId: string }): TamboTool[] => {
-  const { workspaceId, userId } = context;
+export const createTools = (context: ToolContext): TamboTool[] => {
   return [
-    {
-      name: "get-time",
-      description: "Get the current time.",
-      tool: async () => {
-        return new Date().toString();
-      },
-      inputSchema: z.object({}),
-      outputSchema: z.string(),
-    },
+    getGetTimeTool(context),
+    getReadPageTool(context),
+    getUpdatePageTool(context),
+    getCreateDocumentTool(context),
+    getSwitchWorkspaceTool(context),
+    getNavigateToPageTool(context),
+    getNavigateToViewTool(context),
   ];
 };
