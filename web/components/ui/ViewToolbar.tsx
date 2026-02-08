@@ -10,20 +10,20 @@ interface ViewToolbarProps {
   hideCreate?: boolean;
 }
 
-export function ViewToolbar({ 
-  onSearch, 
-  onFilter, 
-  onCreate, 
-  createButtonLabel, 
+export function ViewToolbar({
+  onSearch,
+  onFilter,
+  onCreate,
+  createButtonLabel,
   createButtonColor = '#0073ea',
   hideCreate = false
 }: ViewToolbarProps) {
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: 2, 
-      px: 3, 
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      px: 3,
       py: 1.5,
       bgcolor: 'white',
       borderBottom: '1px solid #e6e9ef'
@@ -51,8 +51,8 @@ export function ViewToolbar({
         placeholder="Search"
         size="small"
         onChange={(e) => onSearch(e.target.value)}
-        sx={{ 
-          '& .MuiOutlinedInput-root': { 
+        sx={{
+          '& .MuiOutlinedInput-root': {
             height: '32px',
             '& fieldset': { border: 'none' }, // Clean monday.com style look
             '&:hover fieldset': { border: '1px solid #e6e9ef' },

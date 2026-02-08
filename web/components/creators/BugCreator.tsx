@@ -1,5 +1,5 @@
-"use client";
 
+import { TeamMember } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -17,11 +17,12 @@ interface BugCreatorProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   initialData?: any;
+  members?: TeamMember[];
 }
 
 import { useAuth } from '@/contexts/AuthContext';
 
-export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorProps) {
+export function BugCreator({ open, onClose, onSubmit, initialData, members = [] }: BugCreatorProps) {
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -29,6 +30,11 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
     description: '',
     dueDate: '',
     reporter: {
+      id: '',
+      name: '',
+      email: ''
+    },
+    assignee: {
       id: '',
       name: '',
       email: ''
@@ -46,6 +52,7 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
         description: initialData.description || '',
         dueDate: initialData.dueDate ? new Date(initialData.dueDate).toISOString().split('T')[0] : '',
         reporter: initialData.reporter || { id: '', name: '', email: '' },
+        assignee: initialData.assignee || { id: '', name: '', email: '' },
         status: initialData.status || 'Awaiting Review',
         priority: initialData.priority || 'Medium',
         group: initialData.group || 'Incoming Bugs'
@@ -93,6 +100,11 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
         name: '',
         email: ''
       },
+      assignee: {
+        id: '',
+        name: '',
+        email: ''
+      },
       status: 'Awaiting Review',
       priority: 'Medium',
       group: 'Incoming Bugs'
@@ -133,6 +145,29 @@ export function BugCreator({ open, onClose, onSubmit, initialData }: BugCreatorP
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
+
+            <TextField
+              select
+              label="Assignee"
+              value={formData.assignee?.id || ''}
+              onChange={(e) => {
+                const member = members.find(m => m.id === e.target.value);
+                setFormData({
+                  ...formData,
+                  assignee: member ? {
+                    id: member.id,
+                    name: member.name,
+                    email: member.email || ''
+                  } : { id: '', name: '', email: '' }
+                });
+              }}
+              fullWidth
+            >
+              <MenuItem value="">Unassigned</MenuItem>
+              {members.map((member) => (
+                <MenuItem key={member.id} value={member.id}>{member.name}</MenuItem>
+              ))}
+            </TextField>
 
             <TextField
               select

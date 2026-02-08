@@ -33,6 +33,7 @@ export type BugItem = {
   description: string;
   dueDate?: Date;
   reporter: TeamMember;
+  assignee?: TeamMember;
   timeUntilResolution?: string;
   status: 'Awaiting Review' | 'Pending Review' | 'Ready for Dev' | 'Done' | 'Fixed';
   priority: 'Critical' | 'High' | 'Low' | 'Medium';
@@ -159,7 +160,7 @@ export type Team = {
   // - GET /api/epics?teamId={teamId}
   // - GET /api/sprints?teamId={teamId}
   // - GET /api/retrospectives?teamId={teamId}
-  
+
   // For backward compatibility with client-side store:
   bugs?: BugItem[];
   tasks?: TaskItem[];
@@ -187,7 +188,7 @@ export type Workspace = {
   // - GET /api/epics?workspaceId={workspaceId}&pageId={pageId}
   // - GET /api/sprints?workspaceId={workspaceId}&pageId={pageId}
   // - GET /api/retrospectives?workspaceId={workspaceId}&pageId={pageId}
-  
+
   // For backward compatibility with client-side store (optional):
   bugs?: Record<string, BugItem[]>; // pageId -> BugItem[]
   tasks?: Record<string, TaskItem[]>;

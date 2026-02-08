@@ -119,43 +119,7 @@ export async function POST(request: NextRequest) {
 
         // Ensure default structure if missing
         if (!body.teams) {
-            const timestamp = Date.now();
-            body.teams = [{
-                id: `g-${timestamp}`,
-                title: 'Team',
-                icon: 'Users',
-                leaderId: creatorId,
-                leaderName: creatorName,
-                leaderEmail: creatorEmail,
-                members: [],
-                bugs: [],
-                tasks: [],
-                epics: [],
-                sprints: [],
-                retrospectives: [],
-                pages: [
-                    { id: `p-${timestamp}-1`, title: 'Bugs Queue', type: 'table', icon: 'Bug', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-2`, title: 'Retrospectives', type: 'table', icon: 'RotateCcw', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-3`, title: 'Tasks', type: 'table', icon: 'CheckSquare', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-4`, title: 'Sprints', type: 'table', icon: 'Rabbit', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
-                    { id: `p-${timestamp}-5`, title: 'Epics', type: 'table', icon: 'Layers', views: ['table', 'board', 'gantt', 'calendar', 'chart'], activeViewIndex: 0 },
-                    {
-                        id: `p-${timestamp}-6`,
-                        title: 'Getting Started',
-                        type: 'document',
-                        icon: 'FileText',
-                        content: `<h1>Welcome to ${body.title}! 🎉</h1><p>This is your team's workspace.</p>`
-                    },
-                    {
-                        id: `p-${timestamp}-7`,
-                        title: 'Team Access',
-                        type: 'document',
-                        icon: 'Shield',
-                        pageType: 'team-access',
-                        content: `<h1>Team Access Management</h1><p>Manage team member access and permissions.</p>`
-                    },
-                ]
-            }];
+            body.teams = [];
         }
 
         // Ensure backward compatibility with teamMembers

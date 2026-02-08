@@ -1,25 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
 import {
-  Box,
-  Typography,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Avatar,
-  Button,
-  Collapse,
-  TextField
+  Box, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Avatar, Button, Collapse, TextField,
+  Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Popover, List, ListItem, Switch
 } from "@mui/material";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Filter, Layout, Calendar as CalendarIcon, X } from "lucide-react";
 import { BugCreator } from "@/components/creators/BugCreator";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { BoardView } from "./BoardView";
@@ -53,6 +40,8 @@ import { ViewToolbar } from "@/components/ui/ViewToolbar";
 export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { canEdit } = usePermissions(workspaceId);
+
   // Find the page and team
   let page: any = null;
   let teamId: string | null = null;
@@ -68,8 +57,6 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
     }
   }
 
-  const { canEdit } = usePermissions(workspaceId, teamId || undefined);
-
   const [bugs, setBugs] = useState<any[]>([]);
   const [groupedBugs, setGroupedBugs] = useState<Record<string, any[]>>({
     "Incoming Bugs": [],
@@ -80,16 +67,40 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   const [loading, setLoading] = useState(true);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterPriority, setFilterPriority] = useState<string[]>([]);
+  const [filterAssignee, setFilterAssignee] = useState<string[]>([]);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
-  const filteredBugs = bugs.filter(b =>
-    b.bug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    b.bugId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Column Visibility State
+  const [visibleColumns, setVisibleColumns] = useState({
+    bug: true,
+    reporter: true,
+    assignee: true,
+    timeUntilResolution: true,
+    status: true,
+    priority: true,
+    connectedTasks: true,
+    bugId: true
+  });
+  const [columnMenuAnchorEl, setColumnMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const filteredBugs = React.useMemo(() => bugs.filter(b => {
+    const matchesSearch =
+      b.bug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      b.bugId.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = filterStatus.length === 0 || filterStatus.includes(b.status);
+    const matchesPriority = filterPriority.length === 0 || filterPriority.includes(b.priority);
+    const matchesAssignee = filterAssignee.length === 0 || (b.assignee?.id && filterAssignee.includes(b.assignee.id));
+
+    return matchesSearch && matchesStatus && matchesPriority && matchesAssignee;
+  }), [bugs, searchQuery, filterStatus, filterPriority, filterAssignee]);
 
   useEffect(() => {
     groupBugsByStatus(filteredBugs);
-  }, [bugs, searchQuery]); // Re-group when bugs or search changes
+  }, [bugs, searchQuery, filterStatus, filterPriority, filterAssignee]); // Re-group when bugs or filters change
 
   const [editingBug, setEditingBug] = useState<any>(null);
 
@@ -423,7 +434,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
                 </Box>
               ))}
               {days.map((date, i) => {
-                const dayBugs = date ? bugs.filter(b => {
+                const dayBugs = date ? filteredBugs.filter(b => {
                   if (!b.dueDate) return false;
                   const d = new Date(b.dueDate);
                   return d.getDate() === date.getDate() && d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
@@ -567,125 +578,163 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>
                   <TableCell width={40} sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Bug</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Reporter</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Time until resolution</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Priority</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Connected tasks</TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Bug ID</TableCell>
+                  {visibleColumns.bug && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Bug</TableCell>}
+                  {visibleColumns.reporter && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Reporter</TableCell>}
+                  {visibleColumns.assignee && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Assignee</TableCell>}
+                  {visibleColumns.timeUntilResolution && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Time until resolution</TableCell>}
+                  {visibleColumns.status && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Status</TableCell>}
+                  {visibleColumns.priority && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Priority</TableCell>}
+                  {visibleColumns.connectedTasks && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338', borderRight: '1px solid #e6e9ef' }}>Connected tasks</TableCell>}
+                  {visibleColumns.bugId && <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#323338' }}>Bug ID</TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {Object.entries(groupedBugs).map(([groupName, groupBugs]) => (
-                  <React.Fragment key={`group-${groupName}`}>
-                    <TableRow
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: '#f0f0f0' }
-                      }}
-                      onClick={() => toggleGroup(groupName)}
-                    >
-                      <TableCell colSpan={8} sx={{ py: 1, borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                          <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
-                            {groupName}
-                          </Typography>
-                          <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
-                            {groupBugs.length}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                {Object.entries(groupedBugs).map(([groupName, groupBugs]) => {
+                  // Filter group bugs based on global filter
+                  const visibleGroupBugs = groupBugs.filter(b => filteredBugs.some(fb => fb._id === b._id || fb.id === b.id));
 
-                    {!collapsedGroups[groupName] && groupBugs.map((bug, index) => (
+                  if (visibleGroupBugs.length === 0) return null;
+
+                  return (
+                    <React.Fragment key={`group-${groupName}`}>
                       <TableRow
-                        key={bug.id || index}
                         sx={{
-                          '&:hover': { bgcolor: '#f6f7fb' },
-                          borderLeft: `4px solid ${GROUP_COLORS[groupName]}`,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: '#f0f0f0' }
                         }}
-                        onClick={() => handleEditBug(bug)}
+                        onClick={() => toggleGroup(groupName)}
                       >
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                          <TextField
-                            variant="standard"
-                            defaultValue={bug.bug}
-                            onClick={(e) => e.stopPropagation()}
-                            onBlur={(e) => handleUpdateBug(bug._id || bug.id, { bug: e.target.value })}
-                            sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
-                            fullWidth
-                            disabled={!canEdit}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                        <TableCell colSpan={8} sx={{ py: 1, borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
-                              {bug.reporter?.name?.[0] || 'U'}
-                            </Avatar>
-                            <Typography sx={{ fontSize: '13px' }}>{bug.reporter?.name || 'Unknown'}</Typography>
+                            {collapsedGroups[groupName] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                            <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#323338' }}>
+                              {groupName}
+                            </Typography>
+                            <Typography sx={{ fontSize: '12px', color: '#676879', ml: 1 }}>
+                              {visibleGroupBugs.length}
+                            </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                          <Typography sx={{ fontSize: '13px', color: '#676879' }}>
-                            {bug.timeUntilResolution || (bug.dueDate ? new Date(bug.dueDate).toLocaleDateString() : '-')}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                          <Chip
-                            label={bug.status}
-                            size="small"
-                            sx={{
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              height: '24px'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                          <Chip
-                            label={bug.priority}
-                            size="small"
-                            sx={{
-                              bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#c4c4c4',
-                              color: PRIORITY_COLORS[bug.priority]?.text || '#ffffff',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              height: '24px'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
-                          <Typography sx={{ fontSize: '13px' }}>
-                            {bug.connectedTasks?.length || 0} tasks
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120, display: 'block' }} title={bug.bugId}>
-                            {bug.bugId}
-                          </Typography>
-                        </TableCell>
                       </TableRow>
-                    ))}
 
-                    {!collapsedGroups[groupName] && canEdit && (
-                      <TableRow sx={{ bgcolor: '#fafbfc', borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
-                        <TableCell colSpan={8}>
-                          <Button
-                            startIcon={<Plus size={14} />}
-                            sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
-                            onClick={() => setIsCreatorOpen(true)}
-                          >
-                            Add bug
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                ))}
+                      {!collapsedGroups[groupName] && visibleGroupBugs.map((bug, index) => (
+                        <TableRow
+                          key={bug.id || index}
+                          sx={{
+                            '&:hover': { bgcolor: '#f6f7fb' },
+                            borderLeft: `4px solid ${GROUP_COLORS[groupName]}`,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleEditBug(bug)}
+                        >
+                          <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}></TableCell>
+                          {visibleColumns.bug && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <TextField
+                                variant="standard"
+                                defaultValue={bug.bug}
+                                onClick={(e) => e.stopPropagation()}
+                                onBlur={(e) => handleUpdateBug(bug._id || bug.id, { bug: e.target.value })}
+                                sx={{ '& .MuiInput-root': { fontSize: '14px' } }}
+                                fullWidth
+                                disabled={!canEdit}
+                              />
+                            </TableCell>
+                          )}
+                          {visibleColumns.reporter && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                                  {bug.reporter?.name?.[0] || 'U'}
+                                </Avatar>
+                                <Typography sx={{ fontSize: '13px' }}>{bug.reporter?.name || 'Unknown'}</Typography>
+                              </Box>
+                            </TableCell>
+                          )}
+                          {visibleColumns.assignee && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {bug.assignee?.name ? (
+                                  <>
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main' }}>
+                                      {bug.assignee.name[0]}
+                                    </Avatar>
+                                    <Typography sx={{ fontSize: '13px' }}>{bug.assignee.name}</Typography>
+                                  </>
+                                ) : (
+                                  <Typography sx={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>Unassigned</Typography>
+                                )}
+                              </Box>
+                            </TableCell>
+                          )}
+                          {visibleColumns.timeUntilResolution && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <Typography sx={{ fontSize: '13px', color: '#676879' }}>
+                                {bug.timeUntilResolution || (bug.dueDate ? new Date(bug.dueDate).toLocaleDateString() : '-')}
+                              </Typography>
+                            </TableCell>
+                          )}
+                          {visibleColumns.status && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <Chip
+                                label={bug.status}
+                                size="small"
+                                sx={{
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  height: '24px'
+                                }}
+                              />
+                            </TableCell>
+                          )}
+                          {visibleColumns.priority && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <Chip
+                                label={bug.priority}
+                                size="small"
+                                sx={{
+                                  bgcolor: PRIORITY_COLORS[bug.priority]?.bg || '#c4c4c4',
+                                  color: PRIORITY_COLORS[bug.priority]?.text || '#ffffff',
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  height: '24px'
+                                }}
+                              />
+                            </TableCell>
+                          )}
+                          {visibleColumns.connectedTasks && (
+                            <TableCell sx={{ borderRight: '1px solid #e6e9ef' }}>
+                              <Typography sx={{ fontSize: '13px' }}>
+                                {bug.connectedTasks?.length || 0} tasks
+                              </Typography>
+                            </TableCell>
+                          )}
+                          {visibleColumns.bugId && (
+                            <TableCell>
+                              <Typography sx={{ fontSize: '13px', fontFamily: 'monospace', color: '#676879', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120, display: 'block' }} title={bug.bugId}>
+                                {bug.bugId}
+                              </Typography>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+
+                      {!collapsedGroups[groupName] && canEdit && (
+                        <TableRow sx={{ bgcolor: '#fafbfc', borderLeft: `4px solid ${GROUP_COLORS[groupName]}` }}>
+                          <TableCell colSpan={Object.values(visibleColumns).filter(Boolean).length + 1}>
+                            <Button
+                              startIcon={<Plus size={14} />}
+                              sx={{ textTransform: 'none', fontSize: '13px', color: '#676879' }}
+                              onClick={() => setIsCreatorOpen(true)}
+                            >
+                              Add bug
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -699,11 +748,22 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
 
       <ViewToolbar
         onSearch={(query) => setSearchQuery(query)}
-        onFilter={() => { }}
+        onFilter={(e) => setFilterAnchorEl(e.currentTarget)}
         onCreate={() => {
           setEditingBug(null);
           setIsCreatorOpen(true);
         }}
+        extraActions={
+          <Button
+            startIcon={<Layout size={16} />}
+            variant="outlined"
+            size="small"
+            onClick={(e) => setColumnMenuAnchorEl(e.currentTarget)}
+            sx={{ ml: 1 }}
+          >
+            Columns
+          </Button>
+        }
         createButtonLabel="New bug"
         createButtonColor="#e2445c"
         hideCreate={!canEdit}
@@ -714,7 +774,116 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
         onClose={handleCloseCreator}
         onSubmit={handleCreateOrUpdateBug}
         initialData={editingBug}
+        members={workspace?.teamMembers || []}
       />
+
+      {/* Filter Popover */}
+      <Popover
+        open={Boolean(filterAnchorEl)}
+        anchorEl={filterAnchorEl}
+        onClose={() => setFilterAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, minWidth: 250 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Filter Bugs</Typography>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Status</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' statuses'}
+                displayEmpty
+              >
+                {['Awaiting Review', 'Pending Review', 'Ready for Dev', 'Fixed', 'Done'].map((status) => (
+                  <MenuItem key={status} value={status}>
+                    <Checkbox checked={filterStatus.indexOf(status) > -1} size="small" />
+                    <ListItemText primary={status} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Priority</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterPriority}
+                onChange={(e) => setFilterPriority(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' priorities'}
+                displayEmpty
+              >
+                {['Critical', 'High', 'Medium', 'Low'].map((p) => (
+                  <MenuItem key={p} value={p}>
+                    <Checkbox checked={filterPriority.indexOf(p) > -1} size="small" />
+                    <ListItemText primary={p} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary">Assignee</Typography>
+            <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+              <Select
+                multiple
+                value={filterAssignee}
+                onChange={(e) => setFilterAssignee(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(selected) => selected.length + ' members'}
+                displayEmpty
+              >
+                {workspace?.teamMembers?.map((m) => (
+                  <MenuItem key={m.id} value={m.id}>
+                    <Checkbox checked={filterAssignee.indexOf(m.id) > -1} size="small" />
+                    <ListItemText primary={m.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Button
+            fullWidth
+            size="small"
+            onClick={() => {
+              setFilterStatus([]);
+              setFilterPriority([]);
+              setFilterAssignee([]);
+            }}
+          >
+            Clear Filters
+          </Button>
+        </Box>
+      </Popover>
+
+      {/* Column Visibility Popover */}
+      <Popover
+        open={Boolean(columnMenuAnchorEl)}
+        anchorEl={columnMenuAnchorEl}
+        onClose={() => setColumnMenuAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, minWidth: 200 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Columns</Typography>
+          <List dense>
+            {Object.keys(visibleColumns).map((col) => (
+              <ListItem key={col} dense>
+                <ListItemText primary={col.charAt(0).toUpperCase() + col.slice(1).replace(/([A-Z])/g, ' $1')} />
+                <Switch
+                  edge="end"
+                  checked={visibleColumns[col as keyof typeof visibleColumns]}
+                  onChange={() => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col as keyof typeof visibleColumns] }))}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Popover>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {renderContent()}

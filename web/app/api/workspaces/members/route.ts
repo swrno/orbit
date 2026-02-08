@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
         const updatedWorkspace = await Workspace.findOneAndUpdate(
             { id: workspaceId },
-            { 
+            {
                 $push: { members: newMember },
                 $addToSet: { teamMembers: { id: userId, name, email, avatar, role } } // Backward compatibility
             },
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
                         name,
                         email,
                         avatar,
-                        teamRole: role === 'OWNER' ? 'LEADER' : role === 'EDITOR' ? 'MEMBER' : 'VIEWER'
+                        teamRole: role === 'OWNER' ? 'LEADER' : role === 'EDITOR' ? 'EDITOR' : 'VIEWER'
                     });
                 }
             }
@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest) {
         // Update member role
         const updatedWorkspace = await Workspace.findOneAndUpdate(
             { id: workspaceId, "members.id": userId },
-            { 
+            {
                 $set: { "members.$.role": role }
             },
             { new: true }
@@ -289,8 +289,8 @@ export async function DELETE(request: NextRequest) {
         // Remove member
         const updatedWorkspace = await Workspace.findOneAndUpdate(
             { id: workspaceId },
-            { 
-                $pull: { 
+            {
+                $pull: {
                     members: { id: userId },
                     teamMembers: { id: userId } // Backward compatibility
                 }

@@ -180,11 +180,11 @@ export default function Sidebar({ className }: { className?: string }) {
     const handleCreateTeam = async () => {
         if (newTeamName.trim() && workspaceId) {
             await addTeam(
-                workspaceId, 
-                newTeamName.trim(), 
-                undefined, 
-                user?.uid, 
-                user?.email || undefined, 
+                workspaceId,
+                newTeamName.trim(),
+                undefined,
+                user?.uid,
+                user?.email || undefined,
                 user?.displayName || undefined
             );
             setNewTeamName('');
@@ -265,6 +265,8 @@ export default function Sidebar({ className }: { className?: string }) {
         const targetWorkspace = workspaces.find(w => w.id === newWorkspaceId);
         if (targetWorkspace && targetWorkspace.teams.length > 0 && targetWorkspace.teams[0].pages.length > 0) {
             router.push(`/${newWorkspaceId}/${targetWorkspace.teams[0].pages[0].id}`);
+        } else {
+            router.push(`/${newWorkspaceId}`);
         }
     };
 
@@ -279,6 +281,8 @@ export default function Sidebar({ className }: { className?: string }) {
                 const newWorkspace = workspaces.find(w => w.id === newId);
                 if (newWorkspace && newWorkspace.teams.length > 0 && newWorkspace.teams[0].pages.length > 0) {
                     router.push(`/${newId}/${newWorkspace.teams[0].pages[0].id}`);
+                } else {
+                    router.push(`/${newId}`);
                 }
             }, 100);
         }
