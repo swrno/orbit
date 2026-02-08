@@ -34,11 +34,22 @@ export const getFetchDataTool = (context: ToolContext): TamboTool => {
         }
       }
 
+      // Infer teamId if not provided but activePageId is available
+      if (!teamId && context.activePageId && workspaces && workspaces.length > 0) {
+        const currentWorkspace = workspaces.find(w => w.id === workspaceId);
+        if (currentWorkspace) {
+             const activeTeam = currentWorkspace.teams?.find(t => 
+                 t.pages?.some(p => p.id === context.activePageId)
+             );
+             if (activeTeam) {
+                 teamId = activeTeam.id;
+             }
+        }
+      }
+
       let url = `/api/${resource}?workspaceId=${workspaceId}`;
       
       if (teamId) url += `&teamId=${teamId}`;
-      // Try to find teamId if not provided but implied? 
-      // For now, trust the agent to pass it or rely on API defaulting (which might return all)
       
       if (pageId) url += `&pageId=${pageId}`;
 

@@ -6,3 +6,4 @@ export { default as CreateTaskForm } from './CreateTaskForm';
 export { default as CreateEpicForm } from './CreateEpicForm';
 export { default as CreateSprintForm } from './CreateSprintForm';
 export { default as CreateRetroForm } from './CreateRetroForm';
+export { default as AssignBugForm } from './AssignBugForm';

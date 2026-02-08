@@ -63,7 +63,7 @@ export default function WorkspaceLayout({
         <div className="flex flex-1 overflow-hidden">
           <Shell>
             <Sidebar />
-            <main className="flex-1 relative z-10 flex flex-col h-full overflow-hidden bg-background">
+            <main className="flex-1 relative z-10 flex flex-col h-full overflow-hidden bg-background pb-20">
               {children}
             </main>
             <MessageThreadCollapsible className="z-50" />

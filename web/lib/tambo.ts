@@ -23,6 +23,7 @@ import {
   CreateEpicForm,
   CreateSprintForm,
   CreateRetroForm,
+  AssignBugForm,
 } from "../components/tambo/addedComponents";
 
 // Tool Imports
@@ -67,6 +68,18 @@ export const components: TamboComponent[] = [
       group: z.string().optional().describe("Pre-selected group (Incoming Bugs, Development Work, Resolved)"),
       teamId: z.string().optional().describe("The ID of the team this bug belongs to"),
       pageId: z.string().optional().describe("The ID of the page this bug belongs to"),
+      workspaceId: z.string().optional().describe("The workspace ID"),
+    }),
+  },
+  // Assign Bug Form - renders a form to assign a bug
+  {
+    name: "AssignBugForm",
+    description: "Use this component IMMEDIATELY when the user wants to assign a bug or issue. Do NOT ask for details in chat. Render this form to let the user select the bug and assignee.",
+    component: AssignBugForm,
+    propsSchema: z.object({
+      bugId: z.string().optional().describe("Pre-selected bug ID"),
+      assigneeId: z.string().optional().describe("Pre-selected assignee user ID"),
+      teamId: z.string().optional().describe("The ID of the team"),
       workspaceId: z.string().optional().describe("The workspace ID"),
     }),
   },
