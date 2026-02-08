@@ -24,11 +24,11 @@ import {
   ToolcallInfo as ToolcallInfoBase,
   type ToolcallInfoRootProps as ToolcallInfoBaseRootProps,
 } from "@/components/tambo/base/toolcall-info";
-import { getSafeContent } from "../../lib/thread-hooks";
+import { getSafeContent } from "@/lib/thread-hooks";
 import {
   createMarkdownComponents,
   markdownComponents,
-} from "./markdown-components";
+} from "@/components/tambo/inbuilt/markdown-components";
 
 /**
  * CSS variants for the message container

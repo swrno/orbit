@@ -9,8 +9,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { TamboProvider } from "@tambo-ai/react";
 import { components, createTools } from "@/lib/tambo";
-import { MessageThreadCollapsible } from "@/components/tambo/message-thread-collapsible";
-import { useMcpServers } from "@/components/tambo/mcp-config-modal";
+import { MessageThreadCollapsible } from "@/components/tambo/inbuilt/message-thread-collapsible";
+import { useMcpServers } from "@/components/tambo/inbuilt/mcp-config-modal";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function WorkspaceLayout({

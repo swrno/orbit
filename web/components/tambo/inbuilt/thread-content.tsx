@@ -8,7 +8,7 @@ import {
   ReasoningInfo,
   ToolcallInfo,
   type messageVariants,
-} from "@/components/tambo/message";
+} from "@/components/tambo/inbuilt/message";
 import { cn } from "@/lib/utils";
 import { type TamboThreadMessage, useTambo } from "@tambo-ai/react";
 import { type VariantProps } from "class-variance-authority";

@@ -39,12 +39,24 @@ export const getNavigateToViewTool = (context: ToolContext): TamboTool => {
       if (workspaces) {
         const ws = workspaces.find(w => w.id === workspaceId);
         if (ws) {
-          for (const team of ws.teams) {
-            const page = team.pages.find(p => p.title.toLowerCase() === normalizedView.toLowerCase());
-            if (page) {
-              router.push(`/${workspaceId}/${page.id}`);
-              return `Navigating to ${page.title}.`;
+          const findPageRecursive = (teams: any[]): any => {
+            for (const team of teams) {
+              if (team.pages) {
+                const page = team.pages.find((p: any) => p.title.toLowerCase() === normalizedView.toLowerCase());
+                if (page) return page;
+              }
+              if (team.teams && team.teams.length > 0) {
+                const found = findPageRecursive(team.teams);
+                if (found) return found;
+              }
             }
+            return null;
+          };
+
+          const page = findPageRecursive(ws.teams || []);
+          if (page) {
+            router.push(`/${workspaceId}/${page.id}`);
+            return `Navigating to ${page.title}.`;
           }
         }
       }

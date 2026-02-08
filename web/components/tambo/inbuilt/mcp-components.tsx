@@ -3,7 +3,7 @@
 import {
   Tooltip,
   TooltipProvider,
-} from "@/components/tambo/message-suggestions";
+} from "@/components/tambo/inbuilt/message-suggestions";
 import { cn } from "@/lib/utils";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {

@@ -1,15 +1,15 @@
 "use client";
 
-import { ElicitationUI } from "@/components/tambo/elicitation-ui";
+import { ElicitationUI } from "@/components/tambo/inbuilt/elicitation-ui";
 import {
   McpPromptButton,
   McpResourceButton,
-} from "@/components/tambo/mcp-components";
-import { McpConfigModal } from "./mcp-config-modal";
+} from "@/components/tambo/inbuilt/mcp-components";
+import { McpConfigModal } from "@/components/tambo/inbuilt/mcp-config-modal";
 import {
   Tooltip,
   TooltipProvider,
-} from "@/components/tambo/message-suggestions";
+} from "@/components/tambo/inbuilt/message-suggestions";
 import { cn } from "@/lib/utils";
 import {
   useIsTamboTokenUpdating,
