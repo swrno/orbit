@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Box, CircularProgress } from '@mui/material';
 import { useAppStore } from '@/lib/store';
 
-const publicRoutes = ['/login', '/signup'];
+const publicRoutes = ['/', '/login', '/signup'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
