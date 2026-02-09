@@ -14,6 +14,7 @@ import {
     MoreVertical, Target, CheckCircle2, Clock
 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 const ROLE_COLORS = {
     'Admin': '#8b5cf6',
@@ -108,22 +109,23 @@ export default function TeamPage() {
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#fafafa' }}>
 
-            <Box sx={{ flex: 1, overflow: 'auto', p: 4 }}>
+            <Box sx={{ flex: 1, overflow: 'auto', p: 0 }}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Users size={28} />
-                        <Typography variant="h4" fontWeight={700}>Team</Typography>
-                        <Chip label={`${workspace.teamMembers?.length || 0} members`} size="small" />
+                <PageHeader
+                    workspaceName={workspace?.name || 'Workspace'}
+                    pageName="Team"
+                />
+                
+                <Box sx={{ p: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Plus size={18} />}
+                            onClick={() => setDialogOpen(true)}
+                        >
+                            Add Member
+                        </Button>
                     </Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<Plus size={18} />}
-                        onClick={() => setDialogOpen(true)}
-                    >
-                        Add Member
-                    </Button>
-                </Box>
 
                 {/* Team Stats Summary */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 4 }}>
@@ -343,5 +345,6 @@ export default function TeamPage() {
                 </DialogActions>
             </Dialog>
         </Box>
+    </Box>
     );
 }

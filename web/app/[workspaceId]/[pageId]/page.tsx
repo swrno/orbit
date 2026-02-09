@@ -33,6 +33,7 @@ export default function GenericPage() {
   // Find the page within the workspace teams
   let currentPage: Page | null = null;
   let currentTeamId: string | null = null;
+  let currentTeamName: string | null = null;
 
   if (workspace && workspace.teams) {
     for (const team of workspace.teams) {
@@ -40,6 +41,7 @@ export default function GenericPage() {
       if (page) {
         currentPage = page;
         currentTeamId = team.id;
+        currentTeamName = team.title;
         break;
       }
     }
@@ -120,6 +122,7 @@ export default function GenericPage() {
       <PageHeader
         workspaceName={workspace?.name || 'Workspace'}
         pageName={currentPage.title}
+        teamName={currentTeamName || undefined}
       />
 
       {/* View Tabs - show for specialized pages too, but not for documents or team-access */}

@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 import ThemeRegistry from "@/components/layout/ThemeRegistry";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -17,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background text-foreground">
+      <body className={`${inter.variable} font-sans bg-background text-foreground`}>
         <ThemeRegistry>
           <AuthProvider>
             <AuthGuard>

@@ -17,11 +17,13 @@ import React from "react";
 
 interface PageHeaderProps {
   workspaceName: string;
+  teamName?: string;
   pageName: string;
 }
 
 export function PageHeader({ 
   workspaceName, 
+  teamName,
   pageName, 
 }: PageHeaderProps) {
   return (
@@ -39,7 +41,7 @@ export function PageHeader({
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
           <Typography sx={{ fontSize: '12px', color: '#676879' }}>
-            {workspaceName} / {pageName}
+            {workspaceName} {teamName ? `/ ${teamName}` : ''} / {pageName}
           </Typography>
         </Box>
         
