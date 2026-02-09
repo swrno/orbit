@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { UserMenu } from '@/components/auth/UserMenu';
 import Link from 'next/link';
+import { Zap } from 'lucide-react';
 
 export function Navbar() {
   const { user } = useAuth();
@@ -19,16 +20,17 @@ export function Navbar() {
       }}
     >
       <Toolbar sx={{ minHeight: '56px !important', px: 3 }}>
-        {/* Logo and Brand */}
-        <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Zap size={24} color="#2563eb" fill="#2563eb" />
             <Typography
               variant="h6"
               sx={{
-                fontWeight: 700,
-                fontSize: '20px',
-                color: '#323338',
-                letterSpacing: '-0.5px'
+                fontWeight: 800,
+                fontSize: '1.1rem',
+                color: '#0f172a',
+                letterSpacing: '-0.03em',
+                fontFamily: 'var(--font-plus-jakarta)'
               }}
             >
               Orbit AI Workspace

@@ -1,10 +1,10 @@
 "use client";
 
-import { Box, Button, Typography, Container, Stack } from "@mui/material";
+import { Box, Button, Typography, Container, Stack, IconButton, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { alpha } from "@mui/material/styles";
 import {
-  Zap
+  Zap, Twitter, Github, Shield
 } from "lucide-react";
 import Link from "next/link";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
@@ -14,11 +14,13 @@ import { useRef } from "react";
 const MotionBox = motion(Box);
 const MotionTypography = motion(Typography);
 
-const FullWidthFeatureSection = ({ 
-  title, 
-  description, 
-  productImage, 
-  componentImage, 
+import DocumentationSection from "@/components/landing/DocumentationSection";
+
+const FullWidthFeatureSection = ({
+  title,
+  description,
+  productImage,
+  componentImage,
   elements,
   buttons,
   reverse = false
@@ -35,12 +37,12 @@ const FullWidthFeatureSection = ({
     <Box sx={{ py: 15, position: 'relative' }}>
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 8 }}>
-          <Typography 
-            variant="h3" 
-            fontWeight={900} 
-            sx={{ 
-              fontFamily: 'var(--font-outfit)', 
-              mb: 3, 
+          <Typography
+            variant="h3"
+            fontWeight={900}
+            sx={{
+              fontFamily: 'var(--font-plus-jakarta)',
+              mb: 3,
               color: "#0f172a",
               fontSize: { xs: '2.5rem', md: '3.5rem' },
               letterSpacing: '-0.02em'
@@ -48,12 +50,12 @@ const FullWidthFeatureSection = ({
           >
             {title}
           </Typography>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              color: '#64748b', 
-              maxWidth: 800, 
-              mx: 'auto', 
+          <Typography
+            variant="h6"
+            sx={{
+              color: '#64748b',
+              maxWidth: 800,
+              mx: 'auto',
               lineHeight: 1.6,
               fontWeight: 500
             }}
@@ -62,10 +64,10 @@ const FullWidthFeatureSection = ({
           </Typography>
         </Box>
 
-        <Box sx={{ 
-          position: 'relative', 
-          width: '100%', 
-          borderRadius: '48px', 
+        <Box sx={{
+          position: 'relative',
+          width: '100%',
+          borderRadius: '48px',
           overflow: 'visible',
           bgcolor: '#f8fafc',
           border: '1px solid rgba(226, 232, 240, 0.8)',
@@ -83,10 +85,10 @@ const FullWidthFeatureSection = ({
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            sx={{ 
-              width: '95%', 
-              borderRadius: '24px', 
-              overflow: 'hidden', 
+            sx={{
+              width: '95%',
+              borderRadius: '24px',
+              overflow: 'hidden',
               boxShadow: '0 30px 60px rgba(0,0,0,0.12)',
               border: '1px solid rgba(255,255,255,0.5)',
               transformStyle: 'preserve-3d',
@@ -103,14 +105,14 @@ const FullWidthFeatureSection = ({
             transition={{ duration: 1.2, delay: 0.2 }}
             animate={{ y: [0, -15, 0] }}
             whileHover={{ scale: 1.05, zIndex: 30, transition: { duration: 0.3 } }}
-            sx={{ 
-              position: 'absolute', 
-              top: '10%', 
+            sx={{
+              position: 'absolute',
+              top: '10%',
               [reverse ? 'left' : 'right']: '-12%',
-              zIndex: 20, 
-              width: { xs: '50%', md: '28%' }, 
-              borderRadius: '20px', 
-              overflow: 'hidden', 
+              zIndex: 20,
+              width: { xs: '50%', md: '28%' },
+              borderRadius: '20px',
+              overflow: 'hidden',
               boxShadow: '0 40px 80px rgba(0,0,0,0.15)',
               border: '1px solid rgba(255,255,255,0.9)',
               bgcolor: 'white'
@@ -125,19 +127,19 @@ const FullWidthFeatureSection = ({
               key={idx}
               initial={{ opacity: 0, scale: 0.5 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              animate={{ 
+              animate={{
                 y: [0, idx % 2 === 0 ? -30 : 30, 0],
                 rotate: [0, idx % 2 === 0 ? 15 : -15, 0],
                 rotateY: [0, 20, 0]
               }}
-              transition={{ 
+              transition={{
                 opacity: { duration: 0.8, delay: 0.4 + (idx * 0.1) },
                 scale: { duration: 0.8, delay: 0.4 + (idx * 0.1) },
                 default: { duration: 6 + idx, repeat: Infinity, ease: "easeInOut" }
               }}
-              sx={{ 
-                position: 'absolute', 
-                zIndex: 25, 
+              sx={{
+                position: 'absolute',
+                zIndex: 25,
                 width: { xs: 120, md: idx === 1 ? 240 : 180 },
                 top: idx === 0 ? '-10%' : idx === 1 ? '60%' : '80%',
                 [idx % 2 === 0 ? 'left' : 'right']: idx === 0 ? '5%' : idx === 1 ? '-5%' : '15%',
@@ -155,8 +157,8 @@ const FullWidthFeatureSection = ({
               whileHover={{ scale: 1.1, y: -5 }}
               animate={{ y: [0, idx % 2 === 0 ? 12 : -12, 0] }}
               transition={{ duration: 3 + idx, repeat: Infinity, ease: "easeInOut" }}
-              sx={{ 
-                position: 'absolute', 
+              sx={{
+                position: 'absolute',
                 zIndex: 40,
                 width: { xs: 120, md: 160 },
                 bottom: idx === 0 ? '5%' : idx === 1 ? '18%' : '30%',
@@ -170,12 +172,12 @@ const FullWidthFeatureSection = ({
                 justifyContent: 'center'
               }}
             >
-              <Image 
-                src={btn} 
-                alt="Button" 
-                width={160} 
-                height={45} 
-                style={{ borderRadius: '12px' }} 
+              <Image
+                src={btn}
+                alt="Button"
+                width={160}
+                height={45}
+                style={{ borderRadius: '12px' }}
               />
             </MotionBox>
           ))}
@@ -210,48 +212,48 @@ export default function HomePage() {
   return (
     <Box ref={containerRef} sx={{ bgcolor: 'white', minHeight: '100vh', overflow: 'hidden', color: slate900 }}>
       {/* Navigation */}
-      <Box sx={{ 
-        position: 'sticky', 
-        top: 0, 
-        zIndex: 1000, 
-        bgcolor: 'rgba(255, 255, 255, 0.8)', 
+      <Box sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        bgcolor: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid',
         borderColor: 'rgba(226, 232, 240, 0.8)'
       }}>
         <Container maxWidth="lg">
           <Stack direction="row" justifyContent="space-between" alignItems="center" py={2}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Zap size={28} color={primaryMain} fill={primaryMain} />
-              <Typography variant="h6" fontWeight={800} sx={{ 
-                color: slate900, 
-                fontFamily: 'var(--font-outfit)',
+              <Typography variant="h6" fontWeight={800} sx={{
+                color: slate900,
+                fontFamily: 'var(--font-plus-jakarta)',
                 letterSpacing: '-0.03em',
                 fontSize: '1.4rem'
               }}>
                 Orbit AI Workspace
               </Typography>
-            </Box>
+            </Link>
 
-              <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="contained"
-                  sx={{
-                    bgcolor: primaryMain,
-                    color: 'white',
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    px: 3,
-                    borderRadius: '10px',
-                    boxShadow: `0 10px 20px ${alpha(primaryMain, 0.2)}`,
-                    '&:hover': { bgcolor: '#1d4ed8', boxShadow: `0 15px 30px ${alpha(primaryMain, 0.3)}` },
-                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                  }}
-                >
-                  Launch Workspace
-                </Button>
-              </Link>
-            </Stack>
+            <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: primaryMain,
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  px: 3,
+                  borderRadius: '10px',
+                  boxShadow: `0 10px 20px ${alpha(primaryMain, 0.2)}`,
+                  '&:hover': { bgcolor: '#1d4ed8', boxShadow: `0 15px 30px ${alpha(primaryMain, 0.3)}` },
+                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}
+              >
+                Launch Workspace
+              </Button>
+            </Link>
+          </Stack>
         </Container>
       </Box>
 
@@ -287,83 +289,115 @@ export default function HomePage() {
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ textAlign: 'center', mb: 10 }}>
 
-                <Typography
-                  variant="h1"
+            <Typography
+              variant="h1"
+              sx={{
+                fontSize: { xs: '3.5rem', md: '5.5rem' },
+                fontWeight: 900,
+                color: slate900,
+                lineHeight: 1.1,
+                mb: 3,
+                fontFamily: 'var(--font-plus-jakarta)',
+                letterSpacing: '-0.03em'
+              }}
+            >
+              Agile Project Management <br />
+              <Box component="span" sx={{ color: primaryMain }}>
+                Built for Modern Teams
+              </Box>
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                color: slate600,
+                fontWeight: 500,
+                lineHeight: 1.6,
+                mb: 6,
+                maxWidth: 800,
+                mx: 'auto',
+                fontFamily: 'var(--font-plus-jakarta)',
+                fontSize: { xs: '1.2rem', md: '1.35rem' }
+              }}
+            >
+              Complete agile workflow from backlog to delivery. Plan sprints, track progress,
+              manage bugs, and generate insights with enterprise-grade project management.
+            </Typography>
+            <Stack direction="row" spacing={3} justifyContent="center" sx={{ mb: 10 }}>
+              <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+                <Button
+                  variant="contained"
+                  size="large"
                   sx={{
-                    fontSize: { xs: '3.5rem', md: '5.5rem' },
-                    fontWeight: 900,
+                    bgcolor: primaryMain,
+                    px: 5,
+                    py: 2,
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '1.1rem',
+                    textTransform: 'none',
+                    boxShadow: `0 20px 40px ${alpha(primaryMain, 0.2)}`,
+                    '&:hover': { bgcolor: '#1d4ed8', transform: 'translateY(-2px)' },
+                    transition: 'all 0.3s ease',
+                    fontFamily: 'var(--font-plus-jakarta)',
+                  }}
+                >
+                  Get Started for Free
+                </Button>
+              </Link>
+              <Link href="/guide" style={{ textDecoration: 'none' }}>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  sx={{
+                    borderColor: '#e2e8f0',
                     color: slate900,
-                    lineHeight: 1,
-                    mb: 4,
-                    fontFamily: 'var(--font-outfit)',
-                    letterSpacing: '-0.05em'
+                    px: 5,
+                    py: 2,
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    textTransform: 'none',
+                    bgcolor: 'white',
+                    fontFamily: 'var(--font-plus-jakarta)',
+                    '&:hover': { bgcolor: bgSlate, borderColor: '#cbd5e1' }
                   }}
                 >
-                  Build software <br /> with <Box component="span" sx={{ color: primaryMain, position: 'relative' }}>
-                    Intelligence.
-                    <Box sx={{ 
-                      position: 'absolute', 
-                      bottom: 12, left: 0, right: 0, 
-                      height: '15%', 
-                      bgcolor: alpha(primaryMain, 0.1), 
-                      zIndex: -1 
-                    }} />
+                  User Guide
+                </Button>
+              </Link>
+            </Stack>
+
+            {/* Hero Stats */}
+            <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+              <Grid container spacing={4} justifyContent="center">
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography variant="h3" fontWeight={800} sx={{ color: primaryMain, mb: 1, fontFamily: 'var(--font-plus-jakarta)' }}>
+                    100%
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: slate600, fontWeight: 500 }}>
+                    Agile Methodology
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography variant="h3" fontWeight={800} sx={{ color: primaryMain, mb: 1, fontFamily: 'var(--font-plus-jakarta)' }}>
+                    Real-time
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: slate600, fontWeight: 500 }}>
+                    Collaboration
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                    <Typography variant="h3" fontWeight={800} sx={{ color: primaryMain, mb: 1, fontFamily: 'var(--font-plus-jakarta)' }}>
+                      ∞
+                    </Typography>
                   </Box>
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{
-                    color: slate600,
-                    fontWeight: 400,
-                    lineHeight: 1.6,
-                    mb: 6,
-                    maxWidth: 750,
-                    mx: 'auto',
-                    fontFamily: 'var(--font-inter)',
-                    fontSize: { xs: '1.2rem', md: '1.5rem' }
-                  }}
-                >
-                  Accelerate your delivery cycle with the world's first AI-integrated agile solution. 
-                  Ship faster, manage smarter, and stay in orbit.
-                </Typography>
-                <Stack direction="row" spacing={3} justifyContent="center">
-                   <Button
-                      variant="contained"
-                      size="large"
-                      sx={{
-                        bgcolor: primaryMain,
-                        px: 6,
-                        py: 2.5,
-                        borderRadius: '14px',
-                        fontWeight: 800,
-                        fontSize: '1.1rem',
-                        textTransform: 'none',
-                        boxShadow: `0 25px 50px ${alpha(primaryMain, 0.25)}`,
-                        '&:hover': { bgcolor: '#1d4ed8', transform: 'translateY(-4px)' },
-                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
-                    >
-                      Start Free Trial
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      sx={{
-                        borderColor: '#e2e8f0',
-                        color: slate900,
-                        px: 5,
-                        borderRadius: '14px',
-                        fontWeight: 700,
-                        fontSize: '1.1rem',
-                        textTransform: 'none',
-                        bgcolor: 'rgba(255,255,255,0.5)',
-                        backdropFilter: 'blur(4px)',
-                        '&:hover': { bgcolor: bgSlate, borderColor: '#cbd5e1' }
-                      }}
-                    >
-                      View Solutions
-                    </Button>
-                </Stack>
+                  <Typography variant="body1" sx={{ color: slate600, fontWeight: 500 }}>
+                    Scalability
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
           </Box>
 
           {/* Full-Width Feature Sections */}
@@ -416,43 +450,52 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* Stats Section */}
-      <Box sx={{ py: 15, bgcolor: '#0f172a', color: 'white' }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={8} justifyContent="center">
-            {[
-              { label: 'Faster Cycles', value: '50%', sub: 'Accelerated delivery' },
-              { label: 'Accuracy', value: '99.9%', sub: 'Predictive forecasting' },
-              { label: 'Cost Savings', value: '35%', sub: 'Resource optimization' },
-              { label: 'Engagement', value: '4x', sub: 'Team productivity' },
-            ].map((stat, idx) => (
-              <Grid size={{ xs: 6, md: 3 }} key={idx} sx={{ textAlign: 'center' }}>
-                <Typography variant="h2" fontWeight={900} sx={{ color: primaryMain, mb: 1, fontFamily: 'var(--font-outfit)' }}>
-                  {stat.value}
-                </Typography>
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>{stat.label}</Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>{stat.sub}</Typography>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
+
+
+
+
+      {/* Documentation Section */}
+      <DocumentationSection />
 
       {/* FAQ Section */}
-      <Box sx={{ py: 20 }}>
+      <Box sx={{ py: 20, bgcolor: '#ffffff' }}>
         <Container maxWidth="md">
-          <Typography variant="h3" fontWeight={900} textAlign="center" sx={{ fontFamily: 'var(--font-outfit)', mb: 10 }}>
+          <Typography variant="h3" fontWeight={900} textAlign="center" sx={{ fontFamily: 'var(--font-plus-jakarta)', mb: 10, letterSpacing: '-0.02em' }}>
             Frequently Asked <span style={{ color: primaryMain }}>Questions</span>
           </Typography>
-          <Stack spacing={4}>
+          <Stack spacing={3}>
             {[
-              { q: "How does Orbit AI integrate with our existing stack?", a: "Orbit connects natively with GitHub, GitLab, Jira, and Slack, orchestrating data across your entire ecosystem without changing your existing workflows." },
-              { q: "Is Orbit AI secure for enterprise use?", a: "Security is built-in. We offer SOC2 compliance, end-to-end encryption, and private VPC deployments for enterprise customers." },
-              { q: "Can we customize the AI's forecasting models?", a: "Yes. Orbit learns from your team's historical velocity and unique coding patterns to provide models tailored specifically to your organization." }
+              {
+                q: "What makes Tambo AI different from other assistants?",
+                a: "Tambo isn't just a chatbot; it's a deep workspace integration. It has full context of your teams, tasks, and sprints, allowing it to perform complex operations like 'Reassign all blocked bugs to the backend team' or 'Draft a retrospective for Sprint 4' instantly."
+              },
+              {
+                q: "Can I manage my entire Agile workflow through Tambo?",
+                a: "Yes. From creating epics and backlog items to starting sprints and moving Kanban cards, Tambo can handle the entire agile lifecycle. Just press ⌘K and tell Orbit what you need."
+              },
+              {
+                q: "How does Orbit ensure data security for my team?",
+                a: "Security is built into Orbit's core. We use enterprise-grade encryption, SOC2-compliant data handling, and isolated workspace environments. Your project intelligence is strictly private and accessible only by your authorized team members."
+              },
+              {
+                q: "Does Orbit support real-time collaboration?",
+                a: "Absolutely. Orbit features a live sync engine. When a task status changes, a comment is added, or Tambo executes a command, every team member sees the update in milliseconds without ever needing to refresh the page."
+              }
             ].map((faq, idx) => (
-              <Box key={idx} sx={{ p: 4, borderRadius: '24px', bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <Typography variant="h6" fontWeight={800} sx={{ mb: 2, color: '#0f172a' }}>{faq.q}</Typography>
-                <Typography variant="body1" sx={{ color: '#64748b', lineHeight: 1.6 }}>{faq.a}</Typography>
+              <Box key={idx} sx={{
+                p: 4,
+                borderRadius: '24px',
+                bgcolor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  borderColor: alpha(primaryMain, 0.3),
+                  bgcolor: '#ffffff',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.04)'
+                }
+              }}>
+                <Typography variant="h6" fontWeight={800} sx={{ mb: 1.5, color: '#0f172a', fontFamily: 'var(--font-plus-jakarta)' }}>{faq.q}</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', lineHeight: 1.7 }}>{faq.a}</Typography>
               </Box>
             ))}
           </Stack>
@@ -469,94 +512,151 @@ export default function HomePage() {
         </MotionBox>
 
         <Container maxWidth="md">
-           <AnimatePresence>
-             <MotionBox
-               initial={{ opacity: 0, scale: 0.9 }}
-               whileInView={{ opacity: 1, scale: 1 }}
-               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-             >
-                <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'var(--font-outfit)', mb: 4, letterSpacing: '-0.04em', color: slate900 }}>
-                  Ready to launch?
-                </Typography>
-                <Typography variant="h6" sx={{ color: slate600, mb: 8, maxWidth: 600, mx: 'auto', lineHeight: 1.6 }}>
-                  Join thousands of teams scaling their velocity with Orbit AI Workspace.
-                </Typography>
-                <Stack direction="row" spacing={3} justifyContent="center">
-                   <Button
-                      variant="contained"
-                      size="large"
-                      sx={{
-                        bgcolor: primaryMain,
-                        px: 8,
-                        py: 2.5,
-                        borderRadius: '16px',
-                        fontWeight: 900,
-                        fontSize: '1.25rem',
-                        textTransform: 'none',
-                        boxShadow: `0 25px 60px ${alpha(primaryMain, 0.3)}`,
-                        '&:hover': { bgcolor: '#1d4ed8', transform: 'scale(1.05)' }
-                      }}
-                    >
-                      Get Started for Free
-                    </Button>
-                </Stack>
-             </MotionBox>
-           </AnimatePresence>
+          <AnimatePresence>
+            <MotionBox
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'var(--font-plus-jakarta)', mb: 4, letterSpacing: '-0.04em', color: slate900 }}>
+                Ready to launch?
+              </Typography>
+              <Typography variant="h6" sx={{ color: slate600, mb: 8, maxWidth: 600, mx: 'auto', lineHeight: 1.6 }}>
+                Join thousands of teams scaling their velocity with Orbit AI Workspace.
+              </Typography>
+              <Stack direction="row" spacing={3} justifyContent="center">
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    bgcolor: primaryMain,
+                    px: 8,
+                    py: 2.5,
+                    borderRadius: '16px',
+                    fontWeight: 900,
+                    fontSize: '1.25rem',
+                    textTransform: 'none',
+                    boxShadow: `0 25px 60px ${alpha(primaryMain, 0.3)}`,
+                    '&:hover': { bgcolor: '#1d4ed8', transform: 'scale(1.05)' }
+                  }}
+                >
+                  Get Started for Free
+                </Button>
+              </Stack>
+            </MotionBox>
+          </AnimatePresence>
         </Container>
       </Box>
 
       {/* Footer */}
-      <Box sx={{ bgcolor: bgSlate, pt: 15, pb: 8, borderTop: '1px solid', borderColor: 'rgba(226, 232, 240, 0.5)' }}>
+      <Box component="footer" sx={{ bgcolor: '#0f172a', pt: 15, pb: 8, color: '#94a3b8' }}>
         <Container maxWidth="lg">
-           <Grid container spacing={10} sx={{ mb: 10 }}>
-              <Grid size={{ xs: 12, md: 4 }}>
-                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-                    <Zap size={32} color={primaryMain} fill={primaryMain} />
-                    <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'var(--font-outfit)', color: slate900 }}>Orbit</Typography>
-                 </Box>
-                 <Typography variant="body1" sx={{ color: slate500, lineHeight: 2, mb: 4 }}>
-                    The world's leading intelligence workspace for software delivery.
-                 </Typography>
-                 <Stack direction="row" spacing={3}>
-                    {['Twitter', 'LinkedIn', 'YouTube'].map(social => (
-                       <Typography key={social} variant="caption" sx={{ color: slate500, fontWeight: 700, cursor: 'pointer', '&:hover': { color: primaryMain } }}>{social}</Typography>
-                    ))}
-                 </Stack>
-              </Grid>
-              <Grid size={{ xs: 6, md: 2 }}>
-                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: slate900 }}>Organization</Typography>
-                 <Stack spacing={2}>
-                    {['About', 'Careers', 'Brand', 'Press'].map(item => (
-                       <Typography key={item} variant="body2" sx={{ color: slate500, '&:hover': { color: primaryMain }, cursor: 'pointer' }}>{item}</Typography>
-                    ))}
-                 </Stack>
-              </Grid>
-              <Grid size={{ xs: 6, md: 2 }}>
-                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: slate900 }}>Product</Typography>
-                 <Stack spacing={2}>
-                    {['Changelog', 'Pricing', 'Docs', 'API'].map(item => (
-                       <Typography key={item} variant="body2" sx={{ color: slate500, '&:hover': { color: primaryMain }, cursor: 'pointer' }}>{item}</Typography>
-                    ))}
-                 </Stack>
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: slate900 }}>Stay in touch</Typography>
-                 <Typography variant="body2" sx={{ color: slate500, mb: 4 }}>Subscribe to our monthly developer update.</Typography>
-                 <Stack direction="row" spacing={1}>
-                    <Box sx={{ flex: 1, height: 48, borderRadius: '12px', bgcolor: 'white', border: '1px solid #e2e8f0', px: 2, display: 'flex', alignItems: 'center' }}>
-                       <Typography variant="caption" sx={{ color: slate500 }}>Email address</Typography>
-                    </Box>
-                    <Button variant="contained" sx={{ bgcolor: primaryMain, borderRadius: '12px', boxShadow: 'none' }}>Join</Button>
-                 </Stack>
-              </Grid>
-           </Grid>
-           <Box sx={{ pt: 6, borderTop: '1px solid rgba(226, 232, 240, 0.5)', display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="caption" sx={{ color: slate500, fontWeight: 500 }}>© 2026 Orbit AI Workspace. All rights reserved.</Typography>
-              <Stack direction="row" spacing={4}>
-                 <Typography variant="caption" sx={{ color: slate500, fontWeight: 500 }}>Security</Typography>
-                 <Typography variant="caption" sx={{ color: slate500, fontWeight: 500 }}>Privacy</Typography>
+          <Grid container spacing={8} sx={{ mb: 12 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
+                <Zap size={28} color={primaryMain} fill={primaryMain} />
+                <Typography variant="h5" fontWeight={900} sx={{
+                  fontFamily: 'var(--font-plus-jakarta)',
+                  color: 'white',
+                  letterSpacing: '-0.03em'
+                }}>
+                  Orbit
+                </Typography>
+              </Box>
+              <Typography variant="body1" sx={{ mb: 5, lineHeight: 1.8, maxWidth: 320 }}>
+                The next generation of agile intelligence. Ship faster, smarter, and together with Tambo AI.
+              </Typography>
+              <Stack direction="row" spacing={2}>
+                {[Twitter, Github, Shield].map((Icon, i) => (
+                  <IconButton key={i} size="small" sx={{
+                    color: '#94a3b8',
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                    '&:hover': { bgcolor: primaryMain, color: 'white' }
+                  }}>
+                    <Icon size={18} />
+                  </IconButton>
+                ))}
               </Stack>
-           </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6, md: 2 }}>
+              <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: 'white' }}>Product</Typography>
+              <Stack spacing={2.5}>
+                {['Features', 'Tambo AI', 'Pricing', 'Guide', 'API Docs'].map(item => (
+                  <Typography key={item} variant="body2" sx={{
+                    cursor: 'pointer',
+                    transition: 'color 0.2s',
+                    '&:hover': { color: primaryMain }
+                  }}>{item}</Typography>
+                ))}
+              </Stack>
+            </Grid>
+
+            <Grid size={{ xs: 6, md: 2 }}>
+              <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: 'white' }}>Company</Typography>
+              <Stack spacing={2.5}>
+                {['About', 'Careers', 'Privacy', 'Terms', 'Security'].map(item => (
+                  <Typography key={item} variant="body2" sx={{
+                    cursor: 'pointer',
+                    transition: 'color 0.2s',
+                    '&:hover': { color: primaryMain }
+                  }}>{item}</Typography>
+                ))}
+              </Stack>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: 'white' }}>Join the orbit</Typography>
+              <Typography variant="body2" sx={{ mb: 4, lineHeight: 1.7 }}>
+                Get the latest updates on AI-powered management and product releases.
+              </Typography>
+              <Box sx={{
+                display: 'flex',
+                gap: 1.5,
+                p: 1,
+                bgcolor: 'rgba(255,255,255,0.03)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.08)'
+              }}>
+                <Box component="input" placeholder="Email address" sx={{
+                  flex: 1,
+                  bgcolor: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'white',
+                  px: 2,
+                  fontFamily: 'inherit'
+                }} />
+                <Button variant="contained" sx={{
+                  bgcolor: primaryMain,
+                  px: 3,
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  '&:hover': { bgcolor: '#1d4ed8' }
+                }}>
+                  Join
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 6 }} />
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center" spacing={3}>
+            <Typography variant="caption" sx={{ fontWeight: 500 }}>
+              © 2026 Orbit AI. Built with intelligence for elite engineering teams.
+            </Typography>
+            <Stack direction="row" spacing={4}>
+              {['Status', 'Privacy Policy', 'Cookie Settings'].map(item => (
+                <Typography key={item} variant="caption" sx={{
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  '&:hover': { color: 'white' }
+                }}>{item}</Typography>
+              ))}
+            </Stack>
+          </Stack>
         </Container>
       </Box>
     </Box>

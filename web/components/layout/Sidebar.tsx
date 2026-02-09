@@ -246,10 +246,10 @@ export default function Sidebar({ className }: { className?: string }) {
         reorderPage(workspaceId, teamId, source.index, destination.index);
     };
 
-    // Keyboard shortcut for search (Cmd+K or Ctrl+K)
+    // Keyboard shortcut for search (Cmd+/ or Ctrl+/)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+            if ((e.metaKey || e.ctrlKey) && e.key === "/") {
                 e.preventDefault();
                 setSearchOpen(true);
             }
@@ -310,23 +310,16 @@ export default function Sidebar({ className }: { className?: string }) {
                 <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     {/* Header */}
                     <Box sx={{ p: 2, borderBottom: '1px solid #DFE1E6' }}>
-                        <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+                        <Link href="/" style={{ textDecoration: 'none' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <Box
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: '6px',
-                                        bgcolor: '#0052CC',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <LayoutGrid size={18} color="white" />
-                                </Box>
-                                <Typography variant="h6" fontWeight={600} sx={{ color: '#172B4D' }}>
-                                    {workspace.name || workspace.title}
+                                <Zap size={24} color="#2563eb" fill="#2563eb" />
+                                <Typography variant="h6" fontWeight={800} sx={{
+                                    color: '#0f172a',
+                                    fontFamily: 'var(--font-plus-jakarta)',
+                                    letterSpacing: '-0.03em',
+                                    fontSize: '1.2rem'
+                                }}>
+                                    Orbit AI Workspace
                                 </Typography>
                             </Box>
                         </Link>
@@ -436,7 +429,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                     fontSize: '0.7rem'
                                 }}
                             >
-                                ⌘K
+                                ⌘/
                             </Typography>
                         </Box>
                     </Box>

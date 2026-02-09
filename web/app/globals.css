@@ -4,7 +4,7 @@
 
 @theme inline {
   --color-background: var(--background);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-plus-jakarta);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);

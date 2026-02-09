@@ -23,18 +23,18 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: 'var(--font-inter), sans-serif',
+    fontFamily: 'var(--font-plus-jakarta), sans-serif',
     h1: {
-      fontFamily: 'var(--font-inter), sans-serif',
+      fontFamily: 'var(--font-plus-jakarta), sans-serif',
     },
     h2: {
-      fontFamily: 'var(--font-inter), sans-serif',
+      fontFamily: 'var(--font-plus-jakarta), sans-serif',
     },
     h3: {
-      fontFamily: 'var(--font-inter), sans-serif',
+      fontFamily: 'var(--font-plus-jakarta), sans-serif',
     },
     h6: {
-      fontFamily: 'var(--font-inter), sans-serif',
+      fontFamily: 'var(--font-plus-jakarta), sans-serif',
       fontWeight: 600,
     },
     button: {
