@@ -23,7 +23,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         router.push('/login');
       } else if (user) {
         fetchWorkspaces(user.uid, user.email);
-        if (isPublicRoute) {
+        // Only redirect to dashboard if they are on login or signup
+        if (['/login', '/signup'].includes(pathname)) {
           router.push('/dashboard');
         }
       }
