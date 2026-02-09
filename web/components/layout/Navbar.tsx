@@ -40,7 +40,19 @@ export function Navbar() {
         <Box sx={{ flexGrow: 1 }} />
 
         {/* User Menu */}
-        {user && <UserMenu />}
+        {user && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexDirection: 'column', alignItems: 'flex-end' }}>
+              <Typography sx={{ fontWeight: 600, fontSize: '14px', lineHeight: 1.2, color: '#323338' }}>
+                {user.displayName || 'User'}
+              </Typography>
+              <Typography sx={{ fontSize: '12px', color: '#676879', lineHeight: 1.2 }}>
+                {user.email}
+              </Typography>
+            </Box>
+            <UserMenu />
+          </Box>
+        )}
       </Toolbar>
     </AppBar>
   );
