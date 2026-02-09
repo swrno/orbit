@@ -3,7 +3,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { UserMenu } from '@/components/auth/UserMenu';
-import { Rocket } from 'lucide-react';
 import Link from 'next/link';
 
 export function Navbar() {
@@ -23,7 +22,6 @@ export function Navbar() {
         {/* Logo and Brand */}
         <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Rocket size={24} color="#0073ea" />
             <Typography
               variant="h6"
               sx={{
