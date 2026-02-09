@@ -394,6 +394,68 @@ export default function HomePage() {
             elements={["/elements/3d_element_1.png", "/elements/3d_element_3.png", "/elements/3d_element_4.png"]}
             buttons={["/buttons/button5.png", "/buttons/button1.png"]}
           />
+
+          <FullWidthFeatureSection
+            title="Automated Quality Assurance"
+            description="Orbit's intelligent QA engine identifies regression risks across your entire codebase, ensuring every release meets the highest performance standards."
+            productImage="/images/product_6.png"
+            componentImage="/components/compo2.png"
+            elements={["/elements/3d_element_2.png", "/elements/3d_element_4.png"]}
+            buttons={["/buttons/button2.png", "/buttons/button3.png"]}
+            reverse={true}
+          />
+
+          <FullWidthFeatureSection
+            title="Next-Gen Resource Orchestration"
+            description="Dynamically balance team load and infrastructure costs with AI-driven allocation. Scale your operations without increasing complexity."
+            productImage="/images/product_7.png"
+            componentImage="/components/compo3.png"
+            elements={["/elements/3d_element_1.png", "/elements/3d_element_3.png"]}
+            buttons={["/buttons/button4.png", "/buttons/button5.png"]}
+          />
+        </Container>
+      </Box>
+
+      {/* Stats Section */}
+      <Box sx={{ py: 15, bgcolor: '#0f172a', color: 'white' }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={8} justifyContent="center">
+            {[
+              { label: 'Faster Cycles', value: '50%', sub: 'Accelerated delivery' },
+              { label: 'Accuracy', value: '99.9%', sub: 'Predictive forecasting' },
+              { label: 'Cost Savings', value: '35%', sub: 'Resource optimization' },
+              { label: 'Engagement', value: '4x', sub: 'Team productivity' },
+            ].map((stat, idx) => (
+              <Grid size={{ xs: 6, md: 3 }} key={idx} sx={{ textAlign: 'center' }}>
+                <Typography variant="h2" fontWeight={900} sx={{ color: primaryMain, mb: 1, fontFamily: 'var(--font-outfit)' }}>
+                  {stat.value}
+                </Typography>
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>{stat.label}</Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>{stat.sub}</Typography>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* FAQ Section */}
+      <Box sx={{ py: 20 }}>
+        <Container maxWidth="md">
+          <Typography variant="h3" fontWeight={900} textAlign="center" sx={{ fontFamily: 'var(--font-outfit)', mb: 10 }}>
+            Frequently Asked <span style={{ color: primaryMain }}>Questions</span>
+          </Typography>
+          <Stack spacing={4}>
+            {[
+              { q: "How does Orbit AI integrate with our existing stack?", a: "Orbit connects natively with GitHub, GitLab, Jira, and Slack, orchestrating data across your entire ecosystem without changing your existing workflows." },
+              { q: "Is Orbit AI secure for enterprise use?", a: "Security is built-in. We offer SOC2 compliance, end-to-end encryption, and private VPC deployments for enterprise customers." },
+              { q: "Can we customize the AI's forecasting models?", a: "Yes. Orbit learns from your team's historical velocity and unique coding patterns to provide models tailored specifically to your organization." }
+            ].map((faq, idx) => (
+              <Box key={idx} sx={{ p: 4, borderRadius: '24px', bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <Typography variant="h6" fontWeight={800} sx={{ mb: 2, color: '#0f172a' }}>{faq.q}</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', lineHeight: 1.6 }}>{faq.a}</Typography>
+              </Box>
+            ))}
+          </Stack>
         </Container>
       </Box>
 
