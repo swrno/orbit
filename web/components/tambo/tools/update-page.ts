@@ -41,7 +41,9 @@ export const getUpdatePageTool = (context: ToolContext): TamboTool => {
 
       try {
         // Verify updatePage is available (already checked)
-        updatePage(workspaceId, target.teamId, target.page.id, { content }, userId, userEmail);
+        if (updatePage) {
+            await updatePage(workspaceId, target.teamId, target.page.id, { content }, userId, userEmail);
+        }
         return `Successfully updated page: ${target.page.title}`;
       } catch (error: any) {
         return `Error updating page: ${error.message}`;

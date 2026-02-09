@@ -185,7 +185,7 @@ interface AppState {
   selectWorkspace: (id: string) => void;
   addTeam: (workspaceId: string, title: string, icon?: string, leaderId?: string, leaderEmail?: string, leaderName?: string) => Promise<void>;
   addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => string;
-  updatePage: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>, userId?: string, userEmail?: string | null) => void;
+  updatePage: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>, userId?: string, userEmail?: string | null) => Promise<void>;
 
   // Task Actions
   addTask: (workspaceId: string, task: Omit<Task, 'id' | 'key' | 'createdAt' | 'updatedAt'>) => void;
@@ -447,7 +447,7 @@ export const useAppStore = create<AppState>()(
         return newId;
       },
 
-      updatePage: (workspaceId, teamId, pageId, updates, userId, userEmail) => {
+      updatePage: async (workspaceId, teamId, pageId, updates, userId, userEmail) => {
         // Optimistic update
         set((state) => ({
           workspaces: state.workspaces.map(ws =>
@@ -476,20 +476,22 @@ export const useAppStore = create<AppState>()(
         if (userId) headers['X-User-Id'] = userId;
         if (userEmail) headers['X-User-Email'] = userEmail;
 
-        // Persist to backend
-        fetch('/api/pages', {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ workspaceId, teamId, pageId, updates })
-        }).then(res => {
-            if (!res.ok) {
-                console.error('Failed to persist page update');
-                // Optionally revert state here
-            }
-        }).catch(err => {
+        try {
+          // Persist to backend
+          const res = await fetch('/api/pages', {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ workspaceId, teamId, pageId, updates })
+          });
+          
+          if (!res.ok) {
+              console.error('Failed to persist page update');
+              // Optionally revert state here
+          }
+        } catch (err) {
             console.error('Error persisting page update:', err);
              // Optionally revert state here
-        });
+        }
       },
 
       addTask: (workspaceId, task) => set((state) => ({

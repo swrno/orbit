@@ -103,3 +103,25 @@
   --panel-right-width: 500px;
   --sidebar-width: 3rem;
 }
+
+/* Tiptap Task List Styles */
+ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+li[data-type="taskItem"] {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+li[data-type="taskItem"] label {
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+li[data-type="taskItem"] div {
+  flex: 1;
+}

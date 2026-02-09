@@ -1,6 +1,9 @@
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Underline from '@tiptap/extension-underline';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState, useRef } from 'react';
@@ -8,7 +11,8 @@ import { useDebouncedCallback } from 'use-debounce';
 import { 
   Bold, Italic, Strikethrough, Code, 
   Heading1, Heading2, Heading3, 
-  List, ListOrdered, Quote 
+  List, ListOrdered, Quote,
+  Undo, Redo, SeparatorHorizontal, CheckSquare, Underline as UnderlineIcon
 } from 'lucide-react';
 import { ToggleButton, ToggleButtonGroup, Paper, Divider, Box } from "@mui/material";
 
@@ -39,6 +43,33 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
     >
       <ToggleButtonGroup
         size="small"
+        aria-label="history"
+        sx={{ flexWrap: 'wrap', gap: 0.5, border: 'none' }}
+      >
+        <ToggleButton
+          value="undo"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().chain().focus().undo().run()}
+          aria-label="undo"
+          sx={{ border: 'none', borderRadius: 1 }}
+        >
+          <Undo size={16} />
+        </ToggleButton>
+        <ToggleButton
+          value="redo"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().chain().focus().redo().run()}
+          aria-label="redo"
+          sx={{ border: 'none', borderRadius: 1 }}
+        >
+          <Redo size={16} />
+        </ToggleButton>
+      </ToggleButtonGroup>
+
+      <Divider flexItem orientation="vertical" sx={{ mx: 0.5, my: 1 }} />
+
+      <ToggleButtonGroup
+        size="small"
         aria-label="text formatting"
         sx={{ flexWrap: 'wrap', gap: 0.5, border: 'none' }}
       >
@@ -59,6 +90,15 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
           sx={{ border: 'none', borderRadius: 1 }}
         >
           <Italic size={16} />
+        </ToggleButton>
+        <ToggleButton
+          value="underline"
+          selected={editor.isActive('underline')}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          aria-label="underline"
+          sx={{ border: 'none', borderRadius: 1 }}
+        >
+          <UnderlineIcon size={16} />
         </ToggleButton>
         <ToggleButton
           value="strike"
@@ -120,6 +160,15 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         >
             <ListOrdered size={16} />
         </ToggleButton>
+        <ToggleButton
+            value="taskList"
+            selected={editor.isActive('taskList')}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+            aria-label="task list"
+            sx={{ border: 'none', borderRadius: 1 }}
+        >
+            <CheckSquare size={16} />
+        </ToggleButton>
 
         <Divider flexItem orientation="vertical" sx={{ mx: 0.5, my: 1 }} />
 
@@ -140,6 +189,14 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
             sx={{ border: 'none', borderRadius: 1 }}
         >
             <Quote size={16} />
+        </ToggleButton>
+        <ToggleButton
+            value="horizontalRule"
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            aria-label="horizontal rule"
+            sx={{ border: 'none', borderRadius: 1 }}
+        >
+            <SeparatorHorizontal size={16} />
         </ToggleButton>
       </ToggleButtonGroup>
     </Paper>
@@ -189,6 +246,11 @@ export function TiptapEditor({ workspaceId, pageId }: TiptapEditorProps) {
       Placeholder.configure({
         placeholder: "Type '/' for commands…",
       }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Underline,
     ],
     editorProps: {
       attributes: {
