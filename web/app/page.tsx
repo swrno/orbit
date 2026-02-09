@@ -1,347 +1,500 @@
 "use client";
 
-import { Box, Button, Typography, Container, Grid, Paper } from "@mui/material";
+import { Box, Button, Typography, Container, Stack } from "@mui/material";
+import Grid from "@mui/material/Grid";
+import { alpha } from "@mui/material/styles";
 import {
-  Zap, ArrowRight, CheckCircle2, BarChart3, Target, Users,
-  Layout, Calendar, Bug, TrendingUp, Layers
+  Zap
 } from "lucide-react";
 import Link from "next/link";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { useRef } from "react";
+
+const MotionBox = motion(Box);
+const MotionTypography = motion(Typography);
+
+const FullWidthFeatureSection = ({ 
+  title, 
+  description, 
+  productImage, 
+  componentImage, 
+  elements,
+  buttons,
+  reverse = false
+}: {
+  title: string;
+  description: string;
+  productImage: string;
+  componentImage: string;
+  elements: string[];
+  buttons: string[];
+  reverse?: boolean;
+}) => {
+  return (
+    <Box sx={{ py: 15, position: 'relative' }}>
+      <Container maxWidth="lg">
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
+          <Typography 
+            variant="h3" 
+            fontWeight={900} 
+            sx={{ 
+              fontFamily: 'var(--font-outfit)', 
+              mb: 3, 
+              color: "#0f172a",
+              fontSize: { xs: '2.5rem', md: '3.5rem' },
+              letterSpacing: '-0.02em'
+            }}
+          >
+            {title}
+          </Typography>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#64748b', 
+              maxWidth: 800, 
+              mx: 'auto', 
+              lineHeight: 1.6,
+              fontWeight: 500
+            }}
+          >
+            {description}
+          </Typography>
+        </Box>
+
+        <Box sx={{ 
+          position: 'relative', 
+          width: '100%', 
+          borderRadius: '48px', 
+          overflow: 'visible',
+          bgcolor: '#f8fafc',
+          border: '1px solid rgba(226, 232, 240, 0.8)',
+          boxShadow: '0 60px 120px rgba(0,0,0,0.05)',
+          p: { xs: 2, md: 8 },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          perspective: '2000px',
+          minHeight: { xs: 400, md: 650 }
+        }}>
+          {/* Base Product Image */}
+          <MotionBox
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            sx={{ 
+              width: '95%', 
+              borderRadius: '24px', 
+              overflow: 'hidden', 
+              boxShadow: '0 30px 60px rgba(0,0,0,0.12)',
+              border: '1px solid rgba(255,255,255,0.5)',
+              transformStyle: 'preserve-3d',
+              rotateX: 5
+            }}
+          >
+            <Image src={productImage} alt="Product Dashboard" width={1200} height={750} layout="responsive" />
+          </MotionBox>
+
+          {/* Floating Component Overlay */}
+          <MotionBox
+            initial={{ opacity: 0, x: reverse ? -50 : 50, y: 50 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.2 }}
+            animate={{ y: [0, -15, 0] }}
+            whileHover={{ scale: 1.05, zIndex: 30, transition: { duration: 0.3 } }}
+            sx={{ 
+              position: 'absolute', 
+              top: '10%', 
+              [reverse ? 'left' : 'right']: '-12%',
+              zIndex: 20, 
+              width: { xs: '50%', md: '28%' }, 
+              borderRadius: '20px', 
+              overflow: 'hidden', 
+              boxShadow: '0 40px 80px rgba(0,0,0,0.15)',
+              border: '1px solid rgba(255,255,255,0.9)',
+              bgcolor: 'white'
+            }}
+          >
+            <Image src={componentImage} alt="Tool Component" width={500} height={350} layout="responsive" />
+          </MotionBox>
+
+          {/* Floating 3D Elements */}
+          {elements.map((el, idx) => (
+            <MotionBox
+              key={idx}
+              initial={{ opacity: 0, scale: 0.5 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              animate={{ 
+                y: [0, idx % 2 === 0 ? -30 : 30, 0],
+                rotate: [0, idx % 2 === 0 ? 15 : -15, 0],
+                rotateY: [0, 20, 0]
+              }}
+              transition={{ 
+                opacity: { duration: 0.8, delay: 0.4 + (idx * 0.1) },
+                scale: { duration: 0.8, delay: 0.4 + (idx * 0.1) },
+                default: { duration: 6 + idx, repeat: Infinity, ease: "easeInOut" }
+              }}
+              sx={{ 
+                position: 'absolute', 
+                zIndex: 25, 
+                width: { xs: 120, md: idx === 1 ? 240 : 180 },
+                top: idx === 0 ? '-10%' : idx === 1 ? '60%' : '80%',
+                [idx % 2 === 0 ? 'left' : 'right']: idx === 0 ? '5%' : idx === 1 ? '-5%' : '15%',
+                filter: idx === 1 ? 'none' : 'blur(1px)'
+              }}
+            >
+              <Image src={el} alt="3D Visual" width={240} height={240} style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.2))' }} />
+            </MotionBox>
+          ))}
+
+          {/* Floating Buttons */}
+          {buttons.map((btn, idx) => (
+            <MotionBox
+              key={`btn-${idx}`}
+              whileHover={{ scale: 1.1, y: -5 }}
+              animate={{ y: [0, idx % 2 === 0 ? 12 : -12, 0] }}
+              transition={{ duration: 3 + idx, repeat: Infinity, ease: "easeInOut" }}
+              sx={{ 
+                position: 'absolute', 
+                zIndex: 40,
+                width: { xs: 120, md: 160 },
+                bottom: idx === 0 ? '5%' : idx === 1 ? '18%' : '30%',
+                [reverse ? 'right' : 'left']: idx === 0 ? '-5%' : idx === 1 ? '5%' : '15%',
+                bgcolor: 'white',
+                p: 1,
+                borderRadius: '16px',
+                boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Image 
+                src={btn} 
+                alt="Button" 
+                width={160} 
+                height={45} 
+                style={{ borderRadius: '12px' }} 
+              />
+            </MotionBox>
+          ))}
+        </Box>
+      </Container>
+    </Box>
+  );
+};
 
 export default function HomePage() {
-  const features = [
-    {
-      icon: <Layers size={32} />,
-      title: "Product Backlog",
-      description: "Centralized repository for all work items with intelligent prioritization and story point estimation"
-    },
-    {
-      icon: <Calendar size={32} />,
-      title: "Sprint Planning",
-      description: "Time-boxed iterations with capacity planning, velocity tracking, and burndown charts"
-    },
-    {
-      icon: <Layout size={32} />,
-      title: "Scrum Boards",
-      description: "Visual workflow management with drag-and-drop, swimlanes, and WIP limits"
-    },
-    {
-      icon: <Target size={32} />,
-      title: "Epic Management",
-      description: "Strategic roadmap planning with epic-to-story hierarchy and progress tracking"
-    },
-    {
-      icon: <Bug size={32} />,
-      title: "Bug Tracking",
-      description: "Comprehensive defect management with severity levels, SLAs, and resolution metrics"
-    },
-    {
-      icon: <BarChart3 size={32} />,
-      title: "Analytics & Reports",
-      description: "Data-driven insights with velocity charts, CFD, burndown, and team capacity reports"
-    }
-  ];
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-  const stats = [
-    { value: "100%", label: "Agile Methodology" },
-    { value: "Real-time", label: "Collaboration" },
-    { value: "∞", label: "Scalability" }
-  ];
+  // Parallax offsets
+  const y1 = useTransform(scrollYProgress, [0, 1], [0, -400]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [0, -800]);
+  const y3 = useTransform(scrollYProgress, [0, 1], [0, -300]);
+  const rotate1 = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const rotate2 = useTransform(scrollYProgress, [0, 1], [0, -60]);
+
+  // Software Matching colors from theme.ts
+  const primaryMain = "#2563eb";
+  const bgSlate = "#f8fafc";
+  const slate900 = "#0f172a";
+  const slate600 = "#475569";
+  const slate500 = "#64748b";
+
 
   return (
-    <Box sx={{ bgcolor: '#f4f5f7', minHeight: '100vh' }}>
-      {/* Header */}
-      <Box sx={{ bgcolor: 'white', borderBottom: '1px solid #dfe1e6', py: 2 }}>
+    <Box ref={containerRef} sx={{ bgcolor: 'white', minHeight: '100vh', overflow: 'hidden', color: slate900 }}>
+      {/* Navigation */}
+      <Box sx={{ 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 1000, 
+        bgcolor: 'rgba(255, 255, 255, 0.8)', 
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid',
+        borderColor: 'rgba(226, 232, 240, 0.8)'
+      }}>
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Zap size={28} color="#0052CC" />
-              <Typography variant="h5" fontWeight={600} sx={{ color: '#172B4D' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" py={2}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <Zap size={28} color={primaryMain} fill={primaryMain} />
+              <Typography variant="h6" fontWeight={800} sx={{ 
+                color: slate900, 
+                fontFamily: 'var(--font-outfit)',
+                letterSpacing: '-0.03em',
+                fontSize: '1.4rem'
+              }}>
                 Orbit AI Workspace
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Link href="/get-started" style={{ textDecoration: 'none' }}>
-                <Button sx={{ color: '#42526E', textTransform: 'none', fontWeight: 500 }}>
-                  Documentation
-                </Button>
-              </Link>
+
               <Link href="/dashboard" style={{ textDecoration: 'none' }}>
                 <Button
                   variant="contained"
                   sx={{
-                    bgcolor: '#0052CC',
+                    bgcolor: primaryMain,
                     color: 'white',
                     textTransform: 'none',
-                    fontWeight: 500,
+                    fontWeight: 700,
                     px: 3,
-                    '&:hover': { bgcolor: '#0747A6' },
-                    boxShadow: 'none'
+                    borderRadius: '10px',
+                    boxShadow: `0 10px 20px ${alpha(primaryMain, 0.2)}`,
+                    '&:hover': { bgcolor: '#1d4ed8', boxShadow: `0 15px 30px ${alpha(primaryMain, 0.3)}` },
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
                 >
-                  Get Started
+                  Launch Workspace
                 </Button>
               </Link>
-            </Box>
-          </Box>
+            </Stack>
         </Container>
       </Box>
 
       {/* Hero Section */}
-      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
-        <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto' }}>
-            <Typography
-              variant="h2"
-              sx={{
-                fontSize: { xs: '2.5rem', md: '3.5rem' },
-                fontWeight: 500,
-                mb: 3,
-                color: '#172B4D',
-                lineHeight: 1.2
-              }}
-            >
-              Agile Project Management
-              <Box component="span" sx={{ display: 'block', color: '#0052CC', mt: 1 }}>
-                Built for Modern Teams
-              </Box>
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 5,
-                color: '#42526E',
-                fontWeight: 400,
-                lineHeight: 1.7,
-                maxWidth: 700,
-                mx: 'auto'
-              }}
-            >
-              Complete agile workflow from backlog to delivery. Plan sprints, track progress,
-              manage bugs, and generate insights with enterprise-grade project management.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  endIcon={<ArrowRight size={20} />}
+      <Box sx={{ pt: { xs: 12, md: 20 }, pb: { xs: 10, md: 15 }, position: 'relative' }}>
+        {/* Decorative elements */}
+        <MotionBox
+          style={{ y: y1, rotate: rotate1 }}
+          sx={{ position: 'absolute', top: '15%', right: '10%', zIndex: 0, opacity: 0.6, pointerEvents: 'none' }}
+        >
+          <Image src="/elements/3d_element_2.png" alt="3D Glass" width={350} height={350} />
+        </MotionBox>
+        <MotionBox
+          style={{ y: y3, rotate: rotate2 }}
+          sx={{ position: 'absolute', top: '40%', left: '5%', zIndex: 0, opacity: 0.4, pointerEvents: 'none', filter: 'blur(4px)' }}
+        >
+          <Image src="/elements/3d_element_2.png" alt="3D Glass" width={200} height={200} />
+        </MotionBox>
+        {/* New 3D elements */}
+        <MotionBox
+          style={{ y: y2 }}
+          sx={{ position: 'absolute', top: '70%', right: '5%', zIndex: 0, opacity: 0.5, pointerEvents: 'none' }}
+        >
+          <Image src="/elements/3d_element_3.png" alt="3D Sphere" width={250} height={250} />
+        </MotionBox>
+        <MotionBox
+          style={{ y: y1, rotate: -30 }}
+          sx={{ position: 'absolute', bottom: '10%', left: '10%', zIndex: 0, opacity: 0.3, pointerEvents: 'none', filter: 'blur(2px)' }}
+        >
+          <Image src="/elements/3d_element_4.png" alt="3D Torus" width={300} height={300} />
+        </MotionBox>
+
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ textAlign: 'center', mb: 10 }}>
+
+                <Typography
+                  variant="h1"
                   sx={{
-                    bgcolor: '#0052CC',
-                    color: 'white',
-                    px: 5,
-                    py: 2,
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    fontSize: '1.1rem',
-                    '&:hover': { bgcolor: '#0747A6' },
-                    boxShadow: 'none'
+                    fontSize: { xs: '3.5rem', md: '5.5rem' },
+                    fontWeight: 900,
+                    color: slate900,
+                    lineHeight: 1,
+                    mb: 4,
+                    fontFamily: 'var(--font-outfit)',
+                    letterSpacing: '-0.05em'
                   }}
                 >
-                  Start Planning
-                </Button>
-              </Link>
-              <Link href="/get-started" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  sx={{
-                    borderColor: '#DFE1E6',
-                    color: '#42526E',
-                    px: 5,
-                    py: 2,
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    fontSize: '1.1rem',
-                    '&:hover': {
-                      borderColor: '#B3BAC5',
-                      bgcolor: '#F4F5F7'
-                    }
-                  }}
-                >
-                  Learn More
-                </Button>
-              </Link>
-            </Box>
-          </Box>
-
-          {/* Stats */}
-          <Box sx={{ display: 'flex', gap: { xs: 4, md: 8 }, justifyContent: 'center', mt: 10, flexWrap: 'wrap' }}>
-            {stats.map((stat, idx) => (
-              <Box key={idx} sx={{ textAlign: 'center' }}>
-                <Typography variant="h3" fontWeight={600} sx={{ color: '#0052CC', mb: 0.5 }}>
-                  {stat.value}
-                </Typography>
-                <Typography variant="body1" sx={{ color: '#6B778C', fontWeight: 500 }}>
-                  {stat.label}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Features Section */}
-      <Box sx={{ py: 10, bgcolor: '#f4f5f7' }}>
-        <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="overline" sx={{ color: '#0052CC', fontWeight: 600, fontSize: '0.875rem', letterSpacing: 1 }}>
-              FEATURES
-            </Typography>
-            <Typography variant="h3" fontWeight={500} sx={{ mt: 2, mb: 2, color: '#172B4D' }}>
-              Everything You Need for Agile Delivery
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#42526E', maxWidth: 600, mx: 'auto' }}>
-              Complete workflow coverage from strategic planning to tactical execution
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
-            {features.map((feature, idx) => (
-              <Box key={idx}>
-                <Paper
-                  sx={{
-                    p: 4,
-                    height: '100%',
-                    bgcolor: 'white',
-                    border: '1px solid #DFE1E6',
-                    borderRadius: '3px',
-                    boxShadow: 'none',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      boxShadow: '0 8px 16px rgba(23,43,77,0.12)',
-                      transform: 'translateY(-4px)'
-                    }
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: '8px',
-                      bgcolor: '#DEEBFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#0052CC',
-                      mb: 3
-                    }}
-                  >
-                    {feature.icon}
+                  Build software <br /> with <Box component="span" sx={{ color: primaryMain, position: 'relative' }}>
+                    Intelligence.
+                    <Box sx={{ 
+                      position: 'absolute', 
+                      bottom: 12, left: 0, right: 0, 
+                      height: '15%', 
+                      bgcolor: alpha(primaryMain, 0.1), 
+                      zIndex: -1 
+                    }} />
                   </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#172B4D', mb: 2 }}>
-                    {feature.title}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#42526E', lineHeight: 1.7 }}>
-                    {feature.description}
-                  </Typography>
-                </Paper>
-              </Box>
-            ))}
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Workflow Section */}
-      <Box sx={{ py: 10, bgcolor: 'white' }}>
-        <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="overline" sx={{ color: '#0052CC', fontWeight: 600, fontSize: '0.875rem', letterSpacing: 1 }}>
-              WORKFLOW
-            </Typography>
-            <Typography variant="h3" fontWeight={500} sx={{ mt: 2, color: '#172B4D' }}>
-              From Backlog to Delivery
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'center' }}>
-            {[
-              { num: "1", title: "Plan", desc: "Prioritize backlog" },
-              { num: "2", title: "Sprint", desc: "Commit to work" },
-              { num: "3", title: "Track", desc: "Monitor progress" },
-              { num: "4", title: "Review", desc: "Analyze metrics" }
-            ].map((step, idx) => (
-              <Box key={idx} sx={{ flex: 1, textAlign: 'center' }}>
-                <Box
+                </Typography>
+                <Typography
+                  variant="h5"
                   sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '50%',
-                    bgcolor: '#0052CC',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    fontWeight: 600,
+                    color: slate600,
+                    fontWeight: 400,
+                    lineHeight: 1.6,
+                    mb: 6,
+                    maxWidth: 750,
                     mx: 'auto',
-                    mb: 2
+                    fontFamily: 'var(--font-inter)',
+                    fontSize: { xs: '1.2rem', md: '1.5rem' }
                   }}
                 >
-                  {step.num}
-                </Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#172B4D' }}>
-                  {step.title}
+                  Accelerate your delivery cycle with the world's first AI-integrated agile solution. 
+                  Ship faster, manage smarter, and stay in orbit.
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                  {step.desc}
-                </Typography>
-              </Box>
-            ))}
+                <Stack direction="row" spacing={3} justifyContent="center">
+                   <Button
+                      variant="contained"
+                      size="large"
+                      sx={{
+                        bgcolor: primaryMain,
+                        px: 6,
+                        py: 2.5,
+                        borderRadius: '14px',
+                        fontWeight: 800,
+                        fontSize: '1.1rem',
+                        textTransform: 'none',
+                        boxShadow: `0 25px 50px ${alpha(primaryMain, 0.25)}`,
+                        '&:hover': { bgcolor: '#1d4ed8', transform: 'translateY(-4px)' },
+                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
+                      Start Free Trial
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      sx={{
+                        borderColor: '#e2e8f0',
+                        color: slate900,
+                        px: 5,
+                        borderRadius: '14px',
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        textTransform: 'none',
+                        bgcolor: 'rgba(255,255,255,0.5)',
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': { bgcolor: bgSlate, borderColor: '#cbd5e1' }
+                      }}
+                    >
+                      View Solutions
+                    </Button>
+                </Stack>
           </Box>
+
+          {/* Full-Width Feature Sections */}
+          <FullWidthFeatureSection
+            title="Unified Delivery Engine"
+            description="Consolidate your entire tech stack into a single, intelligent command center. Orbit's AI orchestrates your workflow, from initial commit to final deployment."
+            productImage="/images/product_3.png"
+            componentImage="/components/compo1.png"
+            elements={["/elements/3d_element_1.png", "/elements/3d_element_2.png", "/elements/3d_element_3.png"]}
+            buttons={["/buttons/button1.png", "/buttons/button2.png"]}
+          />
+
+          <FullWidthFeatureSection
+            title="Predictive Team Velocity"
+            description="Stop guessing, start shipping. Orbit analyzes historical data and real-time signals to provide hyper-accurate delivery forecasts for every sprint."
+            productImage="/images/product_1.png"
+            componentImage="/components/compo2.png"
+            elements={["/elements/3d_element_4.png", "/elements/3d_element_2.png"]}
+            buttons={["/buttons/button3.png", "/buttons/button4.png"]}
+            reverse={true}
+          />
+
+          <FullWidthFeatureSection
+            title="Strategic Engineering Insights"
+            description="Unlock deep-level visibility into your engineering organization. Identify bottlenecks before they happen and optimize resource allocation with ease."
+            productImage="/images/product_2.png"
+            componentImage="/components/compo3.png"
+            elements={["/elements/3d_element_1.png", "/elements/3d_element_3.png", "/elements/3d_element_4.png"]}
+            buttons={["/buttons/button5.png", "/buttons/button1.png"]}
+          />
         </Container>
       </Box>
 
-      {/* CTA Section */}
-      <Box sx={{ py: 10, bgcolor: '#f4f5f7' }}>
+      {/* CTA Final */}
+      <Box sx={{ py: 25, textAlign: 'center', position: 'relative' }}>
+        <MotionBox
+          style={{ y: y3 }}
+          sx={{ position: 'absolute', top: '0', left: '10%', opacity: 0.3, zIndex: 0 }}
+        >
+          <Image src="/elements/3d_element_3.png" alt="3D" width={400} height={400} />
+        </MotionBox>
+
         <Container maxWidth="md">
-          <Paper sx={{ p: 6, textAlign: 'center', bgcolor: 'white', border: '1px solid #DFE1E6', boxShadow: 'none' }}>
-            <Typography variant="h3" fontWeight={500} sx={{ mb: 2, color: '#172B4D' }}>
-              Start Your First Sprint Today
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 4, color: '#42526E' }}>
-              Join teams using Orbit AI Workspace to deliver better software, faster
-            </Typography>
-            <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="contained"
-                size="large"
-                endIcon={<ArrowRight size={20} />}
-                sx={{
-                  bgcolor: '#0052CC',
-                  color: 'white',
-                  px: 5,
-                  py: 2,
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  fontSize: '1.1rem',
-                  '&:hover': { bgcolor: '#0747A6' },
-                  boxShadow: 'none'
-                }}
-              >
-                Get Started Free
-              </Button>
-            </Link>
-          </Paper>
+           <AnimatePresence>
+             <MotionBox
+               initial={{ opacity: 0, scale: 0.9 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+             >
+                <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'var(--font-outfit)', mb: 4, letterSpacing: '-0.04em', color: slate900 }}>
+                  Ready to launch?
+                </Typography>
+                <Typography variant="h6" sx={{ color: slate600, mb: 8, maxWidth: 600, mx: 'auto', lineHeight: 1.6 }}>
+                  Join thousands of teams scaling their velocity with Orbit AI Workspace.
+                </Typography>
+                <Stack direction="row" spacing={3} justifyContent="center">
+                   <Button
+                      variant="contained"
+                      size="large"
+                      sx={{
+                        bgcolor: primaryMain,
+                        px: 8,
+                        py: 2.5,
+                        borderRadius: '16px',
+                        fontWeight: 900,
+                        fontSize: '1.25rem',
+                        textTransform: 'none',
+                        boxShadow: `0 25px 60px ${alpha(primaryMain, 0.3)}`,
+                        '&:hover': { bgcolor: '#1d4ed8', transform: 'scale(1.05)' }
+                      }}
+                    >
+                      Get Started for Free
+                    </Button>
+                </Stack>
+             </MotionBox>
+           </AnimatePresence>
         </Container>
       </Box>
 
       {/* Footer */}
-      <Box sx={{ bgcolor: '#f4f5f7', borderTop: '1px solid #DFE1E6', py: 4 }}>
+      <Box sx={{ bgcolor: bgSlate, pt: 15, pb: 8, borderTop: '1px solid', borderColor: 'rgba(226, 232, 240, 0.5)' }}>
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Zap size={20} color="#0052CC" />
-              <Typography variant="body2" fontWeight={600} sx={{ color: '#172B4D' }}>
-                Orbit AI Workspace
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#6B778C', ml: 2 }}>
-                Agile Project Management Platform
-              </Typography>
-            </Box>
-            <Typography variant="body2" sx={{ color: '#6B778C' }}>
-              © 2026 Orbit AI Workspace. Built for agile teams.
-            </Typography>
-          </Box>
+           <Grid container spacing={10} sx={{ mb: 10 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
+                    <Zap size={32} color={primaryMain} fill={primaryMain} />
+                    <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'var(--font-outfit)', color: slate900 }}>Orbit</Typography>
+                 </Box>
+                 <Typography variant="body1" sx={{ color: slate500, lineHeight: 2, mb: 4 }}>
+                    The world's leading intelligence workspace for software delivery.
+                 </Typography>
+                 <Stack direction="row" spacing={3}>
+                    {['Twitter', 'LinkedIn', 'YouTube'].map(social => (
+                       <Typography key={social} variant="caption" sx={{ color: slate500, fontWeight: 700, cursor: 'pointer', '&:hover': { color: primaryMain } }}>{social}</Typography>
+                    ))}
+                 </Stack>
+              </Grid>
+              <Grid size={{ xs: 6, md: 2 }}>
+                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: slate900 }}>Organization</Typography>
+                 <Stack spacing={2}>
+                    {['About', 'Careers', 'Brand', 'Press'].map(item => (
+                       <Typography key={item} variant="body2" sx={{ color: slate500, '&:hover': { color: primaryMain }, cursor: 'pointer' }}>{item}</Typography>
+                    ))}
+                 </Stack>
+              </Grid>
+              <Grid size={{ xs: 6, md: 2 }}>
+                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: slate900 }}>Product</Typography>
+                 <Stack spacing={2}>
+                    {['Changelog', 'Pricing', 'Docs', 'API'].map(item => (
+                       <Typography key={item} variant="body2" sx={{ color: slate500, '&:hover': { color: primaryMain }, cursor: 'pointer' }}>{item}</Typography>
+                    ))}
+                 </Stack>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                 <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 4, color: slate900 }}>Stay in touch</Typography>
+                 <Typography variant="body2" sx={{ color: slate500, mb: 4 }}>Subscribe to our monthly developer update.</Typography>
+                 <Stack direction="row" spacing={1}>
+                    <Box sx={{ flex: 1, height: 48, borderRadius: '12px', bgcolor: 'white', border: '1px solid #e2e8f0', px: 2, display: 'flex', alignItems: 'center' }}>
+                       <Typography variant="caption" sx={{ color: slate500 }}>Email address</Typography>
+                    </Box>
+                    <Button variant="contained" sx={{ bgcolor: primaryMain, borderRadius: '12px', boxShadow: 'none' }}>Join</Button>
+                 </Stack>
+              </Grid>
+           </Grid>
+           <Box sx={{ pt: 6, borderTop: '1px solid rgba(226, 232, 240, 0.5)', display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="caption" sx={{ color: slate500, fontWeight: 500 }}>© 2026 Orbit AI Workspace. All rights reserved.</Typography>
+              <Stack direction="row" spacing={4}>
+                 <Typography variant="caption" sx={{ color: slate500, fontWeight: 500 }}>Security</Typography>
+                 <Typography variant="caption" sx={{ color: slate500, fontWeight: 500 }}>Privacy</Typography>
+              </Stack>
+           </Box>
         </Container>
       </Box>
     </Box>
