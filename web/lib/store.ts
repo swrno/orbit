@@ -185,7 +185,7 @@ interface AppState {
   deleteWorkspace: (id: string, userId: string) => void;
   selectWorkspace: (id: string) => void;
   addTeam: (workspaceId: string, title: string, icon?: string, leaderId?: string, leaderEmail?: string, leaderName?: string) => Promise<void>;
-  addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => Promise<string>;
+  addPage: (workspaceId: string, teamId: string, title: string, type: PageType, userId?: string) => Promise<string>;
   updatePage: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>, userId?: string, userEmail?: string | null) => Promise<void>;
 
   // Task Actions
@@ -238,7 +238,7 @@ interface AppState {
 
   // Update Actions
   renameTeam: (workspaceId: string, teamId: string, newTitle: string) => Promise<void>;
-  renamePage: (workspaceId: string, teamId: string, pageId: string, newTitle: string) => Promise<void>;
+  renamePage: (workspaceId: string, teamId: string, pageId: string, newTitle: string, userId?: string) => Promise<void>;
   updateTeamIcon: (workspaceId: string, teamId: string, icon: string) => void;
 
   // Delete Actions
@@ -378,7 +378,7 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      addPage: async (workspaceId, teamId, title, type) => {
+      addPage: async (workspaceId, teamId, title, type, userId) => {
         const newId = `p-${Date.now()}`;
         // Optimistic update
         set((state) => ({
@@ -397,7 +397,7 @@ export const useAppStore = create<AppState>()(
         }));
 
         try {
-          const data = await apiClient.addPage(workspaceId, teamId, title, type);
+          const data = await apiClient.addPage(workspaceId, teamId, title, type, userId);
           if (data.success && data.data) {
              // Replace temp ID with real ID from backend
              set((state) => ({
@@ -942,7 +942,7 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      renamePage: async (workspaceId, teamId, pageId, newTitle) => {
+      renamePage: async (workspaceId, teamId, pageId, newTitle, userId) => {
         set((state) => ({
           workspaces: state.workspaces.map(ws =>
             ws.id === workspaceId
@@ -964,7 +964,7 @@ export const useAppStore = create<AppState>()(
         }));
 
         try {
-          const data = await apiClient.updatePage(workspaceId, teamId, pageId, { title: newTitle });
+          const data = await apiClient.updatePage(workspaceId, teamId, pageId, { title: newTitle }, userId);
           if (!data.success) {
              console.error('Failed to rename page:', data.error);
           }

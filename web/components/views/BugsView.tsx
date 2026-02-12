@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Box, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Avatar, Button, Collapse, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Popover, List, ListItem, Switch
@@ -58,6 +59,8 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   }
 
   const { canEdit } = usePermissions(workspaceId, teamId || undefined);
+  const { user } = useAuth();
+  const currentUserId = user?.uid;
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -217,7 +220,7 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
         params.teamId = teamId;
       }
       
-      const data = await apiClient.fetchResources('bugs', params);
+      const data = await apiClient.fetchBugs(params, currentUserId);
 
       if (data.success && Array.isArray(data.data)) {
         setBugs(data.data);
@@ -249,8 +252,8 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
       };
 
       const data = await (isUpdate 
-        ? apiClient.updateResource('bugs', payload)
-        : apiClient.createResource('bugs', payload));
+        ? apiClient.updateBug(payload, currentUserId)
+        : apiClient.createBug(payload, currentUserId));
 
       if (data.success) {
         fetchBugs();

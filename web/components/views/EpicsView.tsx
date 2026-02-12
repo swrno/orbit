@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Box,
   Typography,
@@ -77,6 +78,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
   }
 
   const { canEdit } = usePermissions(workspaceId, teamId || undefined);
+  const { user } = useAuth();
+  const currentUserId = user?.uid;
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -199,8 +202,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
       }
       
       const [epicsRes, tasksRes] = await Promise.all([
-        apiClient.fetchResources('epics', params),
-        apiClient.fetchResources('tasks', { workspaceId, teamId: teamId || '' })
+        apiClient.fetchEpics(params, currentUserId),
+        apiClient.fetchTasks({ workspaceId, teamId: teamId || '' }, currentUserId)
       ]);
 
       if (epicsRes.success && Array.isArray(epicsRes.data)) {
@@ -249,8 +252,8 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
       };
 
       const data = await (isUpdate 
-        ? apiClient.updateResource('epics', payload)
-        : apiClient.createResource('epics', payload));
+        ? apiClient.updateEpic(payload, currentUserId)
+        : apiClient.createEpic(payload, currentUserId));
 
       if (data.success) {
         fetchEpics();

@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Box,
   Typography,
@@ -49,6 +50,8 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
 export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: RetrospectivesViewProps) {
   const { workspaces, updatePage } = useAppStore();
   const workspace = workspaces.find(w => w.id === workspaceId);
+  const { user } = useAuth();
+  const currentUserId = user?.uid;
   const { canEdit } = usePermissions(workspaceId);
 
   // Find the page and team
@@ -210,8 +213,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
       }
 
       const [retrosRes, sprintsRes] = await Promise.all([
-        apiClient.fetchResources('retrospectives', params),
-        apiClient.fetchResources('sprints', { workspaceId, teamId: teamId || '' })
+        apiClient.fetchRetrospectives(params, currentUserId),
+        apiClient.fetchSprints({ workspaceId, teamId: teamId || '' }, currentUserId)
       ]);
 
       if (sprintsRes.success && Array.isArray(sprintsRes.data)) {
@@ -248,8 +251,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
       };
 
       const data = await (isUpdate 
-        ? apiClient.updateResource('retrospectives', payload)
-        : apiClient.createResource('retrospectives', payload));
+        ? apiClient.updateRetrospective(payload, currentUserId)
+        : apiClient.createRetrospective(payload, currentUserId));
 
       if (data.success) {
         fetchRetrospectives();
@@ -264,7 +267,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     if (!confirm('Are you sure you want to delete this retrospective item?')) return;
 
     try {
-      const data = await apiClient.deleteResource('retrospectives', retroId);
+      const data = await apiClient.deleteRetrospective(retroId, currentUserId);
 
       if (data.success) {
         fetchRetrospectives();
@@ -315,7 +318,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
   const handleVote = async (retroId: string) => {
     try {
-      const data = await apiClient.updateResource('retrospectives', { id: retroId, incrementVote: true });
+      const data = await apiClient.updateRetrospective({ id: retroId, incrementVote: true }, currentUserId);
 
       if (data.success) {
         fetchRetrospectives(); // Refresh data
@@ -349,7 +352,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
     // API Update
     try {
-      const data = await apiClient.updateResource('retrospectives', { id: retro._id || retro.id, type: newType });
+      const data = await apiClient.updateRetrospective({ id: retro._id || retro.id, type: newType }, currentUserId);
       if (!data.success) fetchRetrospectives();
     } catch (e) {
       console.error("Failed to move retro", e);
@@ -467,7 +470,7 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
         );
       default:
         return (
-          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
+          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>

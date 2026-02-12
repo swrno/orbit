@@ -88,10 +88,10 @@ export const apiClient = {
     deletePage: (workspaceId: string, teamId: string, pageId: string, userId?: string) =>
         apiFetch(`/api/pages?workspaceId=${workspaceId}&teamId=${teamId}&pageId=${pageId}`, { method: 'DELETE' }, userId),
 
-    // Resources (Tasks, Bugs, etc.)
-    fetchResources: (resource: string, params: Record<string, string>) => {
+    // Generic Resource Methods (still available if needed)
+    fetchResources: (resource: string, params: Record<string, string>, userId?: string) => {
         const query = new URLSearchParams(params).toString();
-        return apiFetch(`/api/${resource}?${query}`);
+        return apiFetch(`/api/${resource}?${query}`, {}, userId);
     },
 
     createResource: (resource: string, body: any, userId?: string) =>
@@ -101,5 +101,31 @@ export const apiClient = {
         apiFetch(`/api/${resource}`, { method: 'PUT', body: JSON.stringify(body) }, userId),
 
     deleteResource: (resource: string, id: string, userId?: string) =>
-        apiFetch(`/api/${resource}?id=${id}`, { method: 'DELETE' }, userId),
+        apiFetch(`/api/${resource}?id=${id}${userId ? `&currentUserId=${userId}` : ''}`, { method: 'DELETE' }, userId),
+
+    // Resource-specific methods for clarity and type-safety
+    fetchTasks: (params: Record<string, string>, userId?: string) => apiClient.fetchResources('tasks', params, userId),
+    createTask: (body: any, userId?: string) => apiClient.createResource('tasks', body, userId),
+    updateTask: (body: any, userId?: string) => apiClient.updateResource('tasks', body, userId),
+    deleteTask: (id: string, userId?: string) => apiClient.deleteResource('tasks', id, userId),
+
+    fetchBugs: (params: Record<string, string>, userId?: string) => apiClient.fetchResources('bugs', params, userId),
+    createBug: (body: any, userId?: string) => apiClient.createResource('bugs', body, userId),
+    updateBug: (body: any, userId?: string) => apiClient.updateResource('bugs', body, userId),
+    deleteBug: (id: string, userId?: string) => apiClient.deleteResource('bugs', id, userId),
+
+    fetchEpics: (params: Record<string, string>, userId?: string) => apiClient.fetchResources('epics', params, userId),
+    createEpic: (body: any, userId?: string) => apiClient.createResource('epics', body, userId),
+    updateEpic: (body: any, userId?: string) => apiClient.updateResource('epics', body, userId),
+    deleteEpic: (id: string, userId?: string) => apiClient.deleteResource('epics', id, userId),
+
+    fetchSprints: (params: Record<string, string>, userId?: string) => apiClient.fetchResources('sprints', params, userId),
+    createSprint: (body: any, userId?: string) => apiClient.createResource('sprints', body, userId),
+    updateSprint: (body: any, userId?: string) => apiClient.updateResource('sprints', body, userId),
+    deleteSprint: (id: string, userId?: string) => apiClient.deleteResource('sprints', id, userId),
+
+    fetchRetrospectives: (params: Record<string, string>, userId?: string) => apiClient.fetchResources('retrospectives', params, userId),
+    createRetrospective: (body: any, userId?: string) => apiClient.createResource('retrospectives', body, userId),
+    updateRetrospective: (body: any, userId?: string) => apiClient.updateResource('retrospectives', body, userId),
+    deleteRetrospective: (id: string, userId?: string) => apiClient.deleteResource('retrospectives', id, userId),
 };

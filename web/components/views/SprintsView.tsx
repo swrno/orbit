@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Box,
   Typography,
@@ -62,6 +63,8 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
   }
 
   const { canEdit } = usePermissions(workspaceId, teamId || undefined);
+  const { user } = useAuth();
+  const currentUserId = user?.uid;
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -169,7 +172,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
         params.teamId = teamId;
       }
 
-      const sprintsData = await apiClient.fetchResources('sprints', params);
+      const sprintsData = await apiClient.fetchSprints(params, currentUserId);
 
       if (sprintsData.success && Array.isArray(sprintsData.data)) {
         setSprints(sprintsData.data);
@@ -179,7 +182,7 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
       }
 
       if (teamId) {
-        const tData = await apiClient.fetchResources('tasks', { workspaceId, teamId });
+        const tData = await apiClient.fetchTasks({ workspaceId, teamId }, currentUserId);
         if (tData.success && Array.isArray(tData.data)) {
           setTasks(tData.data);
           groupTasksBySprint(tData.data);
@@ -233,8 +236,8 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
       };
 
       const data = await (isUpdate 
-        ? apiClient.updateResource('sprints', payload)
-        : apiClient.createResource('sprints', payload));
+        ? apiClient.updateSprint(payload, currentUserId)
+        : apiClient.createSprint(payload, currentUserId));
 
       if (data.success) {
         fetchSprints();

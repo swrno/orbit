@@ -34,6 +34,8 @@ export default function Sidebar({ className }: { className?: string }) {
     }, []);
 
     const { workspaces, createWorkspace, addPage, renamePage, deletePage, reorderPage, addTeam, renameTeam, deleteTeam } = useAppStore();
+    const { user } = useAuth();
+    const currentUserId = user?.uid;
 
     // Fallback to first workspace if ID is invalid, preventing sidebar crash
     const workspace = workspaces.find(w => w.id === paramId) || workspaces[0];
@@ -108,7 +110,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleCreateConfirm = () => {
         if (newViewName.trim() && workspaceId && selectedTeamId) {
-            addPage(workspaceId, selectedTeamId, newViewName.trim(), newViewType).then(newPageId => {
+            addPage(workspaceId, selectedTeamId, newViewName.trim(), newViewType, currentUserId).then(newPageId => {
                  router.push(`/${workspaceId}/${selectedTeamId}/${newPageId}`);
             });
             setNewViewName('');
@@ -141,7 +143,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleRenameSubmit = () => {
         if (selectedPageForAction && renameValue.trim()) {
-            renamePage(workspaceId, selectedPageForAction.teamId, selectedPageForAction.pageId, renameValue.trim());
+            renamePage(workspaceId, selectedPageForAction.teamId, selectedPageForAction.pageId, renameValue.trim(), currentUserId);
             setRenameDialogOpen(false);
             setSelectedPageForAction(null);
         }
@@ -154,7 +156,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleDeleteConfirm = () => {
         if (selectedPageForAction) {
-            deletePage(workspaceId, selectedPageForAction.teamId, selectedPageForAction.pageId);
+            deletePage(workspaceId, selectedPageForAction.teamId, selectedPageForAction.pageId, currentUserId);
             setDeleteDialogOpen(false);
             setSelectedPageForAction(null);
 
@@ -183,7 +185,7 @@ export default function Sidebar({ className }: { className?: string }) {
     const [renameTeamValue, setRenameTeamValue] = useState('');
     const [deleteTeamOpen, setDeleteTeamOpen] = useState(false);
 
-    const { user } = useAuth(); // Get auth user
+    // const { user } = useAuth(); // Removed duplicate declaration
     const handleCreateTeam = async () => {
         if (newTeamName.trim() && workspaceId) {
             await addTeam(

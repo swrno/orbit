@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore, Task, TaskStatus, TaskPriority } from "@/lib/store";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Box,
   Typography,
@@ -85,6 +86,8 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
   }
 
   const { canEdit } = usePermissions(workspaceId, groupId || undefined);
+  const { user } = useAuth();
+  const currentUserId = user?.uid;
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -215,8 +218,8 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
       }
 
       const [tasksRes, sprintsRes] = await Promise.all([
-        apiClient.fetchResources('tasks', params),
-        apiClient.fetchResources('sprints', { workspaceId, teamId: groupId || '' })
+        apiClient.fetchTasks(params, currentUserId),
+        apiClient.fetchSprints({ workspaceId, teamId: groupId || '' }, currentUserId)
       ]);
 
       if (sprintsRes.success && Array.isArray(sprintsRes.data)) {
@@ -249,12 +252,12 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
         setEditingTask(null);
       } else {
         // Handle create
-        const data = await apiClient.createResource('tasks', {
+        const data = await apiClient.createTask({
           ...taskData,
           workspaceId,
           pageId,
           teamId: groupId
-        });
+        }, currentUserId);
 
         if (data.success) {
           fetchTasks();
@@ -306,7 +309,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
   const handleUpdateTask = async (taskId: string, updates: any) => {
     try {
-      const data = await apiClient.updateResource('tasks', { taskId, updates });
+      const data = await apiClient.updateTask({ taskId, updates }, currentUserId);
 
       if (data.success) {
         fetchTasks(); // Refresh tasks
@@ -507,7 +510,7 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
       default:
         // Default table view
         return (
-          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef' }}>
+          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e6e9ef', mx: 2, my: 2, width: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f6f7fb' }}>

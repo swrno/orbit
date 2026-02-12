@@ -171,7 +171,7 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
     return (
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default', overflow: 'hidden' }}>
             {/* Header */}
-            <Paper elevation={0} sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+            <Paper elevation={0} sx={{ px: 2, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Layers size={24} />
@@ -217,7 +217,7 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
             </Paper>
 
             {/* Toolbar */}
-            <Box sx={{ px: 3, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'background.paper' }}>
+            <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'background.paper' }}>
                 <Checkbox
                     size="small"
                     checked={selectedTasks.size > 0 && selectedTasks.size === backlogTasks.length}
@@ -273,7 +273,7 @@ export function BacklogView({ workspaceId }: BacklogViewProps) {
             </Box>
 
             {/* Backlog Items */}
-            <Box sx={{ flex: 1, overflow: 'auto', px: 3, py: 2 }}>
+            <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
                 {backlogTasks.length > 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {backlogTasks.map((task, index) => (
