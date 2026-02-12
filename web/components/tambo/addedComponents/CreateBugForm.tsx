@@ -175,15 +175,14 @@ export default function CreateBugForm({
         {/* Workspace & Team Selection */}
         <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase mb-1">
-              Workspace
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase mb-1">
+              <Building className="w-3.5 h-3.5" /> Workspace
             </label>
             <div className="relative">
-              <Building className="absolute left-2 top-2 w-4 h-4 text-zinc-400" />
               <select
                 value={selectedWorkspaceId}
                 onChange={(e) => setSelectedWorkspaceId(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
               >
                  <option value="" disabled>Select Workspace</option>
                 {workspaces.length === 0 ? (
@@ -197,11 +196,10 @@ export default function CreateBugForm({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase mb-1">
-              Team
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase mb-1">
+              <Users className="w-3.5 h-3.5" /> Team
             </label>
             <div className="relative">
-              <Users className="absolute left-2 top-2 w-4 h-4 text-zinc-400" />
               <select
                 value={selectedTeamId}
                 onChange={(e) => {
@@ -216,7 +214,7 @@ export default function CreateBugForm({
                     }
                 }}
                 disabled={!selectedWorkspaceId || teams.length === 0}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:opacity-50"
+                className="w-full px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:opacity-50"
               >
                 <option value="" disabled>Select Team</option>
                 {teams.map((t) => (
@@ -230,15 +228,14 @@ export default function CreateBugForm({
         {/* Page Selection */}
         {selectedTeamId && teams.find(t => t.id === selectedTeamId)?.pages && teams.find(t => t.id === selectedTeamId)!.pages.length > 0 && (
           <div className="mb-4">
-             <label className="block text-xs font-semibold text-zinc-500 uppercase mb-1">
-              Page
+             <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase mb-1">
+              <FolderOpen className="w-3.5 h-3.5" /> Page
             </label>
             <div className="relative">
-              <FolderOpen className="absolute left-2 top-2 w-4 h-4 text-zinc-400" />
               <select
                 value={selectedPageId}
                 onChange={(e) => setSelectedPageId(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
               >
                 {teams.find(t => t.id === selectedTeamId)?.pages.map((p: any) => (
                   <option key={p.id} value={p.id}>{p.title || p.name || 'Untitled Page'}</option>

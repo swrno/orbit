@@ -683,7 +683,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
                     {/* Footer */}
                     <Box sx={{ p: 2, borderTop: '1px solid #DFE1E6' }}>
-                        <Link href={`/${selectedWorkspace}/main/settings`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/${selectedWorkspace}/settings`} style={{ textDecoration: 'none' }}>
                             <Box sx={{
                                 display: 'flex',
                                 alignItems: 'center',
