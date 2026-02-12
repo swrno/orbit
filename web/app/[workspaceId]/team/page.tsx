@@ -172,7 +172,10 @@ export default function TeamPage() {
                                             transition: 'border-color 0.2s',
                                             '&:hover': { borderColor: 'primary.main' }
                                         }}
-                                        onClick={() => router.push(`/${workspaceId}/team/${member.id}`)}
+                                        onClick={() => {
+                                            const teamId = workspace.teams?.[0]?.id || 'main';
+                                            router.push(`/${workspaceId}/${teamId}/team/${member.id}`);
+                                        }}
                                     >
                                         <CardContent>
                                             {/* Header */}

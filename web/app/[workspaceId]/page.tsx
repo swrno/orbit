@@ -23,7 +23,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchTasks = async () => {
+        const fetchTasksData = async () => {
             try {
                 setLoading(true);
                 const res = await fetch(`/api/tasks?workspaceId=${workspaceId}`);
@@ -39,7 +39,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
         };
 
         if (workspaceId) {
-            fetchTasks();
+            fetchTasksData();
         }
     }, [workspaceId]);
 
@@ -80,12 +80,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
         }
     ];
 
+    const firstTeamId = workspace.teams?.[0]?.id || 'main';
     const quickLinks = [
         {
             title: 'Backlog',
             description: 'Manage and prioritize your product backlog',
             icon: LayoutGrid,
-            path: `/${workspaceId}/backlog`,
+            path: `/${workspaceId}/${firstTeamId}/backlog`,
             color: '#3b82f6', // blue-500
             bgcolor: '#eff6ff'
         },
@@ -93,7 +94,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
             title: 'Active Sprints',
             description: `${activeSprints.length} sprint(s) in progress`,
             icon: Calendar,
-            path: `/${workspaceId}/sprints`,
+            path: `/${workspaceId}/${firstTeamId}/sprints`,
             color: '#10b981', // green-500
             bgcolor: '#f0fdf4'
         },
@@ -101,7 +102,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ workspaceI
             title: 'Roadmap',
             description: 'Strategic planning and epic timeline',
             icon: TrendingUp,
-            path: `/${workspaceId}/roadmap`,
+            path: `/${workspaceId}/${firstTeamId}/roadmap`,
             color: '#8b5cf6', // violet-500
             bgcolor: '#f5f3ff'
         }

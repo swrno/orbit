@@ -33,14 +33,14 @@ export const getCreateDocumentTool = (context: ToolContext): TamboTool => {
       const pageType = (type as PageType) || 'document';
       
       try {
-        const newPageId = addPage(workspaceId, targetTeam.id, title, pageType);
+        const newPageId = await addPage(workspaceId, targetTeam.id, title, pageType);
         
         if (content && updatePage) {
            // Immediately update with content
-           updatePage(workspaceId, targetTeam.id, newPageId, { content }, userId, userEmail);
+           await updatePage(workspaceId, targetTeam.id, newPageId, { content }, userId, userEmail);
         }
 
-        router.push(`/${workspaceId}/${newPageId}`);
+        router.push(`/${workspaceId}/${targetTeam.id}/${newPageId}`);
         return `Created document '${title}' in team '${targetTeam.title}' and opened it.`;
       } catch (error: any) {
         return `Error creating document: ${error.message}`;

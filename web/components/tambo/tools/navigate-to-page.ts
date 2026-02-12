@@ -21,22 +21,32 @@ export const getNavigateToPageTool = (context: ToolContext): TamboTool => {
        if (!ws) return "Error: Current workspace not found.";
 
        let foundPage: Page | undefined;
+       let foundTeamId: string | undefined;
+
        if (pageId) {
           for (const team of ws.teams) {
             const p = team.pages.find(pg => pg.id === pageId);
-            if (p) { foundPage = p; break; }
+            if (p) { 
+              foundPage = p; 
+              foundTeamId = team.id;
+              break; 
+            }
           }
        }
        if (!foundPage && title) {
           for (const team of ws.teams) {
             const p = team.pages.find(pg => pg.title.toLowerCase() === title.toLowerCase());
-            if (p) { foundPage = p; break; }
+            if (p) { 
+              foundPage = p; 
+              foundTeamId = team.id;
+              break; 
+            }
           }
        }
 
-       if (!foundPage) return "Error: Page not found.";
+       if (!foundPage || !foundTeamId) return "Error: Page not found.";
        
-       router.push(`/${workspaceId}/${foundPage.id}`);
+       router.push(`/${workspaceId}/${foundTeamId}/${foundPage.id}`);
        return `Navigating to page: ${foundPage.title}`;
     },
   };

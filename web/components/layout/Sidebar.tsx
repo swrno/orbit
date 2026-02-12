@@ -108,14 +108,13 @@ export default function Sidebar({ className }: { className?: string }) {
 
     const handleCreateConfirm = () => {
         if (newViewName.trim() && workspaceId && selectedTeamId) {
-            addPage(workspaceId, selectedTeamId, newViewName.trim(), newViewType);
+            addPage(workspaceId, selectedTeamId, newViewName.trim(), newViewType).then(newPageId => {
+                 router.push(`/${workspaceId}/${selectedTeamId}/${newPageId}`);
+            });
             setNewViewName('');
             setCreateDialogOpen(false);
             setTargetTeamId(null);
             setSelectedTeamId('');
-
-            // Navigate to the new page (optimistic)
-            // Note: In a real app we'd wait for ID or use a deterministic ID
         }
     };
 
@@ -160,8 +159,16 @@ export default function Sidebar({ className }: { className?: string }) {
             setSelectedPageForAction(null);
 
             // If we deleted the current page, navigate to backlog
+            // If we deleted the current page, navigate to workspace root or first available page
             if (pathname?.includes(selectedPageForAction.pageId)) {
-                router.push(`/${workspaceId}/backlog`);
+                const ws = workspaces.find(w => w.id === workspaceId);
+                const firstTeam = ws?.teams?.[0];
+                const firstPage = firstTeam?.pages?.[0];
+                if (firstTeam && firstPage) {
+                   router.push(`/${workspaceId}/${firstTeam.id}/${firstPage.id}`);
+                } else {
+                   router.push(`/${workspaceId}`);
+                }
             }
         }
     };
@@ -264,7 +271,7 @@ export default function Sidebar({ className }: { className?: string }) {
         setSelectedWorkspace(newWorkspaceId);
         const targetWorkspace = workspaces.find(w => w.id === newWorkspaceId);
         if (targetWorkspace && targetWorkspace.teams.length > 0 && targetWorkspace.teams[0].pages.length > 0) {
-            router.push(`/${newWorkspaceId}/${targetWorkspace.teams[0].pages[0].id}`);
+            router.push(`/${newWorkspaceId}/${targetWorkspace.teams[0].id}/${targetWorkspace.teams[0].pages[0].id}`);
         } else {
             router.push(`/${newWorkspaceId}`);
         }
@@ -280,7 +287,7 @@ export default function Sidebar({ className }: { className?: string }) {
             setTimeout(() => {
                 const newWorkspace = workspaces.find(w => w.id === newId);
                 if (newWorkspace && newWorkspace.teams.length > 0 && newWorkspace.teams[0].pages.length > 0) {
-                    router.push(`/${newId}/${newWorkspace.teams[0].pages[0].id}`);
+                    router.push(`/${newId}/${newWorkspace.teams[0].id}/${newWorkspace.teams[0].pages[0].id}`);
                 } else {
                     router.push(`/${newId}`);
                 }
@@ -565,7 +572,7 @@ export default function Sidebar({ className }: { className?: string }) {
                                                     {(provided) => (
                                                         <List disablePadding ref={provided.innerRef} {...provided.droppableProps}>
                                                             {team.pages.map((page, index) => {
-                                                                const pagePath = `/${selectedWorkspace}/${page.id}`;
+                                                                const pagePath = `/${selectedWorkspace}/${team.id}/${page.id}`;
                                                                 const isActive = pathname === pagePath;
 
                                                                 // Determine icon based on page type
@@ -676,7 +683,7 @@ export default function Sidebar({ className }: { className?: string }) {
 
                     {/* Footer */}
                     <Box sx={{ p: 2, borderTop: '1px solid #DFE1E6' }}>
-                        <Link href={`/${selectedWorkspace}/settings`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/${selectedWorkspace}/main/settings`} style={{ textDecoration: 'none' }}>
                             <Box sx={{
                                 display: 'flex',
                                 alignItems: 'center',

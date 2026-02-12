@@ -51,9 +51,9 @@ export function PageTabs() {
         if (pId === pageId) {
              const remaining = currentTeam!.pages.filter(p => p.id !== pId);
              if (remaining.length > 0) {
-                 router.push(`/${workspaceId}/${remaining[0].id}`);
+                 router.push(`/${workspaceId}/${currentTeam!.id}/${remaining[0].id}`);
              } else {
-                 router.push(`/dashboard`);
+                 router.push(`/${workspaceId}`); // Fallback to workspace root
              }
         }
     }
@@ -62,7 +62,7 @@ export function PageTabs() {
   const currentTab = currentTeam.pages.find(p => p.id === pageId)?.id || false;
 
   const handleChange = (event: SyntheticEvent, newValue: string) => {
-     router.push(`/${workspaceId}/${newValue}`);
+     router.push(`/${workspaceId}/${currentTeam!.id}/${newValue}`);
   };
 
   return (

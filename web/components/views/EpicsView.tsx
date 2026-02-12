@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { apiClient } from "@/lib/api-client";
 import {
   Box,
   Typography,
@@ -192,27 +193,24 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
     try {
       setLoading(true);
       
-      const queryParams = [`workspaceId=${workspaceId}`];
+      const params: Record<string, string> = { workspaceId };
       if (!debouncedSearchQuery && teamId) {
-        queryParams.push(`teamId=${teamId}`);
+        params.teamId = teamId;
       }
       
       const [epicsRes, tasksRes] = await Promise.all([
-        fetch(`/api/epics?${queryParams.join('&')}`),
-        fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`) // Tasks for connection
+        apiClient.fetchResources('epics', params),
+        apiClient.fetchResources('tasks', { workspaceId, teamId: teamId || '' })
       ]);
 
-      const epicsData = await epicsRes.json();
-      const tasksData = await tasksRes.json();
-
-      if (epicsData.success && Array.isArray(epicsData.data)) {
-        setEpics(epicsData.data);
+      if (epicsRes.success && Array.isArray(epicsRes.data)) {
+        setEpics(epicsRes.data);
       } else {
         setEpics([]);
       }
 
-      if (tasksData.success && Array.isArray(tasksData.data)) {
-        setTasks(tasksData.data);
+      if (tasksRes.success && Array.isArray(tasksRes.data)) {
+        setTasks(tasksRes.data);
       } else {
         setTasks([]);
       }
@@ -242,9 +240,6 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
       }
 
       const isUpdate = !!epicData._id;
-      const url = '/api/epics';
-      const method = isUpdate ? 'PUT' : 'POST';
-
       const payload = {
         ...epicData,
         workspaceId,
@@ -253,13 +248,11 @@ export function EpicsView({ workspaceId, pageId, viewType = 'table' }: EpicsView
         id: isUpdate ? epicData._id : undefined
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const data = await (isUpdate 
+        ? apiClient.updateResource('epics', payload)
+        : apiClient.createResource('epics', payload));
 
-      if (response.ok) {
+      if (data.success) {
         fetchEpics();
         setEditingEpic(null);
       }

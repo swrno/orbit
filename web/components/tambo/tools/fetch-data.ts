@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { TamboTool } from "@tambo-ai/react";
 import type { ToolContext } from "./types";
+import { apiClient } from "@/lib/api-client";
 
 export const getFetchDataTool = (context: ToolContext): TamboTool => {
   const { workspaceId, workspaces } = context;
@@ -38,68 +39,60 @@ export const getFetchDataTool = (context: ToolContext): TamboTool => {
       if (!teamId && context.activePageId && workspaces && workspaces.length > 0) {
         const currentWorkspace = workspaces.find(w => w.id === workspaceId);
         if (currentWorkspace) {
-             const activeTeam = currentWorkspace.teams?.find(t => 
-                 t.pages?.some(p => p.id === context.activePageId)
-             );
-             if (activeTeam) {
-                 teamId = activeTeam.id;
-             }
+          const activeTeam = currentWorkspace.teams?.find(t =>
+            t.pages?.some(p => p.id === context.activePageId)
+          );
+          if (activeTeam) {
+            teamId = activeTeam.id;
+          }
         }
       }
 
-      let url = `/api/${resource}?workspaceId=${workspaceId}`;
-      
-      if (teamId) url += `&teamId=${teamId}`;
-      
-      if (pageId) url += `&pageId=${pageId}`;
+      const params: Record<string, string> = { workspaceId };
+      if (teamId) params.teamId = teamId;
+      if (pageId) params.pageId = pageId;
 
-      // Add specific filters to query params if applicable
+      // Add specific filters from parsedFilters if any
       if (parsedFilters) {
-        if (parsedFilters.sprint) url += `&sprint=${encodeURIComponent(parsedFilters.sprint)}`;
-        if (parsedFilters.type) url += `&type=${encodeURIComponent(parsedFilters.type)}`;
-        if (parsedFilters.status) url += `&status=${encodeURIComponent(parsedFilters.status)}`; 
-        // Note: APIs might not support all filters via query params directly, 
-        // except likely Retros which support 'sprint' and 'type'.
-        // For others, we might need to filter client-side after fetch if the API is simple.
+        Object.entries(parsedFilters).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+             params[key] = value;
+          }
+        });
       }
 
       try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          return { error: `Failed to fetch ${resource}: ${response.statusText}` };
-        }
-
-        const json = await response.json();
+        const json = await apiClient.fetchResources(resource, params);
         
         if (!json.success) {
-           return { error: json.error || "Unknown API error" };
+          return { error: json.error || "Unknown API error" };
         }
 
         let data = json.data;
         if (!Array.isArray(data)) {
-           return { data }; // Single object or other format
+          return { data }; // Single object or other format
         }
 
-        // Apply client-side filtering if needed for common fields not handled by simple APIs
+        // Apply client-side filtering for complex filters if needed
         if (parsedFilters) {
-            data = data.filter((item: any) => {
-                for (const [key, value] of Object.entries(parsedFilters!)) {
-                    if (key === 'sprint' || key === 'type' || key === 'status') continue; // Already handled or params
-                    // precise match for now
-                    if (item[key] !== value) return false;
-                }
-                return true;
-            });
+          data = data.filter((item: any) => {
+            for (const [key, value] of Object.entries(parsedFilters!)) {
+              if (params[key]) continue; // Already handled by API params
+              // precise match for now
+              if (item[key] !== value) return false;
+            }
+            return true;
+          });
         }
 
         // Apply limit
         if (limit && limit > 0) {
-            data = data.slice(0, limit);
+          data = data.slice(0, limit);
         }
 
-        return { 
-          count: data.length, 
-          data: data 
+        return {
+          count: data.length,
+          data: data
         };
 
       } catch (error: any) {

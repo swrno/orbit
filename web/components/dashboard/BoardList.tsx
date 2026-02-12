@@ -57,7 +57,10 @@ export function BoardList({ workspaceId }: BoardListProps) {
                         key={page.id}
                         hover
                         sx={{ cursor: 'pointer', '&:last-child td, &:last-child th': { border: 0 } }}
-                        onClick={() => router.push(`/${workspaceId}/${page.id}`)}
+                        onClick={() => {
+                            const team = workspace.teams?.find((t: Team) => t.pages.some((p: Page) => p.id === page.id));
+                            router.push(`/${workspaceId}/${team?.id || 'main'}/${page.id}`);
+                        }}
                     >
                         <TableCell>
                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); }}>

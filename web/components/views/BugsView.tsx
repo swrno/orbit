@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
+import { apiClient } from "@/lib/api-client";
 import {
   Box, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Avatar, Button, Collapse, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Popover, List, ListItem, Switch
@@ -211,15 +212,12 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
   const fetchBugs = async () => {
     try {
       setLoading(true);
-      // If searchQuery is present, fetch globally (omit teamId)
-      // Otherwise fetch for specific team
-      const queryParams = [`workspaceId=${workspaceId}`];
+      const params: Record<string, string> = { workspaceId };
       if (!debouncedSearchQuery && teamId) {
-        queryParams.push(`teamId=${teamId}`);
+        params.teamId = teamId;
       }
       
-      const response = await fetch(`/api/bugs?${queryParams.join('&')}`);
-      const data = await response.json();
+      const data = await apiClient.fetchResources('bugs', params);
 
       if (data.success && Array.isArray(data.data)) {
         setBugs(data.data);
@@ -242,9 +240,6 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
       }
 
       const isUpdate = !!bugData._id;
-      const url = '/api/bugs';
-      const method = isUpdate ? 'PUT' : 'POST';
-
       const payload = {
         ...bugData,
         workspaceId,
@@ -253,13 +248,11 @@ export function BugsView({ workspaceId, pageId, viewType = 'table' }: BugsViewPr
         id: isUpdate ? bugData._id : undefined
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const data = await (isUpdate 
+        ? apiClient.updateResource('bugs', payload)
+        : apiClient.createResource('bugs', payload));
 
-      if (response.ok) {
+      if (data.success) {
         fetchBugs();
         setEditingBug(null);
       }

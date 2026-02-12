@@ -39,11 +39,11 @@ export const getNavigateToViewTool = (context: ToolContext): TamboTool => {
       if (workspaces) {
         const ws = workspaces.find(w => w.id === workspaceId);
         if (ws) {
-          const findPageRecursive = (teams: any[]): any => {
+          const findPageRecursive = (teams: any[]): { page: any, teamId: string } | null => {
             for (const team of teams) {
               if (team.pages) {
                 const page = team.pages.find((p: any) => p.title.toLowerCase() === normalizedView.toLowerCase());
-                if (page) return page;
+                if (page) return { page, teamId: team.id };
               }
               if (team.teams && team.teams.length > 0) {
                 const found = findPageRecursive(team.teams);
@@ -53,19 +53,21 @@ export const getNavigateToViewTool = (context: ToolContext): TamboTool => {
             return null;
           };
 
-          const page = findPageRecursive(ws.teams || []);
-          if (page) {
-            router.push(`/${workspaceId}/${page.id}`);
-            return `Navigating to ${page.title}.`;
+          const result = findPageRecursive(ws.teams || []);
+          if (result) {
+            router.push(`/${workspaceId}/${result.teamId}/${result.page.id}`);
+            return `Navigating to ${result.page.title}.`;
           }
         }
       }
 
       // 3. Fallback to static route ONLY for known static views
       const staticViews = ["backlog", "roadmap", "settings", "team access"];
-      if (staticViews.includes(normalizedView.toLowerCase())) {
+      if (staticViews.includes(normalizedView.toLowerCase()) && workspaces) {
+        const ws = workspaces.find(w => w.id === workspaceId);
+        const teamId = ws?.teams?.[0]?.id || "main"; // Fallback to first team
         const route = normalizedView.toLowerCase().replace(/\s+/g, '-');
-        router.push(`/${workspaceId}/${route}`);
+        router.push(`/${workspaceId}/${teamId}/${route}`);
         return `Navigating to ${normalizedView}.`;
       }
 

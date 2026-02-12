@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiClient } from './api-client';
 
 export type PageType = 'board' | 'table' | 'document' | 'gantt' | 'roadmap' | 'calendar' | 'chart' | 'list' | 'team-access';
 export type TaskStatus = 'Todo' | 'In Progress' | 'In Review' | 'Done' | 'Blocked';
@@ -184,7 +185,7 @@ interface AppState {
   deleteWorkspace: (id: string, userId: string) => void;
   selectWorkspace: (id: string) => void;
   addTeam: (workspaceId: string, title: string, icon?: string, leaderId?: string, leaderEmail?: string, leaderName?: string) => Promise<void>;
-  addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => string;
+  addPage: (workspaceId: string, teamId: string, title: string, type: PageType) => Promise<string>;
   updatePage: (workspaceId: string, teamId: string, pageId: string, updates: Partial<Page>, userId?: string, userEmail?: string | null) => Promise<void>;
 
   // Task Actions
@@ -236,13 +237,13 @@ interface AppState {
   addActivity: (workspaceId: string, activity: Omit<Activity, 'id' | 'createdAt'>) => void;
 
   // Update Actions
-  renameTeam: (workspaceId: string, teamId: string, newTitle: string) => void;
-  renamePage: (workspaceId: string, teamId: string, pageId: string, newTitle: string) => void;
+  renameTeam: (workspaceId: string, teamId: string, newTitle: string) => Promise<void>;
+  renamePage: (workspaceId: string, teamId: string, pageId: string, newTitle: string) => Promise<void>;
   updateTeamIcon: (workspaceId: string, teamId: string, icon: string) => void;
 
   // Delete Actions
   deleteTeam: (workspaceId: string, teamId: string, userId: string) => Promise<void>;
-  deletePage: (workspaceId: string, teamId: string, pageId: string) => void;
+  deletePage: (workspaceId: string, teamId: string, pageId: string, userId?: string) => Promise<void>;
   reorderPage: (workspaceId: string, teamId: string, startIndex: number, endIndex: number) => void;
 }
 
@@ -266,35 +267,14 @@ export const useAppStore = create<AppState>()(
 
       fetchWorkspaces: async (userId, userEmail) => {
         try {
-          const encodedUserId = userId ? encodeURIComponent(userId) : '';
-          const timestamp = Date.now();
-          const url = userId 
-            ? `/api/workspaces?userId=${encodedUserId}&_t=${timestamp}` 
-            : `/api/workspaces?_t=${timestamp}`;
+          console.log(`Store: fetching workspaces for ${userId}`);
+          const data = await apiClient.fetchWorkspaces(userId, userEmail);
           
-          const headers: HeadersInit = {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          };
-          if (userId) headers['X-User-Id'] = userId;
-          if (userEmail) headers['X-User-Email'] = userEmail;
-          
-          console.log(`Store: fetching workspaces from ${url}`, headers);
-          const response = await fetch(url, { 
-            headers,
-            cache: 'no-store' 
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log("Store: workspaces fetched", data);
-            if (data.success && Array.isArray(data.data)) {
-              set({ workspaces: data.data });
-            } else {
-               console.warn("Store: fetched data is not success or not array", data);
-            }
+          if (data.success && Array.isArray(data.data)) {
+            console.log("Store: workspaces fetched", data.data);
+            set({ workspaces: data.data });
           } else {
-            console.error("Store: fetch failed", response.status, response.statusText);
+            console.warn("Store: fetched data is not success or not array", data);
           }
         } catch (error) {
           console.error('Failed to fetch workspaces:', error);
@@ -307,36 +287,25 @@ export const useAppStore = create<AppState>()(
       createWorkspace: async (title, id, creatorId, creatorEmail, creatorName) => {
         try {
           const workspaceId = id || `ws-${Date.now()}`;
-          console.log('Creating workspace:', { title, workspaceId, creatorId, creatorEmail, creatorName });
+          console.log('Creating workspace:', { title, workspaceId, creatorId });
           
-          const response = await fetch('/api/workspaces', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              ...(creatorId && { 'X-User-Id': creatorId }),
-              ...(creatorEmail && { 'X-User-Email': creatorEmail })
-            },
-            body: JSON.stringify({ 
-              title, 
-              id: workspaceId,
-              creatorId,
-              creatorEmail,
-              creatorName
-            })
-          });
+          const data = await apiClient.createWorkspace({ 
+            title, 
+            id: workspaceId,
+            creatorId,
+            creatorEmail,
+            creatorName
+          }, creatorId, creatorEmail);
 
-          const data = await response.json();
           console.log('Workspace creation response:', data);
 
-          if (response.ok && data.success) {
-            // Add the workspace to the store
+          if (data.success && data.data) {
             set((state) => ({
               workspaces: [...state.workspaces, data.data]
             }));
-            console.log('Workspace added to store:', data.data);
-            return data.data; // Return the created workspace
+            return data.data;
           } else {
-            console.error('Failed to create workspace:', data.error || 'Unknown error');
+            console.error('Failed to create workspace:', data.error);
             alert('Failed to create workspace: ' + (data.error || 'Unknown error'));
             return null;
           }
@@ -356,18 +325,9 @@ export const useAppStore = create<AppState>()(
       deleteWorkspace: async (id, userId) => {
         try {
           console.log('Deleting workspace:', id);
-          const response = await fetch(`/api/workspaces?id=${id}&userId=${userId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${userId}`, // Mock token for now as per auth-middleware
-              'X-User-Id': userId
-            }
-          });
-          
-          const data = await response.json();
+          const data = await apiClient.deleteWorkspace(id, userId);
 
-          if (response.ok && data.success) {
+          if (data.success) {
              set((state) => ({
               workspaces: state.workspaces.filter(ws => ws.id !== id),
               currentWorkspaceId: state.currentWorkspaceId === id
@@ -389,35 +349,25 @@ export const useAppStore = create<AppState>()(
       addTeam: async (workspaceId, title, icon, leaderId, leaderEmail, leaderName) => {
         try {
           console.log('Adding team:', { workspaceId, title, leaderId });
-          const response = await fetch('/api/teams', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${leaderId}`,
-              'X-User-Id': leaderId || ''
-            },
-            body: JSON.stringify({ 
-              workspaceId, 
-              title, 
-              icon,
-              leaderId,
-              leaderEmail,
-              leaderName,
-              currentUserId: leaderId // Also pass in body as fallback
-            })
-          });
+          const data = await apiClient.addTeam({ 
+            workspaceId, 
+            title, 
+            icon,
+            leaderId,
+            leaderEmail,
+            leaderName,
+            currentUserId: leaderId
+          }, leaderId);
 
-          const data = await response.json();
           console.log('Add team response:', data);
 
-          if (response.ok && data.success && data.data) {
-            // Update workspace with the new data from server which contains the new team
+          if (data.success && data.data) {
             set((state) => ({
               workspaces: state.workspaces.map(ws =>
                 ws.id === workspaceId ? data.data : ws
               )
             }));
-            return data.data; // Return full workspace
+            return data.data;
           } else {
             console.error('Failed to add team:', data.error);
             alert(`Failed to add team: ${data.error}`);
@@ -428,8 +378,9 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      addPage: (workspaceId, teamId, title, type) => {
+      addPage: async (workspaceId, teamId, title, type) => {
         const newId = `p-${Date.now()}`;
+        // Optimistic update
         set((state) => ({
           workspaces: state.workspaces.map(ws =>
             ws.id === workspaceId
@@ -444,6 +395,31 @@ export const useAppStore = create<AppState>()(
               : ws
           )
         }));
+
+        try {
+          const data = await apiClient.addPage(workspaceId, teamId, title, type);
+          if (data.success && data.data) {
+             // Replace temp ID with real ID from backend
+             set((state) => ({
+                workspaces: state.workspaces.map(ws =>
+                  ws.id === workspaceId
+                    ? {
+                      ...ws,
+                      teams: ws.teams.map(g =>
+                        g.id === teamId
+                          ? { ...g, pages: g.pages.map(p => p.id === newId ? data.data : p) }
+                          : g
+                      )
+                    }
+                    : ws
+                )
+             }));
+             return data.data.id;
+          }
+        } catch (err) {
+            console.error('Error persisting page creation:', err);
+        }
+        
         return newId;
       },
 
@@ -469,28 +445,13 @@ export const useAppStore = create<AppState>()(
           )
         }));
 
-        const headers: HeadersInit = { 
-            'Content-Type': 'application/json' 
-        };
-        
-        if (userId) headers['X-User-Id'] = userId;
-        if (userEmail) headers['X-User-Email'] = userEmail;
-
         try {
-          // Persist to backend
-          const res = await fetch('/api/pages', {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify({ workspaceId, teamId, pageId, updates })
-          });
-          
-          if (!res.ok) {
-              console.error('Failed to persist page update');
-              // Optionally revert state here
+          const data = await apiClient.updatePage(workspaceId, teamId, pageId, updates, userId, userEmail);
+          if (!data.success) {
+              console.error('Failed to persist page update:', data.error);
           }
         } catch (err) {
             console.error('Error persisting page update:', err);
-             // Optionally revert state here
         }
       },
 
@@ -957,38 +918,60 @@ export const useAppStore = create<AppState>()(
       })),
 
       // Update Actions
-      renameTeam: (workspaceId, teamId, newTitle) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-              ...ws,
-              teams: ws.teams.map(t =>
-                t.id === teamId ? { ...t, title: newTitle } : t
-              )
-            }
-            : ws
-        )
-      })),
+      renameTeam: async (workspaceId, teamId, newTitle) => {
+        set((state) => ({
+          workspaces: state.workspaces.map(ws =>
+            ws.id === workspaceId
+              ? {
+                ...ws,
+                teams: ws.teams.map(t =>
+                  t.id === teamId ? { ...t, title: newTitle } : t
+                )
+              }
+              : ws
+          )
+        }));
 
-      renamePage: (workspaceId, teamId, pageId, newTitle) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-              ...ws,
-              teams: ws.teams.map(t =>
-                t.id === teamId
-                  ? {
-                    ...t,
-                    pages: t.pages.map(p =>
-                      p.id === pageId ? { ...p, title: newTitle } : p
-                    )
-                  }
-                  : t
-              )
-            }
-            : ws
-        )
-      })),
+        try {
+          const data = await apiClient.renameTeam(workspaceId, teamId, newTitle);
+          if (!data.success) {
+            console.error('Failed to rename team:', data.error);
+          }
+        } catch (error) {
+          console.error('Error renaming team:', error);
+        }
+      },
+
+      renamePage: async (workspaceId, teamId, pageId, newTitle) => {
+        set((state) => ({
+          workspaces: state.workspaces.map(ws =>
+            ws.id === workspaceId
+              ? {
+                ...ws,
+                teams: ws.teams.map(t =>
+                  t.id === teamId
+                    ? {
+                      ...t,
+                      pages: t.pages.map(p =>
+                        p.id === pageId ? { ...p, title: newTitle } : p
+                      )
+                    }
+                    : t
+                )
+              }
+              : ws
+          )
+        }));
+
+        try {
+          const data = await apiClient.updatePage(workspaceId, teamId, pageId, { title: newTitle });
+          if (!data.success) {
+             console.error('Failed to rename page:', data.error);
+          }
+        } catch (error) {
+           console.error('Error renaming page:', error);
+        }
+      },
 
       updateTeamIcon: (workspaceId, teamId, icon) => set((state) => ({
         workspaces: state.workspaces.map(ws =>
@@ -1006,18 +989,9 @@ export const useAppStore = create<AppState>()(
       // Delete Actions
       deleteTeam: async (workspaceId, teamId, userId) => {
         try {
-          const response = await fetch(`/api/teams?workspaceId=${workspaceId}&teamId=${teamId}&currentUserId=${userId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${userId}`,
-              'X-User-Id': userId || ''
-            }
-          });
+          const data = await apiClient.deleteTeam(workspaceId, teamId, userId);
 
-          const data = await response.json();
-
-          if (response.ok && data.success) {
+          if (data.success) {
             set((state) => ({
               workspaces: state.workspaces.map(ws =>
                 ws.id === workspaceId
@@ -1038,20 +1012,31 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      deletePage: (workspaceId, teamId, pageId) => set((state) => ({
-        workspaces: state.workspaces.map(ws =>
-          ws.id === workspaceId
-            ? {
-              ...ws,
-              teams: ws.teams.map(t =>
-                t.id === teamId
-                  ? { ...t, pages: t.pages.filter(p => p.id !== pageId) }
-                  : t
-              )
-            }
-            : ws
-        )
-      })),
+      deletePage: async (workspaceId, teamId, pageId, userId) => {
+        set((state) => ({
+          workspaces: state.workspaces.map(ws =>
+            ws.id === workspaceId
+              ? {
+                ...ws,
+                teams: ws.teams.map(t =>
+                  t.id === teamId
+                    ? { ...t, pages: t.pages.filter(p => p.id !== pageId) }
+                    : t
+                )
+              }
+              : ws
+          )
+        }));
+
+        try {
+          const data = await apiClient.deletePage(workspaceId, teamId, pageId, userId);
+           if (!data.success) {
+              console.error('Failed to persist page deletion:', data.error);
+          }
+        } catch (err) {
+            console.error('Error persisting page deletion:', err);
+        }
+      },
 
       reorderPage: (workspaceId, teamId, startIndex, endIndex) => set((state) => ({
         workspaces: state.workspaces.map(ws => {

@@ -46,12 +46,13 @@ export function SearchModal({ open, onClose, workspaceId }: SearchModalProps) {
                 task.key.toLowerCase().includes(lowerQuery) ||
                 task.description?.toLowerCase().includes(lowerQuery)
             ) {
+                const team = workspace.teams?.find(t => t.pages?.length > 0) || workspace.teams?.[0];
                 results.push({
                     type: 'task',
                     id: task.id,
                     title: task.title,
                     subtitle: `${task.key} • ${task.status}`,
-                    path: `/${workspaceId}/backlog`
+                    path: `/${workspaceId}/${team?.id || 'main'}/backlog`
                 });
             }
         });
@@ -62,12 +63,13 @@ export function SearchModal({ open, onClose, workspaceId }: SearchModalProps) {
                 epic.name.toLowerCase().includes(lowerQuery) ||
                 epic.description?.toLowerCase().includes(lowerQuery)
             ) {
+                const team = workspace.teams?.find(t => t.pages?.length > 0) || workspace.teams?.[0];
                 results.push({
                     type: 'epic',
                     id: epic.id,
                     title: epic.name,
                     subtitle: `Epic • ${epic.status}`,
-                    path: `/${workspaceId}/epics`
+                    path: `/${workspaceId}/${team?.id || 'main'}/epics`
                 });
             }
         });
@@ -78,12 +80,13 @@ export function SearchModal({ open, onClose, workspaceId }: SearchModalProps) {
                 sprint.name.toLowerCase().includes(lowerQuery) ||
                 sprint.goal?.toLowerCase().includes(lowerQuery)
             ) {
+                const team = workspace.teams?.find(t => t.pages?.length > 0) || workspace.teams?.[0];
                 results.push({
                     type: 'sprint',
                     id: sprint.id,
                     title: sprint.name,
                     subtitle: `Sprint • ${sprint.status}`,
-                    path: `/${workspaceId}/sprints`
+                    path: `/${workspaceId}/${team?.id || 'main'}/sprints`
                 });
             }
         });
@@ -97,7 +100,7 @@ export function SearchModal({ open, onClose, workspaceId }: SearchModalProps) {
                         id: page.id,
                         title: page.title,
                         subtitle: `${page.type.charAt(0).toUpperCase() + page.type.slice(1)} • ${team.title}`,
-                        path: `/${workspaceId}/${page.id}`
+                        path: `/${workspaceId}/${team.id}/${page.id}`
                     });
                 }
             });
@@ -106,12 +109,13 @@ export function SearchModal({ open, onClose, workspaceId }: SearchModalProps) {
         // Search team members
         workspace.teamMembers?.forEach(member => {
             if (member.name.toLowerCase().includes(lowerQuery)) {
+                const team = workspace.teams?.find(t => t.pages?.length > 0) || workspace.teams?.[0];
                 results.push({
                     type: 'member',
                     id: member.id,
                     title: member.name,
                     subtitle: `${member.role} • Team Member`,
-                    path: `/${workspaceId}/team`
+                    path: `/${workspaceId}/${team?.id || 'main'}/team`
                 });
             }
         });

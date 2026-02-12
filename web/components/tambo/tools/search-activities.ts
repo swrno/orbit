@@ -58,7 +58,17 @@ export const getSearchActivitiesTool = (context: ToolContext): TamboTool => {
       }
 
       if (targetPageId) {
-        const searchUrl = `/${workspaceId}/${targetPageId}?q=${encodeURIComponent(q)}`;
+        // Find the teamId for this page
+        let teamId = "main";
+        if (currentWorkspace.teams) {
+            for (const team of currentWorkspace.teams) {
+                if (team.pages.some(p => p.id === targetPageId)) {
+                    teamId = team.id;
+                    break;
+                }
+            }
+        }
+        const searchUrl = `/${workspaceId}/${teamId}/${targetPageId}?q=${encodeURIComponent(q)}`;
         router.push(searchUrl);
         return `Navigating to ${targetView} view to search for "${q}"...`;
       } else {

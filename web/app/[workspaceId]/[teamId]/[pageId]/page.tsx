@@ -25,6 +25,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 export default function GenericPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
+  const teamId = params.teamId as string;
   const pageId = params.pageId as string;
 
   const { workspaces, updatePage } = useAppStore();
@@ -36,13 +37,13 @@ export default function GenericPage() {
   let currentTeamName: string | null = null;
 
   if (workspace && workspace.teams) {
-    for (const team of workspace.teams) {
+    const team = workspace.teams.find(t => t.id === teamId);
+    if (team) {
+      currentTeamId = team.id;
+      currentTeamName = team.title;
       const page = team.pages.find(p => p.id === pageId);
       if (page) {
         currentPage = page;
-        currentTeamId = team.id;
-        currentTeamName = team.title;
-        break;
       }
     }
   }

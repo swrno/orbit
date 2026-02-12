@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { apiClient } from "@/lib/api-client";
 import {
   Box,
   Typography,
@@ -160,27 +161,25 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
   }, [workspaceId, pageId, debouncedSearchQuery]);
 
   const fetchSprints = async () => {
-    // ... existing fetch logic
     try {
       setLoading(true);
       
-      const queryParams = [`workspaceId=${workspaceId}`];
+      const params: Record<string, string> = { workspaceId };
       if (!debouncedSearchQuery && teamId) {
-        queryParams.push(`teamId=${teamId}`);
+        params.teamId = teamId;
       }
 
-      const response = await fetch(`/api/sprints?${queryParams.join('&')}`, { cache: 'no-store' });
-      const data = await response.json();
+      const sprintsData = await apiClient.fetchResources('sprints', params);
 
-      if (data.success && Array.isArray(data.data)) {
-        setSprints(data.data);
+      if (sprintsData.success && Array.isArray(sprintsData.data)) {
+        setSprints(sprintsData.data);
       } else {
-        console.error('Invalid sprints data format:', data);
+        console.error('Invalid sprints data format:', sprintsData);
         setSprints([]);
       }
-      try {
-        const tResp = await fetch(`/api/tasks?workspaceId=${workspaceId}&teamId=${teamId}`, { cache: 'no-store' });
-        const tData = await tResp.json();
+
+      if (teamId) {
+        const tData = await apiClient.fetchResources('tasks', { workspaceId, teamId });
         if (tData.success && Array.isArray(tData.data)) {
           setTasks(tData.data);
           groupTasksBySprint(tData.data);
@@ -188,10 +187,6 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
           setTasks([]);
           setGroupedTasks({});
         }
-      } catch (err) {
-        console.error('Error fetching tasks for sprints view:', err);
-        setTasks([]);
-        setGroupedTasks({});
       }
     } catch (error) {
       console.error('Error fetching sprints:', error);
@@ -229,9 +224,6 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
       }
 
       const isUpdate = !!sprintData._id;
-      const url = '/api/sprints';
-      const method = isUpdate ? 'PUT' : 'POST';
-
       const payload = {
         ...sprintData,
         workspaceId,
@@ -240,13 +232,11 @@ export function SprintsView({ workspaceId, pageId, viewType = 'table' }: Sprints
         id: isUpdate ? sprintData._id : undefined
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const data = await (isUpdate 
+        ? apiClient.updateResource('sprints', payload)
+        : apiClient.createResource('sprints', payload));
 
-      if (response.ok) {
+      if (data.success) {
         fetchSprints();
         setEditingSprint(null);
       }

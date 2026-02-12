@@ -33,6 +33,7 @@ export default function WorkspaceLayout({
       workspaces,
       updatePage,
       addPage,
+      activeTeamId: params.teamId as string,
       activePageId: params.pageId as string,
       router
     });

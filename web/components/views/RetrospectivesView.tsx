@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { apiClient } from "@/lib/api-client";
 import {
   Box,
   Typography,
@@ -203,29 +204,24 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     try {
       setLoading(true);
       
-      const queryParams = [`workspaceId=${workspaceId}`];
+      const params: Record<string, string> = { workspaceId };
       if (!debouncedSearchQuery && teamId) {
-        queryParams.push(`teamId=${teamId}`);
+        params.teamId = teamId;
       }
 
       const [retrosRes, sprintsRes] = await Promise.all([
-        fetch(`/api/retrospectives?${queryParams.join('&')}`),
-        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${teamId}`) // Keep Sprints local?
+        apiClient.fetchResources('retrospectives', params),
+        apiClient.fetchResources('sprints', { workspaceId, teamId: teamId || '' })
       ]);
 
-      const retrosData = await retrosRes.json();
-      const sprintsData = await sprintsRes.json();
-
-      let currentSprints = [];
-      if (sprintsData.success && Array.isArray(sprintsData.data)) {
-        setSprints(sprintsData.data);
-        currentSprints = sprintsData.data;
+      if (sprintsRes.success && Array.isArray(sprintsRes.data)) {
+        setSprints(sprintsRes.data);
       }
 
-      if (retrosData.success && Array.isArray(retrosData.data)) {
-        setRetrospectives(retrosData.data);
+      if (retrosRes.success && Array.isArray(retrosRes.data)) {
+        setRetrospectives(retrosRes.data);
       } else {
-        console.error('Invalid retrospectives data format:', retrosData);
+        console.error('Invalid retrospectives data format:', retrosRes);
         setRetrospectives([]);
       }
     } catch (error) {
@@ -243,9 +239,6 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
       }
 
       const isUpdate = !!retroData._id;
-      const url = '/api/retrospectives';
-      const method = isUpdate ? 'PUT' : 'POST';
-
       const payload = {
         ...retroData,
         workspaceId,
@@ -254,13 +247,11 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
         id: isUpdate ? retroData._id : undefined
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const data = await (isUpdate 
+        ? apiClient.updateResource('retrospectives', payload)
+        : apiClient.createResource('retrospectives', payload));
 
-      if (response.ok) {
+      if (data.success) {
         fetchRetrospectives();
         setEditingRetro(null);
       }
@@ -273,11 +264,9 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
     if (!confirm('Are you sure you want to delete this retrospective item?')) return;
 
     try {
-      const response = await fetch(`/api/retrospectives?id=${retroId}`, {
-        method: 'DELETE',
-      });
+      const data = await apiClient.deleteResource('retrospectives', retroId);
 
-      if (response.ok) {
+      if (data.success) {
         fetchRetrospectives();
       }
     } catch (error) {
@@ -326,13 +315,9 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
   const handleVote = async (retroId: string) => {
     try {
-      const response = await fetch('/api/retrospectives', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: retroId, incrementVote: true })
-      });
+      const data = await apiClient.updateResource('retrospectives', { id: retroId, incrementVote: true });
 
-      if (response.ok) {
+      if (data.success) {
         fetchRetrospectives(); // Refresh data
       }
     } catch (error) {
@@ -364,12 +349,8 @@ export function RetrospectivesView({ workspaceId, pageId, viewType = 'table' }: 
 
     // API Update
     try {
-      const response = await fetch('/api/retrospectives', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: retro._id || retro.id, type: newType })
-      });
-      if (!response.ok) fetchRetrospectives();
+      const data = await apiClient.updateResource('retrospectives', { id: retro._id || retro.id, type: newType });
+      if (!data.success) fetchRetrospectives();
     } catch (e) {
       console.error("Failed to move retro", e);
       fetchRetrospectives();

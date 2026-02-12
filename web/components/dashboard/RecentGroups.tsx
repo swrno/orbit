@@ -58,7 +58,7 @@ export function RecentGroups({ workspaceId }: RecentGroupsProps) {
                   // Navigate to first page in the group if it exists
                   if (team.pages.length > 0) {
                     const firstPage = team.pages[0];
-                    router.push(`/${workspaceId}/${firstPage.id}`);
+                    router.push(`/${workspaceId}/${team.id}/${firstPage.id}`);
                   }
                 }}
                 sx={{ 

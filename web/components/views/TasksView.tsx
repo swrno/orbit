@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useAppStore, Task, TaskStatus, TaskPriority } from "@/lib/store";
+import { apiClient } from "@/lib/api-client";
 import {
   Box,
   Typography,
@@ -208,29 +209,24 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
     try {
       setLoading(true);
       
-      const queryParams = [`workspaceId=${workspaceId}`];
+      const params: Record<string, string> = { workspaceId };
       if (!debouncedSearchQuery && groupId) {
-        queryParams.push(`teamId=${groupId}`);
+        params.teamId = groupId;
       }
 
       const [tasksRes, sprintsRes] = await Promise.all([
-        fetch(`/api/tasks?${queryParams.join('&')}`),
-        fetch(`/api/sprints?workspaceId=${workspaceId}&teamId=${groupId}`) // Sprints still team specific usually? Or should sprints also be global? Sprints are usually team specific.
+        apiClient.fetchResources('tasks', params),
+        apiClient.fetchResources('sprints', { workspaceId, teamId: groupId || '' })
       ]);
 
-      const tasksData = await tasksRes.json();
-      const sprintsData = await sprintsRes.json();
-
-      let currentSprints = [];
-      if (sprintsData.success && Array.isArray(sprintsData.data)) {
-        setSprints(sprintsData.data);
-        currentSprints = sprintsData.data;
+      if (sprintsRes.success && Array.isArray(sprintsRes.data)) {
+        setSprints(sprintsRes.data);
       }
 
-      if (tasksData.success && Array.isArray(tasksData.data)) {
-        setTasks(tasksData.data);
+      if (tasksRes.success && Array.isArray(tasksRes.data)) {
+        setTasks(tasksRes.data);
       } else {
-        console.error('Invalid tasks data format:', tasksData);
+        console.error('Invalid tasks data format:', tasksRes);
         setTasks([]);
       }
     } catch (error) {
@@ -253,18 +249,14 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
         setEditingTask(null);
       } else {
         // Handle create
-        const response = await fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...taskData,
-            workspaceId,
-            pageId,
-            teamId: groupId
-          })
+        const data = await apiClient.createResource('tasks', {
+          ...taskData,
+          workspaceId,
+          pageId,
+          teamId: groupId
         });
 
-        if (response.ok) {
+        if (data.success) {
           fetchTasks();
         }
       }
@@ -314,13 +306,9 @@ export function TasksView({ workspaceId, pageId, viewType = 'table' }: TasksView
 
   const handleUpdateTask = async (taskId: string, updates: any) => {
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId, updates })
-      });
+      const data = await apiClient.updateResource('tasks', { taskId, updates });
 
-      if (response.ok) {
+      if (data.success) {
         fetchTasks(); // Refresh tasks
       }
     } catch (error) {
